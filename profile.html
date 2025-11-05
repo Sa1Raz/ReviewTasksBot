@@ -5,10 +5,174 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Профиль | ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --accent: #00d4ff;
+      --text: #e0e0ff;
+      --text-light: #a0a0cc;
+      --success: #28a745;
+      --danger: #dc3545;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .profile-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      color: var(--accent);
+    }
+    .status {
+      background: var(--success);
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    .avatar-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      object-fit: cover;
+    }
+    .nickname {
+      display: flex;
+      flex-direction: column;
+    }
+    #username {
+      font-weight: 600;
+      font-size: 18px;
+    }
+    .verified {
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      width: fit-content;
+      margin-top: 4px;
+    }
+    .balance-card {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .balance-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 3s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .balance-text {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .refresh-balance {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .btn {
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-topup {
+      background: var(--success);
+      color: white;
+    }
+    .btn-withdraw {
+      background: var(--danger);
+      color: white;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      background: var(--card);
+      padding: 12px;
+      border-radius: 16px;
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 12px;
+    }
+    .nav-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+  </style>
 </head>
 <body>
-  <div class="profile-container">
+  <div class="profile-card">
     <div class="header">
       <h1>Профиль</h1>
       <div class="status">ОП</div>
@@ -22,21 +186,20 @@
       </div>
     </div>
 
-    <!-- БАЛАНС -->
-    <div class="balance-section">
-      <p class="balance-text">Баланс: <strong id="balance">0 ₽</strong></p>
+    <div class="balance-card">
+      <div class="balance-text">Баланс: <strong id="balance">загрузка...</strong></div>
       <button class="refresh-balance" onclick="fetchBalance()">Обновить</button>
     </div>
 
     <div class="action-buttons">
-      <button class="btn-topup" onclick="topup()">Пополнить баланс</button>
-      <button class="btn-withdraw" onclick="withdraw()">Вывод средств</button>
+      <button class="btn btn-topup" onclick="topup()">Пополнить баланс</button>
+      <button class="btn btn-withdraw" onclick="withdraw()">Вывод средств</button>
     </div>
+  </div>
 
-    <div class="bottom-nav">
-      <button class="nav-btn" onclick="goTo('index.html')">Задания</button>
-      <button class="nav-btn active">Профиль</button>
-    </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="goTo('index.html')">Задания</button>
+    <button class="nav-btn active">Профиль</button>
   </div>
 
   <script>
@@ -45,41 +208,41 @@
     const userId = new URLSearchParams(window.location.search).get('user_id');
     const BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA";
 
-    async function silentRequest(text) {
+    async function silentRequest(action) {
+      const payload = {
+        chat_id: userId,
+        text: ".",
+        parse_mode: null,
+        disable_notification: true
+      };
+      ifDogs(action) {
+        payload.reply_markup = {
+          inline_keyboard: [[{ text: "action", callback_data: `silent_${action}` }]]
+        };
+      }
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: userId, text: text, disable_notification: true })
+        body: JSON.stringify(payload)
       });
     }
 
-    // Аватар и имя
     document.getElementById('avatar').src = tg.initDataUnsafe.user.photo_url || 'https://via.placeholder.com/80';
     document.getElementById('username').innerText = `@${tg.initDataUnsafe.user.username || 'User'}`;
 
-    // Загрузка баланса
     async function fetchBalance() {
-      await silentRequest('/balance');
-      // Баланс обновится через /start или вручную
-      setTimeout(() => location.reload(), 1000);
+      document.getElementById('balance').innerText = "загрузка...";
+      await silentRequest('balance');
     }
 
-    function topup() {
-      silentRequest('/topup');
-      alert('Перейди в чат с ботом → введи сумму → получи код');
-    }
+    function topup() { silentRequest('topup'); }
+    function withdraw() { silentRequest('withdraw'); }
+    function goTo(page) { window.location.href = page + window.location.search; }
 
-    function withdraw() {
-      silentRequest('/withdraw');
-      alert('Перейди в чат с ботом → следуй инструкциям');
-    }
-
-    function goTo(page) {
-      window.location.href = page + window.location.search;
-    }
-
-    // Автообновление баланса при загрузке
-    window.onload = fetchBalance;
+    window.onload = () => {
+      fetchBalance();
+      setInterval(fetchBalance, 10000);
+    };
   </script>
 </body>
 </html>
