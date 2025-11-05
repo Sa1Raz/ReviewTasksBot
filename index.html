@@ -3,163 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Задания | ReviewCash</title>
+  <title>ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    :root {
-      --bg: #0a0a14;
-      --card: #141426;
-      --neon: #00ffff;
-      --neon-glow: 0 0 20px #00ffff, 0 0 40px #00ffff;
-      --text: #e0f7ff;
-      --text-muted: #88c0d0;
-      --success: #00ff88;
-      --danger: #ff3366;
-      --gold: #ffd700;
-      --glass: rgba(20, 20, 38, 0.6);
-      --border: rgba(0, 255, 255, 0.3);
-    }
+    :root { --bg: #0a0a14; --card: #141426; --neon: #00ffff; --neon-glow: 0 0 20px #00ffff; --text: #e0f7ff; --text-muted: #88c0d0; --success: #00ff88; --danger: #ff3366; --gold: #ffd700; --glass: rgba(20, 20, 38, 0.6); --border: rgba(0, 255, 255, 0.3); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      background-image: 
-        radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 0, 150, 0.1) 0%, transparent 50%);
-    }
-    .bg-animation {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: -1;
-      background: linear-gradient(45deg, #0a0a14, #141426);
-      overflow: hidden;
-    }
-    .bg-animation::before {
-      content: '';
-      position: absolute;
-      top: -50%; left: -50%;
-      width: 200%; height: 200%;
-      background: repeating-conic-gradient(from 0deg, transparent 0deg, rgba(0,255,255,0.03) 1deg, transparent 2deg);
-      animation: rotate 30s linear infinite;
-    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; background-image: radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 0, 150, 0.1) 0%, transparent 50%); }
+    .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; background: linear-gradient(45deg, #0a0a14, #141426); overflow: hidden; }
+    .bg-animation::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: repeating-conic-gradient(from 0deg, transparent 0deg, rgba(0,255,255,0.03) 1deg, transparent 2deg); animation: rotate 30s linear infinite; }
     @keyframes rotate { to { transform: rotate(360deg); } }
     .container { max-width: 420px; margin: 20px auto; padding: 0 16px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .header h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 26px;
-      font-weight: 900;
-      background: linear-gradient(90deg, #00ffff, #00ff88);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 20px rgba(0,255,255,0.5);
-    }
-    .filters {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-      overflow-x: auto;
-      padding: 8px 0;
-      scrollbar-width: none;
-    }
+    .header h1 { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(0,255,255,0.5); }
+    .filters { display: flex; gap: 12px; margin-bottom: 24px; overflow-x: auto; padding: 8px 0; scrollbar-width: none; }
     .filters::-webkit-scrollbar { display: none; }
-    .filter-btn {
-      background: var(--glass);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      padding: 10px 18px;
-      border-radius: 16px;
-      font-size: 14px;
-      font-weight: 600;
-      white-space: nowrap;
-      transition: all 0.3s;
-    }
-    .filter-btn.active {
-      background: linear-gradient(45deg, var(--neon), #00ff88);
-      color: white;
-      box-shadow: var(--neon-glow);
-    }
+    .filter-btn { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--border); color: var(--text-muted); padding: 10px 18px; border-radius: 16px; font-size: 14px; font-weight: 600; white-space: nowrap; transition: all 0.3s; }
+    .filter-btn.active { background: linear-gradient(45deg, var(--neon), #00ff88); color: white; box-shadow: var(--neon-glow); }
     .tasks-list { display: flex; flex-direction: column; gap: 18px; margin-bottom: 100px; }
-    .task-card {
-      background: var(--glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 20px;
-      transition: all 0.4s;
-      position: relative;
-      overflow: hidden;
-    }
-    .task-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--neon), transparent);
-      animation: glow-line 3s infinite;
-    }
+    .task-card { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 24px; padding: 20px; transition: all 0.4s; position: relative; overflow: hidden; }
+    .task-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--neon), transparent); animation: glow-line 3s infinite; }
     @keyframes glow-line { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(100%); } }
     .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .task-type { font-size: 14px; font-weight: 600; color: var(--neon); text-transform: uppercase; letter-spacing: 1px; }
-    .task-reward {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 20px;
-      font-weight: 900;
-      background: linear-gradient(90deg, var(--gold), #ffed4e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    .task-reward { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; background: linear-gradient(90deg, var(--gold), #ffed4e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .task-text { font-size: 15px; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
     .task-link { color: var(--neon); text-decoration: none; font-weight: 500; word-break: break-all; }
     .task-actions { display: flex; gap: 12px; margin-top: 16px; }
     .btn-task { flex: 1; padding: 12px; border: none; border-radius: 16px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s; }
     .btn-do { background: linear-gradient(45deg, var(--success), #00cc66); color: white; }
     .btn-proof { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border); }
-    .bottom-nav {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: var(--glass);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 12px;
-      display: flex;
-      justify-content: space-around;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .nav-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 14px;
-      font-weight: 600;
-      padding: 12px 20px;
-      border-radius: 16px;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 24px; padding: 12px; display: flex; justify-content: space-around; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 14px; font-weight: 600; padding: 12px 20px; border-radius: 16px; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
     .nav-btn i { font-size: 18px; }
     .nav-btn.active { background: linear-gradient(45deg, var(--neon), #00ff88); color: white; box-shadow: 0 0 20px rgba(0,255,255,0.4); }
-    .refresh-btn {
-      background: var(--glass);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 12px 20px;
-      border-radius: 16px;
-      font-size: 14px;
-      margin: 20px auto;
-      display: block;
-      cursor: pointer;
-    }
+    .refresh-btn { background: var(--glass); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 16px; font-size: 14px; margin: 20px auto; display: block; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -175,9 +54,7 @@
       <button class="filter-btn" data-type="tg">TG</button>
     </div>
     <div id="tasks-list">Загрузка заданий...</div>
-    <button class="refresh-btn" onclick="loadTasks()">
-      Обновить
-    </button>
+    <button class="refresh-btn" onclick="loadTasks()">Обновить</button>
   </div>
   <div class="bottom-nav">
     <button class="nav-btn active">
