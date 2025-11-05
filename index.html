@@ -21,7 +21,6 @@
       --glass: rgba(20, 20, 38, 0.6);
       --border: rgba(0, 255, 255, 0.3);
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: var(--bg);
@@ -33,7 +32,6 @@
         radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255, 0, 150, 0.1) 0%, transparent 50%);
     }
-
     .bg-animation {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -50,19 +48,8 @@
       animation: rotate 30s linear infinite;
     }
     @keyframes rotate { to { transform: rotate(360deg); } }
-
-    .container {
-      max-width: 420px;
-      margin: 20px auto;
-      padding: 0 16px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
+    .container { max-width: 420px; margin: 20px auto; padding: 0 16px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .header h1 {
       font-family: 'Orbitron', sans-serif;
       font-size: 26px;
@@ -72,8 +59,6 @@
       -webkit-text-fill-color: transparent;
       text-shadow: 0 0 20px rgba(0,255,255,0.5);
     }
-
-    /* ФИЛЬТРЫ */
     .filters {
       display: flex;
       gap: 12px;
@@ -100,14 +85,7 @@
       color: white;
       box-shadow: var(--neon-glow);
     }
-
-    /* ЗАДАНИЯ */
-    .tasks-list {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      margin-bottom: 100px;
-    }
+    .tasks-list { display: flex; flex-direction: column; gap: 18px; margin-bottom: 100px; }
     .task-card {
       background: var(--glass);
       backdrop-filter: blur(16px);
@@ -125,23 +103,9 @@
       background: linear-gradient(90deg, transparent, var(--neon), transparent);
       animation: glow-line 3s infinite;
     }
-    @keyframes glow-line {
-      0%, 100% { transform: translateX(-100%); }
-      50% { transform: translateX(100%); }
-    }
-    .task-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .task-type {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--neon);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+    @keyframes glow-line { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(100%); } }
+    .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .task-type { font-size: 14px; font-weight: 600; color: var(--neon); text-transform: uppercase; letter-spacing: 1px; }
     .task-reward {
       font-family: 'Orbitron', sans-serif;
       font-size: 20px;
@@ -150,43 +114,12 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .task-text {
-      font-size: 15px;
-      color: var(--text);
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-    .task-link {
-      color: var(--neon);
-      text-decoration: none;
-      font-weight: 500;
-      word-break: break-all;
-    }
-    .task-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .btn-task {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 16px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .btn-do {
-      background: linear-gradient(45deg, var(--success), #00cc66);
-      color: white;
-    }
-    .btn-proof {
-      background: rgba(255,255,255,0.1);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
+    .task-text { font-size: 15px; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
+    .task-link { color: var(--neon); text-decoration: none; font-weight: 500; word-break: break-all; }
+    .task-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .btn-task { flex: 1; padding: 12px; border: none; border-radius: 16px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s; }
+    .btn-do { background: linear-gradient(45deg, var(--success), #00cc66); color: white; }
+    .btn-proof { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border); }
     .bottom-nav {
       position: fixed;
       bottom: 20px;
@@ -215,12 +148,7 @@
       gap: 8px;
     }
     .nav-btn i { font-size: 18px; }
-    .nav-btn.active {
-      background: linear-gradient(45deg, var(--neon), #00ff88);
-      color: white;
-      box-shadow: 0 0 20px rgba(0,255,255,0.4);
-    }
-
+    .nav-btn.active { background: linear-gradient(45deg, var(--neon), #00ff88); color: white; box-shadow: 0 0 20px rgba(0,255,255,0.4); }
     .refresh-btn {
       background: var(--glass);
       border: 1px solid var(--border);
@@ -236,26 +164,21 @@
 </head>
 <body>
   <div class="bg-animation"></div>
-
   <div class="container">
     <div class="header">
       <h1>ЗАДАНИЯ</h1>
     </div>
-
     <div class="filters">
       <button class="filter-btn active" data-type="all">Все</button>
       <button class="filter-btn" data-type="yandex">Яндекс</button>
       <button class="filter-btn" data-type="google">Google</button>
       <button class="filter-btn" data-type="tg">TG</button>
     </div>
-
     <div id="tasks-list">Загрузка заданий...</div>
-
     <button class="refresh-btn" onclick="loadTasks()">
       <i class="fas fa-sync-alt"></i> Обновить
     </button>
   </div>
-
   <div class="bottom-nav">
     <button class="nav-btn active">
       <i class="fas fa-tasks"></i> Задания
@@ -268,38 +191,35 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
-    const userId = new URLSearchParams(window.location.search).get('user_id');
-    const BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA";
-
-    // silentRequest — БЕЗ СПАМА
-    async function silentRequest(action) {
-      const payload = {
-        chat_id: userId,
-        text: "‎",  // НЕВИДИМЫЙ СИМВОЛ (U+200E)
-        disable_notification: true
-      };
-      if (action) {
-        payload.reply_markup = {
-          inline_keyboard: [[{ text: "silent", callback_data: `silent_${action}` }]]
-        };
-      }
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    }
 
     function loadTasks() {
       document.getElementById('tasks-list').innerHTML = '<p style="text-align:center;color:#88c0d0;">Загрузка...</p>';
-      silentRequest('tasks');
+      tg.sendData(JSON.stringify({ action: "get_tasks" }));
     }
 
-    function goTo(page) {
-      window.location.href = page + window.location.search;
-    }
+    tg.onEvent('webAppDataReceived', (data) => {
+      const res = JSON.parse(data);
+      if (res.tasks) {
+        const list = res.tasks.map(t => `
+          <div class="task-card">
+            <div class="task-header">
+              <span class="task-type">${t.type.toUpperCase()}</span>
+              <span class="task-reward">${t.price} ₽</span>
+            </div>
+            <div class="task-text">${t.text}</div>
+            <a href="${t.link}" class="task-link" target="_blank">${t.link}</a>
+            <div class="task-actions">
+              <button class="btn-task btn-do">Выполнить</button>
+              <button class="btn-task btn-proof">Доказательство</button>
+            </div>
+          </div>
+        `).join('') || '<p style="text-align:center;color:#88c0d0;">Нет заданий</p>';
+        document.getElementById('tasks-list').innerHTML = list;
+      }
+    });
 
-    // Фильтры
+    function goTo(page) { window.location.href = page + window.location.search; }
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
