@@ -1,357 +1,280 @@
-# bot.py — ПОЛНАЯ ВЕРСИЯ 2025
-import asyncio
-import aiosqlite
-import random
-import json
-from aiogram import Bot, Dispatcher, Router, F
-from aiogram.filters import Command
-from aiogram.types import (
-    Message, InlineKeyboardMarkup, InlineKeyboardButton,
-    WebAppInfo
-)
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
-from dotenv import load_dotenv
-from urllib.parse import urlencode
-import os
-import time
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Профиль | ReviewCash</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a0a14;
+      --card: #141426;
+      --neon: #00ffff;
+      --neon-glow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+      --text: #e0f7ff;
+      --text-muted: #88c0d0;
+      --success: #00ff88;
+      --danger: #ff3366;
+      --gold: #ffd700;
+      --glass: rgba(20, 20, 38, 0.6);
+      --border: rgba(0, 255, 255, 0.3);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 0, 150, 0.1) 0%, transparent 50%);
+    }
+    .bg-animation {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: -1;
+      background: linear-gradient(45deg, #0a0a14, #141426);
+      overflow: hidden;
+    }
+    .bg-animation::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: repeating-conic-gradient(from 0deg, transparent 0deg, rgba(0,255,255,0.03) 1deg, transparent 2deg);
+      animation: rotate 30s linear infinite;
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    .container { max-width: 420px; margin: 20px auto; padding: 0 16px; }
+    .profile-card {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 30px rgba(0,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon), transparent);
+      animation: glow-line 3s infinite;
+    }
+    @keyframes glow-line { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(100%); } }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #00ffff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0,255,255,0.5);
+    }
+    .status {
+      background: linear-gradient(45deg, var(--success), #00cc66);
+      color: white;
+      font-weight: bold;
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(0,255,136,0.5);
+      animation: pulse-status 2s infinite;
+    }
+    @keyframes pulse-status { 0%, 100% { box-shadow: 0 0 15px rgba(0,255,136,0.5); } 50% { box-shadow: 0 0 25px rgba(0,255,136,0.8); } }
+    .avatar-section { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; padding: 16px; background: rgba(0,255,255,0.05); border-radius: 20px; border: 1px solid rgba(0,255,255,0.2); }
+    .avatar-wrapper { position: relative; }
+    .avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 4px solid var(--neon); box-shadow: var(--neon-glow), 0 0 30px rgba(0,255,255,0.3); }
+    .avatar-wrapper::after { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border: 2px solid var(--neon); border-radius: 50%; opacity: 0; animation: ripple 2s infinite; }
+    @keyframes ripple { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
+    .nickname { flex: 1; }
+    #username { font-weight: 700; font-size: 20px; color: var(--text); display: block; margin-bottom: 4px; }
+    .verified { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(45deg, var(--gold), #ffed4e); color: #000; font-size: 12px; font-weight: bold; padding: 4px 10px; border-radius: 12px; box-shadow: 0 0 15px rgba(255,215,0,0.5); }
+    .balance-card {
+      background: linear-gradient(135deg, #1e3c72, #2a5298, #1e3c72);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0,255,255,0.3);
+      box-shadow: 0 10px 30px rgba(30,60,114,0.4);
+    }
+    .balance-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 30% 30%, rgba(0,255,255,0.2), transparent 70%);
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+    .balance-label { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 1px; }
+    .balance-amount {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #00ffff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0,255,255,0.6);
+      margin-bottom: 12px;
+    }
+    .refresh-balance {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 10px 20px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    .refresh-balance:hover { background: rgba(0,255,255,0.2); box-shadow: 0 0 20px rgba(0,255,255,0.4); transform: translateY(-2px); }
+    .action-buttons { display: flex; flex-direction: column; gap: 18px; margin-bottom: 100px; }
+    .btn {
+      padding: 18px;
+      border: none;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 17px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+    }
+    .btn:hover::before { left: 100%; }
+    .btn-topup { background: linear-gradient(45deg, var(--success), #00cc66); color: white; box-shadow: 0 10px 30px rgba(0,255,136,0.3); }
+    .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; box-shadow: 0 10px 30px rgba(255,51,102,0.3); }
+    .btn:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-around;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 16px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn i { font-size: 18px; }
+    .nav-btn.active { background: linear-gradient(45deg, var(--neon), #00ff88); color: white; box-shadow: 0 0 20px rgba(0,255,255,0.4); }
+  </style>
+</head>
+<body>
+  <div class="bg-animation"></div>
+  <div class="container">
+    <div class="profile-card">
+      <div class="header">
+        <h1>ПРОФИЛЬ</h1>
+        <div class="status">ПРЕМИУМ</div>
+      </div>
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          <img id="avatar" src="" alt="Аватар" class="avatar">
+        </div>
+        <div class="nickname">
+          <span id="username">@User</span>
+          <div class="verified">VERIFIED</div>
+        </div>
+      </div>
+      <div class="balance-card">
+        <div class="balance-label">ВАШ БАЛАНС</div>
+        <div class="balance-amount"><span id="balance">0.00</span> ₽</div>
+        <button class="refresh-balance" onclick="fetchBalance()">
+          Обновить
+        </button>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-topup" onclick="topup()">
+          ПОПОЛНИТЬ
+        </button>
+        <button class="btn btn-withdraw" onclick="withdraw()">
+          ВЫВОД
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="goTo('index.html')">
+      Задания
+    </button>
+    <button class="nav-btn active">
+      Профиль
+    </button>
+  </div>
 
-load_dotenv()
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    const userId = new URLSearchParams(window.location.search).get('user_id');
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID"))
-WEBAPP_URL = os.getenv("WEBAPP_URL")
-COMMISSION = float(os.getenv("COMMISSION", "0.15"))
-DB_NAME = os.getenv("DB_NAME", "earn_bot.db")
-MIN_WITHDRAW = float(os.getenv("MIN_WITHDRAW", "200"))
+    const avatar = document.getElementById('avatar');
+    const username = document.getElementById('username');
+    const balanceEl = document.getElementById('balance');
 
-TOPUP_PHONE = "+79600738559"
-TOPUP_NAME = "Раяз Н."
-TOPUP_BANK = "Т-Банк"
+    avatar.src = tg.initDataUnsafe.user.photo_url || 'https://via.placeholder.com/90/00ffff/000000?text=RC';
+    username.innerText = `@${tg.initDataUnsafe.user.username || 'User'}`;
 
-if not BOT_TOKEN or not ADMIN_ID or not WEBAPP_URL:
-    raise ValueError("BOT_TOKEN, ADMIN_ID и WEBAPP_URL обязательны!")
+    async function fetchBalance() {
+      balanceEl.innerText = "...";
+      balanceEl.style.opacity = "0.6";
+      tg.sendData(JSON.stringify({ action: "get_balance" }));
+    }
 
-bot = Bot(token=BOT_TOKEN)
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
-router = Router()
-dp.include_router(router)
+    tg.onEvent('webAppDataReceived', (data) => {
+      try {
+        const res = JSON.parse(data);
+        if (res.balance !== undefined) {
+          balanceEl.innerText = res.balance.toFixed(2);
+          balanceEl.style.opacity = "1";
+        }
+      } catch (e) { console.log(e); }
+    });
 
-# === FSM ===
-class TopupStates(StatesGroup):
-    waiting_amount = State()
+    function topup() { tg.sendData(JSON.stringify({ action: "topup" })); }
+    function withdraw() { tg.sendData(JSON.stringify({ action: "withdraw" })); }
+    function goTo(page) { window.location.href = page + window.location.search; }
 
-class WithdrawStates(StatesGroup):
-    waiting_wallet = State()
-    waiting_amount = State()
-
-class TaskStates(StatesGroup):
-    waiting_text = State()
-    waiting_link = State()
-    waiting_price = State()
-
-# === БД ===
-async def init_db():
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
-                role TEXT,
-                balance REAL DEFAULT 0
-            );
-            CREATE TABLE IF NOT EXISTS topups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                amount REAL,
-                code TEXT,
-                status TEXT DEFAULT 'pending'
-            );
-            CREATE TABLE IF NOT EXISTS withdrawals (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                amount REAL,
-                wallet TEXT,
-                status TEXT DEFAULT 'pending'
-            );
-            CREATE TABLE IF NOT EXISTS tasks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                employer_id INTEGER,
-                text TEXT,
-                link TEXT,
-                price REAL,
-                status TEXT DEFAULT 'active',
-                type TEXT
-            );
-        """)
-        await db.commit()
-    print("База данных готова.")
-
-# === УТИЛИТЫ ===
-async def get_role(user_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-        async with db.execute("SELECT role FROM users WHERE user_id = ?", (user_id,)) as cursor:
-            row = await cursor.fetchone()
-            return row[0] if row else None
-
-async def set_role(user_id, role):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("INSERT OR REPLACE INTO users (user_id, role) VALUES (?, ?)", (user_id, role))
-        await db.commit()
-
-async def add_balance(user_id, amount):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
-        await db.commit()
-
-async def get_balance(user_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-        async with db.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,)) as cursor:
-            row = await cursor.fetchone()
-            return row[0] if row else 0.0
-
-def generate_code():
-    return f"{random.randint(100000, 999999)}"
-
-# === WebApp: ЧИСТЫЙ ЧАТ ===
-@router.message(F.web_app_data)
-async def webapp_handler(message: Message):
-    try:
-        data = json.loads(message.web_app_data.data)
-        user_id = message.from_user.id
-
-        if data["action"] == "get_balance":
-            balance = await get_balance(user_id)
-            result = {"balance": balance}
-            await bot.send_message(user_id, json.dumps(result), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[]]))
-
-        elif data["action"] == "get_tasks":
-            async with aiosqlite.connect(DB_NAME) as db:
-                async with db.execute("SELECT id, text, link, price, type FROM tasks WHERE status = 'active'") as cursor:
-                    tasks = await cursor.fetchall()
-            result = {"tasks": [
-                {"id": t[0], "text": t[1], "link": t[2], "price": t[3], "type": t[4]}
-                for t in tasks
-            ]}
-            await bot.send_message(user_id, json.dumps(result), reply_markup=InlineKeyboardMarkup(inline_keyboard=[[]]))
-
-        elif data["action"] == "topup":
-            if await get_role(user_id) != "employer":
-                await bot.send_message(user_id, "Только для работодателей!")
-            else:
-                await bot.send_message(user_id, "Введите сумму пополнения (≥ 100 ₽):")
-                # FSM будет обрабатывать дальше
-
-        elif data["action"] == "withdraw":
-            if await get_role(user_id) != "executor":
-                await bot.send_message(user_id, "Только для исполнителей!")
-            else:
-                bal = await get_balance(user_id)
-                if bal < MIN_WITHDRAW:
-                    await bot.send_message(user_id, f"Минимум {MIN_WITHDRAW} ₽")
-                else:
-                    await bot.send_message(user_id, "Кошелёк:")
-
-    except Exception as e:
-        print(f"WebApp error: {e}")
-
-# === /start ===
-@router.message(Command("start"))
-async def start_command(message: Message):
-    user_id = message.from_user.id
-    role = await get_role(user_id)
-    params = {"user_id": user_id, "role": role or "none", "v": int(time.time())}
-    webapp_url = f"{WEBAPP_URL}?{urlencode(params)}"
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="Открыть ReviewCash", web_app=WebAppInfo(url=webapp_url))
-    ]])
-
-    if not role:
-        await message.answer("Выбери роль:", reply_markup=keyboard)
-    else:
-        balance = await get_balance(user_id)
-        role_name = "Работодатель" if role == "employer" else "Исполнитель"
-        await message.answer(f"Привет, **{role_name}**!\nБаланс: *{balance:.2f} ₽*", reply_markup=keyboard)
-
-# === СОЗДАНИЕ ЗАДАНИЯ ===
-@router.message(Command("newtask"))
-async def newtask_start(message: Message, state: FSMContext):
-    if await get_role(message.from_user.id) != "employer":
-        await message.answer("Только для работодателей!")
-        return
-    await message.answer("Текст задания:")
-    await state.set_state(TaskStates.waiting_text)
-
-@router.message(TaskStates.waiting_text)
-async def newtask_text(message: Message, state: FSMContext):
-    await state.update_data(text=message.text)
-    await message.answer("Ссылка:")
-    await state.set_state(TaskStates.waiting_link)
-
-@router.message(TaskStates.waiting_link)
-async def newtask_link(message: Message, state: FSMContext):
-    await state.update_data(link=message.text)
-    await message.answer("Цена (с учётом комиссии):")
-    await state.set_state(TaskStates.waiting_price)
-
-@router.message(TaskStates.waiting_price)
-async def newtask_price(message: Message, state: FSMContext):
-    try:
-        price = float(message.text)
-    except:
-        await message.answer("Введите число")
-        return
-    data = await state.get_data()
-    executor_reward = round(price * (1 - COMMISSION), 2)
-
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("INSERT INTO tasks (employer_id, text, link, price, type) VALUES (?, ?, ?, ?, ?)",
-                         (message.from_user.id, data['text'], data['link'], price, "custom"))
-        await db.commit()
-
-    await message.answer(
-        f"Задание создано!\n"
-        f"Вы заплатите: {price} ₽\n"
-        f"Исполнитель получит: {executor_reward} ₽"
-    )
-    await state.clear()
-
-# === ПОПОЛНЕНИЕ ===
-@router.message(Command("topup"))
-async def topup_start(message: Message, state: FSMContext):
-    if await get_role(message.from_user.id) != "employer":
-        await message.answer("Только для работодателей!")
-        return
-    await message.answer("Введите сумму пополнения (≥ 100 ₽):")
-    await state.set_state(TopupStates.waiting_amount)
-
-@router.message(TopupStates.waiting_amount)
-async def topup_amount_input(message: Message, state: FSMContext):
-    try:
-        amount = float(message.text)
-        if amount < 100:
-            raise ValueError
-    except:
-        await message.answer("Ошибка: сумма ≥ 100 ₽")
-        return
-
-    code = generate_code()
-    user_id = message.from_user.id
-
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("INSERT INTO topups (user_id, amount, code, status) VALUES (?, ?, ?, ?)",
-                         (user_id, amount, code, 'pending'))
-        await db.commit()
-
-    await message.answer(
-        f"**Пополнение на {amount} ₽**\n\n"
-        f"Переведите **ровно {amount} ₽** на:\n"
-        f"**{TOPUP_PHONE}**\n"
-        f"Получатель: **{TOPUP_NAME}**\n"
-        f"Банк: **{TOPUP_BANK}**\n\n"
-        f"**В комментарии укажите код:**\n"
-        f"`{code}`\n\n"
-        f"После перевода — ожидайте подтверждения.",
-        parse_mode="Markdown"
-    )
-
-    await bot.send_message(
-        ADMIN_ID,
-        f"Пополнение от @{message.from_user.username or user_id}\n"
-        f"Сумма: {amount} ₽\n"
-        f"Код: `{code}`\n\n"
-        f"/approve_topup_{user_id}_{amount}\n"
-        f"/reject_topup_{user_id}",
-        parse_mode="Markdown"
-    )
-    await state.clear()
-
-# === ВЫВОД ===
-@router.message(Command("withdraw"))
-async def withdraw_start(message: Message, state: FSMContext):
-    if await get_role(message.from_user.id) != "executor":
-        await message.answer("Только для исполнителей!")
-        return
-    bal = await get_balance(message.from_user.id)
-    if bal < MIN_WITHDRAW:
-        await message.answer(f"Минимум {MIN_WITHDRAW} ₽")
-        return
-    await message.answer("Кошелёк:")
-    await state.set_state(WithdrawStates.waiting_wallet)
-
-@router.message(WithdrawStates.waiting_wallet)
-async def withdraw_wallet_input(message: Message, state: FSMContext):
-    await state.update_data(wallet=message.text.strip())
-    await message.answer("Сумма:")
-    await state.set_state(WithdrawStates.waiting_amount)
-
-@router.message(WithdrawStates.waiting_amount)
-async def withdraw_amount_input(message: Message, state: FSMContext):
-    try:
-        amount = float(message.text)
-    except:
-        await message.answer("Только число")
-        return
-    bal = await get_balance(message.from_user.id)
-    if amount > bal or amount < MIN_WITHDRAW:
-        await message.answer(f"От {MIN_WITHDRAW} до {bal:.2f}")
-        return
-
-    data = await state.get_data()
-    user_id = message.from_user.id
-
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE users SET balance = balance - ? WHERE user_id = ?", (amount, user_id))
-        await db.execute("INSERT INTO withdrawals (user_id, amount, wallet, status) VALUES (?, ?, ?, ?)",
-                         (user_id, amount, data['wallet'], 'pending'))
-        await db.commit()
-
-    await message.answer(f"Заявка на вывод {amount} ₽ → {data['wallet']}")
-    await bot.send_message(
-        ADMIN_ID,
-        f"Вывод от @{message.from_user.username or user_id}\n"
-        f"Сумма: {amount} ₽\n"
-        f"Кошелёк: {data['wallet']}\n\n"
-        f"/approve_withdraw_{user_id}_{amount}\n"
-        f"/reject_withdraw_{user_id}"
-    )
-    await state.clear()
-
-# === АДМИН ===
-@router.message(Command(commands=["approve_topup_", "reject_topup_", "approve_withdraw_", "reject_withdraw_"]))
-async def admin_action(message: Message):
-    if message.from_user.id != ADMIN_ID:
-        return
-    parts = message.text.split("_")
-    action = parts[0][1:]
-    user_id = int(parts[2])
-    amount = float(parts[3]) if len(parts) > 3 else 0
-
-    async with aiosqlite.connect(DB_NAME) as db:
-        if action == "approve_topup":
-            await add_balance(user_id, amount)
-            await db.execute("UPDATE topups SET status = 'approved' WHERE user_id = ? AND amount = ?", (user_id, amount))
-            await bot.send_message(user_id, f"Пополнение {amount} ₽ подтверждено!")
-        elif action == "reject_topup":
-            await db.execute("UPDATE topups SET status = 'rejected' WHERE user_id = ?", (user_id,))
-            await bot.send_message(user_id, "Пополнение отклонено.")
-        elif action == "approve_withdraw":
-            await db.execute("UPDATE withdrawals SET status = 'approved' WHERE user_id = ? AND amount = ?", (user_id, amount))
-            await bot.send_message(user_id, f"Вывод {amount} ₽ одобрен!")
-        elif action == "reject_withdraw":
-            await add_balance(user_id, amount)
-            await db.execute("UPDATE withdrawals SET status = 'rejected' WHERE user_id = ?", (user_id,))
-            await bot.send_message(user_id, "Вывод отклонён. Деньги возвращены.")
-        await db.commit()
-    await message.delete()
-
-# === ЗАПУСК ===
-async def main():
-    await init_db()
-    print("ReviewCash Bot запущен! Чат ЧИСТЫЙ!")
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    window.onload = () => {
+      fetchBalance();
+      setInterval(fetchBalance, 8000);
+    };
+  </script>
+</body>
+</html>
