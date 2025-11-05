@@ -176,15 +176,15 @@
     </div>
     <div id="tasks-list">Загрузка заданий...</div>
     <button class="refresh-btn" onclick="loadTasks()">
-      <i class="fas fa-sync-alt"></i> Обновить
+      Обновить
     </button>
   </div>
   <div class="bottom-nav">
     <button class="nav-btn active">
-      <i class="fas fa-tasks"></i> Задания
+      Задания
     </button>
     <button class="nav-btn" onclick="goTo('profile.html')">
-      <i class="fas fa-user-astronaut"></i> Профиль
+      Профиль
     </button>
   </div>
 
@@ -198,24 +198,26 @@
     }
 
     tg.onEvent('webAppDataReceived', (data) => {
-      const res = JSON.parse(data);
-      if (res.tasks) {
-        const list = res.tasks.map(t => `
-          <div class="task-card">
-            <div class="task-header">
-              <span class="task-type">${t.type.toUpperCase()}</span>
-              <span class="task-reward">${t.price} ₽</span>
+      try {
+        const res = JSON.parse(data);
+        if (res.tasks) {
+          const list = res.tasks.map(t => `
+            <div class="task-card">
+              <div class="task-header">
+                <span class="task-type">${t.type.toUpperCase()}</span>
+                <span class="task-reward">${t.price} ₽</span>
+              </div>
+              <div class="task-text">${t.text}</div>
+              <a href="${t.link}" class="task-link" target="_blank">${t.link}</a>
+              <div class="task-actions">
+                <button class="btn-task btn-do">Выполнить</button>
+                <button class="btn-task btn-proof">Доказательство</button>
+              </div>
             </div>
-            <div class="task-text">${t.text}</div>
-            <a href="${t.link}" class="task-link" target="_blank">${t.link}</a>
-            <div class="task-actions">
-              <button class="btn-task btn-do">Выполнить</button>
-              <button class="btn-task btn-proof">Доказательство</button>
-            </div>
-          </div>
-        `).join('') || '<p style="text-align:center;color:#88c0d0;">Нет заданий</p>';
-        document.getElementById('tasks-list').innerHTML = list;
-      }
+          `).join('') || '<p style="text-align:center;color:#88c0d0;">Нет заданий</p>';
+          document.getElementById('tasks-list').innerHTML = list;
+        }
+      } catch (e) { console.log(e); }
     });
 
     function goTo(page) { window.location.href = page + window.location.search; }
