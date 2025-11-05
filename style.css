@@ -1,0 +1,305 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;500&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  background: #0f0c29; 
+  color: #fff; 
+  font-family: 'Roboto', sans-serif; 
+  min-height: 100vh;
+}
+
+/* КОНТЕЙНЕР */
+.container { 
+  max-width: 400px; 
+  margin: 20px auto; 
+  background: rgba(30, 30, 46, 0.9); 
+  border-radius: 20px; 
+  padding: 25px; 
+  box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+/* ЗАГОЛОВКИ */
+h1, h2, h3 { 
+  font-family: 'Orbitron', sans-serif; 
+  color: #00ffff; 
+  text-shadow: 0 0 10px #00ffff;
+}
+
+/* КНОПКИ */
+button, .role-btn, .filter-btn, .take-btn, .refresh-btn {
+  background: rgba(0, 255, 255, 0.15);
+  border: 2px solid #00ffff;
+  color: #fff;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 48px;
+}
+button:hover, .role-btn:hover, .filter-btn:hover, .take-btn:hover {
+  background: #00ffff;
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px #00ffff;
+}
+
+/* ФИЛЬТРЫ */
+.filters { 
+  display: flex; 
+  gap: 8px; 
+  margin: 15px 0; 
+  overflow-x: auto; 
+  padding-bottom: 5px;
+}
+.filter-btn { flex: 1; min-width: 80px; }
+.filter-btn.active { background: #00ffff; color: #000; }
+
+/* КАРТОЧКИ ЗАДАНИЙ */
+.task-card {
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s;
+}
+.task-card:hover { transform: translateY(-3px); }
+.task-icon { font-size: 28px; }
+.task-title { font-weight: 600; }
+.task-link { font-size: 13px; color: #aaa; }
+.task-reward { font-size: 20px; font-weight: bold; color: #00ff00; }
+.take-btn { margin-left: auto; padding: 10px 20px; font-size: 14px; }
+
+/* ПРОФИЛЬ */
+.profile-container { max-width: 400px; margin: 0 auto; background: #1e1e2e; min-height: 100vh; padding-bottom: 80px; }
+.header { padding: 60px 20px; background: #007bff; text-align: center; position: relative; }
+.header h1 { font-size: 28px; }
+.status { position: absolute; right: 20px; top: 65px; background: #28a745; padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+
+.avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #ffd700; }
+.nickname { font-size: 20px; font-weight: 600; margin: 15px 0; display: flex; align-items: center; gap: 8px; justify-content: center; }
+.verified { color: #1da1f2; font-size: 24px; }
+
+/* ПРОГРЕСС-БАР */
+.level-progress { padding: 20px; background: #252540; margin: 0 20px; border-radius: 12px; }
+.level-label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+.progress-bar { height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #ffd700, #00ff00); border-radius: 5px; transition: width 0.5s ease; }
+
+/* СТАТИСТИКА */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 20px; }
+.stat-card { background: #252540; padding: 16px; border-radius: 12px; text-align: center; }
+.stat-number { font-size: 24px; font-weight: bold; }
+.stat-label { font-size: 13px; color: #aaa; }
+
+/* КНОПКИ ДЕЙСТВИЙ */
+.action-buttons { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+.btn-withdraw, .btn-change-role { 
+  padding: 20px; 
+  border: none; 
+  border-radius: 16px; 
+  font-size: 18px; 
+  font-weight: bold;
+}
+.btn-withdraw { background: #28a745; }
+.btn-change-role { background: #6c757d; }
+
+/* НИЖНЯЯ НАВИГАЦИЯ */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1e1e2e; display: flex; border-top: 1px solid #333; }
+.nav-btn { flex: 1; padding: 20px; background: none; border: none; color: #aaa; font-size: 16px; font-weight: bold; }
+.nav-btn.active { color: #ffd700; }
+
+/* АДАПТИВНОСТЬ */
+@media (max-width: 480px) {
+  .container { margin: 10px; padding: 20px; }
+}
+/* === КРАСИВАЯ ФОРМА ДОБАВЛЕНИЯ ЗАДАНИЯ === */
+.task-form-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 24px;
+  margin: 20px 0;
+  backdrop-filter: blur(12px);
+  box-shadow: 
+    0 8px 32px rgba(0, 255, 255, 0.1),
+    inset 0 0 20px rgba(0, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+.task-form-card:hover {
+  border-color: #00ffff;
+  box-shadow: 0 12px 40px rgba(0, 255, 255, 0.2);
+}
+
+.section-title {
+  text-align: center;
+  margin: 0 0 20px;
+  font-size: 22px;
+  color: #00ffff;
+  text-shadow: 0 0 15px #00ffff;
+}
+
+/* ПОЛЯ */
+.input-group {
+  margin-bottom: 18px;
+  position: relative;
+}
+.input-label.neon-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #00ffff;
+  text-shadow: 0 0 8px #00ffff;
+  font-weight: 500;
+}
+
+.neon-input, .neon-select {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(0, 255, 255, 0.4);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+.neon-input::placeholder, .neon-select::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.neon-input:focus, .neon-select:focus {
+  border-color: #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.6);
+}
+.neon-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+}
+
+/* ПОДСКАЗКА */
+.input-hint {
+  position: absolute;
+  right: 12px;
+  top: 42px;
+  font-size: 12px;
+  color: #00ffff;
+  opacity: 0.7;
+}
+
+/* ПРЕДВАРИТЕЛЬНЫЙ РАСЧЁТ */
+.price-preview {
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px dashed rgba(0, 255, 255, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 20px 0;
+  text-align: center;
+  font-size: 15px;
+}
+.price-line {
+  font-size: 18px;
+  margin-bottom: 4px;
+  color: #00ff88;
+}
+.price-line strong {
+  font-size: 22px;
+  font-weight: bold;
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
+}
+.price-sub {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+/* КНОПКА */
+.neon-btn {
+  background: linear-gradient(45deg, #007bff, #00d4ff);
+  border: none;
+  color: white;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.neon-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: 0.6s;
+}
+.neon-btn:hover::before {
+  left: 100%;
+}
+.neon-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(0, 212, 255, 0.4);
+}
+.full-width { width: 100%; }
+/* УБРАЛ "Привет!" */
+#greeting { display: none; }
+
+/* ФОРМА ТОЛЬКО ДЛЯ РАБОТОДАТЕЛЯ */
+#employer-tools.hidden { display: none !important; }
+.action-buttons {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.btn-topup {
+  background: #28a745;
+  color: white;
+  padding: 18px;
+  border: none;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 18px;
+}
+.btn-withdraw {
+  background: #dc3545;
+  color: white;
+  padding: 18px;
+  border: none;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 18px;
+}
+.balance-section {
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+}
+.balance-text {
+  font-size: 20px;
+  margin: 0;
+}
+.refresh-balance {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+}

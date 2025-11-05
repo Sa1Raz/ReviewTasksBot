@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Задания</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Доступные задания</h1>
+    <div id="tasks-list">Загрузка...</div>
+    <button onclick="loadTasks()">Обновить</button>
+    <button onclick="history.back()">Назад</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id');
+
+    async function loadTasks() {
+      const res = await fetch(`https://api.telegram.org/bot8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: userId, text: '/tasks' })
+      });
+      const data = await res.json();
+      let text = data.result.text || 'Нет заданий';
+      text = text.replace(/—/g, '<br>—');
+      document.getElementById('tasks-list').innerHTML = text;
+    }
+    loadTasks();
+  </script>
+</body>
+</html>

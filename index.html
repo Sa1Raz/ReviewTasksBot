@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReviewCash</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container" id="role-selection">
+    <h1>Выбери роль</h1>
+    <button class="role-btn employer" onclick="selectRole('employer')">Работодатель</button>
+    <button class="role-btn executor" onclick="selectRole('executor')">Исполнитель</button>
+  </div>
+
+  <div class="container hidden" id="dashboard">
+    <p class="balance">Баланс: <strong id="balance">0 ₽</strong></p>
+
+    <div id="employer-tools" class="hidden">
+      <h3 class="section-title">Добавить задание</h3>
+      <div class="task-form-card">
+        <div class="input-group">
+          <label class="input-label neon-label">Тип задания</label>
+          <select id="task-type" class="neon-select">
+            <option value="yandex">Яндекс.Карты (80 ₽/отзыв)</option>
+            <option value="google">Google Карты (50 ₽/отзыв)</option>
+            <option value="tg">Telegram-канал (5 ₽/подписка)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label neon-label">Количество</label>
+          <input type="number" id="task-quantity" placeholder="Минимум 1" min="1" class="neon-input" value="1">
+          <span class="input-hint">мин. 1</span>
+        </div>
+        <div class="input-group">
+          <label class="input-label neon-label">Ссылка</label>
+          <input type="text" id="task-link" placeholder="https://..." class="neon-input">
+        </div>
+        <div id="price-preview" class="price-preview">
+          <div class="price-line">Вы заплатите: <strong>92 ₽</strong></div>
+          <div class="price-sub">Исполнитель получит: 80 ₽ (+15%)</div>
+        </div>
+        <button onclick="addTask()" class="neon-btn full-width">
+          <span>Создать задание (+15%)</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="executor-tools" class="hidden">
+      <div class="filters">
+        <button class="filter-btn active" data-type="all">Все</button>
+        <button class="filter-btn" data-type="yandex">Яндекс</button>
+        <button class="filter-btn" data-type="google">Google</button>
+        <button class="filter-btn" data-type="tg">TG</button>
+      </div>
+      <div id="tasks-list">Загрузка...</div>
+      <button class="refresh-btn" onclick="loadTasks()">Обновить</button>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goTo('index.html')">Задания</button>
+      <button class="nav-btn active" onclick="goTo('profile.html')">Профиль</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id');
+    const role = urlParams.get('role');
+    const BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA";
+
+    const prices = { yandex: 80, google: 50, tg: 5 };
+
+    async function silentRequest(text) {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: userId, text: text, disable_notification: true })
+      });
+    }
+
+    if (role && role !== 'none') {
+      showDashboard(role);
+      fetchBalance();
+      if (role === 'executor') loadTasks();
+    }
+
+    function selectRole(selectedRole) {
+      silentRequest(`/setrole_${selectedRole}`).then(() => {
+        showDashboard(selectedRole);
+        fetchBalance();
+        if (selectedRole === 'executor') loadTasks();
+      });
+    }
+
+    function showDashboard(roleName) {
+      document.getElementById('role-selection').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      const isEmployer = roleName === 'employer';
+      document.getElementById('employer-tools').classList.toggle('hidden', !isEmployer);
+      document.getElementById('executor-tools').classList.toggle('hidden', isEmployer);
+      if (isEmployer) {
+        document.getElementById('task-type').onchange = updatePreview;
+        document.getElementById('task-quantity').oninput = updatePreview;
+        updatePreview();
+      }
+    }
+
+    function updatePreview() {
+      const type = document.getElementById('task-type').value;
+      let qty = parseInt(document.getElementById('task-quantity').value) || 1;
+      qty = Math.max(qty, 1);
+      document.getElementById('task-quantity').value = qty;
+      const executorPay = prices[type] * qty;
+      const employerPay = Math.round(executorPay * 1.15);
+      document.getElementById('price-preview').innerHTML = `
+        <div class="price-line">Вы заплатите: <strong>${employerPay} ₽</strong></div>
+        <div class="price-sub">Исполнитель получит: ${executorPay} ₽ (+15%)</div>
+      `;
+    }
+
+    function addTask() {
+      const type = document.getElementById('task-type').value;
+      const qty = parseInt(document.getElementById('task-quantity').value);
+      const link = document.getElementById('task-link').value;
+      if (!link || qty < 1) return alert("Минимум 1!");
+      const executorPay = prices[type] * qty;
+      const employerPay = Math.round(executorPay * 1.15);
+      const text = type === 'tg' ? `Подписка на TG (${qty} шт.)` : `Отзыв в ${type === 'yandex' ? 'Яндекс' : 'Google'} Картах (${qty} шт.)`;
+      silentRequest(`/newtask ${text} | ${link} | ${employerPay} | ${type}`).then(() => {
+        alert(`Задание создано! Вы заплатите: ${employerPay} ₽`);
+        document.getElementById('task-link').value = '';
+        updatePreview();
+      });
+    }
+
+    async function fetchBalance() { await silentRequest('/balance'); }
+    async function loadTasks() { await silentRequest('/tasks'); }
+    function goTo(page) { window.location.href = page + window.location.search; }
+  </script>
+</body>
+</html>

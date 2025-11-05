@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Профиль | ReviewCash</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="profile-container">
+    <div class="header">
+      <h1>Профиль</h1>
+      <div class="status">ОП</div>
+    </div>
+
+    <div class="avatar-section">
+      <img id="avatar" src="" alt="Аватар" class="avatar">
+      <div class="nickname">
+        <span id="username">@User</span>
+        <div class="verified">Verified</div>
+      </div>
+    </div>
+
+    <!-- БАЛАНС -->
+    <div class="balance-section">
+      <p class="balance-text">Баланс: <strong id="balance">0 ₽</strong></p>
+      <button class="refresh-balance" onclick="fetchBalance()">Обновить</button>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn-topup" onclick="topup()">Пополнить баланс</button>
+      <button class="btn-withdraw" onclick="withdraw()">Вывод средств</button>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="goTo('index.html')">Задания</button>
+      <button class="nav-btn active">Профиль</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    const userId = new URLSearchParams(window.location.search).get('user_id');
+    const BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA";
+
+    async function silentRequest(text) {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: userId, text: text, disable_notification: true })
+      });
+    }
+
+    // Аватар и имя
+    document.getElementById('avatar').src = tg.initDataUnsafe.user.photo_url || 'https://via.placeholder.com/80';
+    document.getElementById('username').innerText = `@${tg.initDataUnsafe.user.username || 'User'}`;
+
+    // Загрузка баланса
+    async function fetchBalance() {
+      await silentRequest('/balance');
+      // Баланс обновится через /start или вручную
+      setTimeout(() => location.reload(), 1000);
+    }
+
+    function topup() {
+      silentRequest('/topup');
+      alert('Перейди в чат с ботом → введи сумму → получи код');
+    }
+
+    function withdraw() {
+      silentRequest('/withdraw');
+      alert('Перейди в чат с ботом → следуй инструкциям');
+    }
+
+    function goTo(page) {
+      window.location.href = page + window.location.search;
+    }
+
+    // Автообновление баланса при загрузке
+    window.onload = fetchBalance;
+  </script>
+</body>
+</html>
