@@ -27,8 +27,8 @@
       color: var(--text);
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
-      overflow-x: hidden;
-      background-image: 
+      overflow: hidden;
+      background-image:
         radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255, 0, 150, 0.1) 0%, transparent 50%);
     }
@@ -163,7 +163,7 @@
     }
     .btn:hover::before { left: 100%; }
     .btn-topup { background: linear-gradient(45deg, var(--success), #00cc66); color: white; box-shadow: 0 10px 30px rgba(0,255,136,0.3); }
-    .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; box-shadow: 0 10px 30px rgba(255,51,102,0.3); }
+    .btn-withdraw {  { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; box-shadow: 0 10px 30px rgba(255,51,102,0.3); }
     .btn:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
     .bottom-nav {
       position: fixed;
@@ -194,6 +194,38 @@
     }
     .nav-btn i { font-size: 18px; }
     .nav-btn.active { background: linear-gradient(45deg, var(--neon), #00ff88); color: white; box-shadow: 0 0 20px rgba(0,255,255,0.4); }
+
+    /* МОДАЛКИ */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); z-index: 1000;
+      justify-content: center; align-items: center; padding: 20px;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--card); border: 2px solid var(--neon); border-radius: 32px;
+      padding: 40px 32px; width: 100%; max-width: 460px; text-align: center;
+      box-shadow: 0 0 120px rgba(0,255,255,0.7); position: relative;
+    }
+    .close-modal {
+      position: absolute; top: 16px; right: 16px; background: none; border: none;
+      color: var(--neon); font-size: 32px; cursor: pointer;
+    }
+    .payment-info {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 24px; padding: 24px; margin: 20px 0; font-size: 17px;
+      backdrop-filter: blur(12px);
+    }
+    .code {
+      font-family: 'Orbitron'; font-size: 48px; color: var(--gold); letter-spacing: 10px;
+      background: rgba(0,0,0,0.4); padding: 20px; border-radius: 20px; margin: 24px 0;
+      text-shadow: 0 0 30px #ffd700;
+    }
+    input[type="number"], input[type="text"] {
+      width: 100%; padding: 20px; margin: 16px 0; background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(0,255,255,0.3); border-radius: 20px; color: white; font-size: 18px;
+      text-align: center; font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -221,15 +253,48 @@
         </button>
       </div>
       <div class="action-buttons">
-        <button class="btn btn-topup" onclick="topup()">
+        <button class="btn btn-topup" onclick="openTopup()">
           ПОПОЛНИТЬ
         </button>
-        <button class="btn btn-withdraw" onclick="withdraw()">
+        <button class="btn btn-withdraw" onclick="openWithdraw()">
           ВЫВОД
         </button>
       </div>
     </div>
   </div>
+
+  <!-- МОДАЛКА ПОПОЛНЕНИЯ -->
+  <div id="topup-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeTopup()">×</button>
+      <h2 style="color:var(--neon); font-size:32px; margin-bottom:20px;">Пополнение</h2>
+      <input type="number" id="topup-amount" placeholder="Сумма (мин. 100 ₽)" min="100">
+      <div id="topup-details" style="display:none;">
+        <p>Переведи <b>ровно</b>:</p>
+        <div class="payment-info">
+          <p><b>Карта:</b> 2200 1501 2345 6789</p>
+          <p><b>Имя:</b> Раяз Н.</p>
+          <p><b>Банк:</b> Т-Банк</p>
+        </div>
+        <p>Комментарий:</p>
+        <div class="code" id="topup-code">000000</div>
+        <p style="color:var(--success); font-weight:900;">Зачисление автоматом!</p>
+      </div>
+      <button class="btn btn-topup" onclick="confirmTopup()" id="confirm-btn">ПОДТВЕРДИТЬ</button>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ВЫВОДА -->
+  <div id="withdraw-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeWithdraw()">×</button>
+      <h2 style="color:var(--danger); font-size:32px; margin-bottom:20px;">Вывод средств</h2>
+      <input type="text" id="withdraw-wallet" placeholder="TON Кошелёк (UQ...)" maxlength="48">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 200 ₽)" min="200">
+      <button class="btn btn-withdraw" onclick="confirmWithdraw()">ВЫВЕСТИ</button>
+    </div>
+  </div>
+
   <div class="bottom-nav">
     <button class="nav-btn" onclick="goTo('index.html')">
       Задания
@@ -241,19 +306,18 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.ready();
-    const userId = new URLSearchParams(window.location.search).get('user_id');
+    tg.ready(); tg.expand();
 
+    const userId = tg.initDataUnsafe.user?.id;
     const avatar = document.getElementById('avatar');
     const username = document.getElementById('username');
     const balanceEl = document.getElementById('balance');
 
-    avatar.src = tg.initDataUnsafe.user.photo_url || 'https://via.placeholder.com/90/00ffff/000000?text=RC';
-    username.innerText = `@${tg.initDataUnsafe.user.username || 'User'}`;
+    avatar.src = tg.initDataUnsafe.user?.photo_url || 'https://via.placeholder.com/90/00ffff/000000?text=RC';
+    username.innerText = `@${tg.initDataUnsafe.user?.username || 'User'}`;
 
-    async function fetchBalance() {
+    function fetchBalance() {
       balanceEl.innerText = "...";
-      balanceEl.style.opacity = "0.6";
       tg.sendData(JSON.stringify({ action: "get_balance" }));
     }
 
@@ -262,13 +326,51 @@
         const res = JSON.parse(data);
         if (res.balance !== undefined) {
           balanceEl.innerText = res.balance.toFixed(2);
-          balanceEl.style.opacity = "1";
+        }
+        if (res.success) {
+          tg.showAlert("Успешно!");
+          fetchBalance();
+          closeTopup(); closeWithdraw();
         }
       } catch (e) { console.log(e); }
     });
 
-    function topup() { tg.sendData(JSON.stringify({ action: "topup" })); }
-    function withdraw() { tg.sendData(JSON.stringify({ action: "withdraw" })); }
+    window.openTopup = () => document.getElementById('topup-modal').classList.add('active');
+    window.closeTopup = () => {
+      document.getElementById('topup-modal').classList.remove('active');
+      document.getElementById('topup-details').style.display = 'none';
+    };
+
+    window.confirmTopup = () => {
+      const amount = parseFloat(document.getElementById('topup-amount').value);
+      if (!amount || amount < 100) return tg.showAlert("Минимум 100 ₽");
+
+      const code = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('topup-code').innerText = code;
+      document.getElementById('topup-details').style.display = 'block';
+
+      tg.sendData(JSON.stringify({
+        action: "request_topup",
+        amount: amount,
+        code: code
+      }));
+    };
+
+    window.openWithdraw = () => document.getElementById('withdraw-modal').classList.add('active');
+    window.closeWithdraw = () => document.getElementById('withdraw-modal').classList.remove('active');
+
+    window.confirmWithdraw = () => {
+      const wallet = document.getElementById('withdraw-wallet').value.trim();
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      if (!wallet || !amount || amount < 200) return tg.showAlert("Проверь данные!");
+
+      tg.sendData(JSON.stringify({
+        action: "request_withdraw",
+        wallet: wallet,
+        amount: amount
+      }));
+    };
+
     function goTo(page) { window.location.href = page + window.location.search; }
 
     window.onload = () => {
