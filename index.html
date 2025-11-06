@@ -7,54 +7,224 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #0a0a14; --card: #141426; --neon: #00ffff; --text: #e0f7ff; --success: #00ff88; --gold: #ffd700; --glass: rgba(20,20,38,0.8); --border: rgba(0,255,255,0.3); }
+    :root {
+      --bg: #0a0a14;
+      --card: #141426;
+      --neon: #00ffff;
+      --success: #00ff88;
+      --gold: #ffd700;
+      --glass: rgba(20,20,38,0.9);
+      --border: rgba(0,255,255,0.4);
+      --text: #e0f7ff;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
-    .bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 80%, rgba(0,255,255,0.1), transparent 50%); pointer-events: none; z-index: -1; }
-    .container { max-width: 420px; margin: 20px auto; padding: 0 16px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .header h1 { font-family: 'Orbitron', sans-serif; font-size: 28px; background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .create-btn { background: linear-gradient(45deg, #00ff88, #00cc66); color: #000; padding: 12px 20px; border: none; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 0 20px rgba(0,255,136,0.5); }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+    .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(0,255,255,0.12), transparent 70%); pointer-events: none; z-index: -1; animation: breathe 8s infinite; }
+    @keyframes breathe { 0%,100% { opacity: 0.8; } 50% { opacity: 1; } }
+
+    .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 120px; }
+
+    /* ДВЕ КНОПКИ ВВЕРХУ */
+    .mode-switch {
+      display: flex;
+      background: rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 8px;
+      margin-bottom: 28px;
+      border: 1.5px solid var(--border);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 30px rgba(0,255,255,0.2);
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 18px;
+      font-weight: 800;
+      font-size: 16px;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      background: transparent;
+      color: #88c0d0;
+    }
+    .mode-btn.active {
+      background: linear-gradient(45deg, #00ffff, #00ff88);
+      color: #000;
+      box-shadow: 0 0 30px rgba(0,255,255,0.7);
+      transform: scale(1.05);
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 32px;
+      text-align: center;
+      background: linear-gradient(90deg, #00ffff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(0,255,255,0.4);
+    }
+
+    /* КНОПКА СОЗДАТЬ */
+    #create-btn {
+      background: linear-gradient(45deg, #00ff88, #00cc66);
+      color: #000;
+      padding: 20px;
+      border: none;
+      border-radius: 24px;
+      font-weight: 900;
+      font-size: 18px;
+      width: 100%;
+      margin: 24px 0;
+      box-shadow: 0 0 40px rgba(0,255,136,0.7);
+      animation: float 3s infinite;
+    }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+    /* ЗАДАНИЯ */
+    .tasks-list { display: flex; flex-direction: column; gap: 20px; }
+    .task-card {
+      background: var(--glass);
+      border-radius: 28px;
+      padding: 24px;
+      border: 1.5px solid var(--border);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .task-type {
+      color: var(--neon);
+      font-weight: 900;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .task-reward {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 30px;
+      color: var(--gold);
+      text-align: right;
+      margin: 10px 0;
+      text-shadow: 0 0 15px rgba(255,215,0,0.5);
+    }
+    .task-text { font-size: 17px; margin: 14px 0; line-height: 1.6; }
+    .task-link { color: #88c0d0; word-break: break-all; font-size: 15px; }
+
+    /* МОДАЛКА */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.97);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(20px);
+    }
     .modal.active { display: flex; }
-    .modal-content { background: var(--card); border-radius: 28px; padding: 28px; width: 90%; max-width: 400px; border: 1px solid var(--border); box-shadow: 0 0 40px rgba(0,255,255,0.3); }
-    input, textarea, select { width: 100%; padding: 14px; margin: 12px 0; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 16px; color: var(--text); font-size: 16px; }
-    .btn-create { background: linear-gradient(45deg, var(--success), #00cc66); color: white; padding: 16px; border: none; border-radius: 16px; font-weight: 700; width: 100%; margin-top: 20px; }
-    .reward { color: var(--gold); font-weight: bold; font-size: 18px; }
-    .tasks-list { margin-bottom: 120px; }
-    .task-card { background: var(--glass); border-radius: 24px; padding: 20px; margin: 16px 0; border: 1px solid var(--border); }
-    .task-reward { font-family: 'Orbitron', sans-serif; font-size: 24px; color: var(--gold); }
-    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass); border-radius: 24px; padding: 12px; display: flex; backdrop-filter: blur(16px); border: 1px solid var(--border); }
-    .nav-btn { flex: 1; padding: 16px; background: none; border: none; color: #88c0d0; font-weight: bold; }
-    .nav-btn.active { background: var(--neon); color: #000; border-radius: 16px; }
+    .modal-content {
+      background: var(--card);
+      border-radius: 32px;
+      padding: 36px;
+      width: 94%;
+      max-width: 440px;
+      border: 2px solid var(--neon);
+      box-shadow: 0 0 80px rgba(0,255,255,0.6);
+    }
+    input, select {
+      width: 100%;
+      padding: 18px;
+      margin: 16px 0;
+      background: rgba(255,255,255,0.1);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      color: var(--text);
+      font-size: 17px;
+    }
+    .btn-create {
+      background: linear-gradient(45deg, var(--success), #00cc66);
+      color: white;
+      padding: 20px;
+      border: none;
+      border-radius: 20px;
+      font-weight: 900;
+      font-size: 18px;
+      width: 100%;
+      margin-top: 24px;
+    }
+    .reward {
+      text-align: center;
+      font-size: 22px;
+      color: var(--gold);
+      font-weight: 900;
+      margin: 20px 0;
+      text-shadow: 0 0 15px rgba(255,215,0,0.5);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: var(--glass);
+      border-radius: 32px;
+      padding: 18px;
+      display: flex;
+      backdrop-filter: blur(20px);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 18px;
+      background: none;
+      border: none;
+      color: #88c0d0;
+      font-weight: 800;
+      font-size: 16px;
+    }
+    .nav-btn.active {
+      background: var(--neon);
+      color: #000;
+      border-radius: 20px;
+    }
   </style>
 </head>
 <body>
-  <div class="bg"></div>
+  <div class="bg-glow"></div>
+
   <div class="container">
-    <div class="header">
-      <h1>ЗАДАНИЯ</h1>
-      <button id="create-btn" class="create-btn" style="display:none;">+ Создать</button>
+    <!-- ДВЕ КНОПКИ: РАБОТОДАТЕЛЬ / ИСПОЛНИТЕЛЬ -->
+    <div class="mode-switch">
+      <button id="executor-mode" class="mode-btn active">ИСПОЛНИТЕЛЬ</button>
+      <button id="employer-mode" class="mode-btn">РАБОТОДАТЕЛЬ</button>
     </div>
-    <div id="tasks-list">Загрузка...</div>
+
+    <h1>ЗАДАНИЯ</h1>
+
+    <!-- КНОПКА СОЗДАТЬ (ТОЛЬКО В РЕЖИМЕ РАБОТОДАТЕЛЯ) -->
+    <button id="create-btn" class="create-btn">+ Создать задание</button>
+
+    <div id="tasks-list">
+      <p style="text-align:center; color:#88c0d0; padding:60px; font-size:18px;">Загрузка заданий...</p>
+    </div>
   </div>
 
-  <!-- МОДАЛКА СОЗДАНИЯ ЗАДАНИЯ -->
+  <!-- МОДАЛКА СОЗДАНИЯ -->
   <div id="modal" class="modal">
     <div class="modal-content">
-      <h2 style="color:var(--neon); margin-bottom:20px;">Новое задание</h2>
-      <input type="text" id="task-text" placeholder="Текст задания (например: Оставить отзыв)">
-      <input type="url" id="task-link" placeholder="Ссылка на товар/канал">
-      <input type="number" id="task-price" placeholder="Цена (от 100 ₽)" min="100">
+      <h2 style="color:var(--neon); text-align:center; font-size:28px; margin-bottom:30px;">Новое задание</h2>
+      <input type="text" id="task-text" placeholder="Что нужно сделать?">
+      <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
+      <input type="number" id="task-price" placeholder="Цена от 100 ₽" min="100">
       <select id="task-type">
-        <option value="yandex">Яндекс</option>
-        <option value="google">Google</option>
+        <option value="yandex">Яндекс Отзыв</option>
+        <option value="google">Google Отзыв</option>
         <option value="tg">Telegram</option>
         <option value="custom">Другое</option>
       </select>
-      <p>Исполнитель получит: <span id="reward" class="reward">0 ₽</span></p>
-      <button class="btn-create" onclick="createTask()">Создать задание</button>
-      <button style="margin-top:10px; background:#ff3366; color:white; padding:10px; border:none; border-radius:12px;" onclick="closeModal()">Отмена</button>
+      <div class="reward">Исполнитель получит: <span id="reward">0</span> ₽</div>
+      <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
+      <button style="margin-top:16px; background:#ff3366; color:white; padding:16px; border:none; border-radius:20px; width:100%; font-weight:700;" onclick="closeModal()">Отмена</button>
     </div>
   </div>
 
@@ -66,40 +236,62 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
-    const params = new URLSearchParams(location.search);
-    const role = params.get('role');
+    tg.expand();
 
-    if (role === 'employer') {
-      document.getElementById('create-btn').style.display = 'block';
-      document.getElementById('create-btn').onclick = () => document.getElementById('modal').classList.add('active');
-    }
+    const executorBtn = document.getElementById('executor-mode');
+    const employerBtn = document.getElementById('employer-mode');
+    const createBtn = document.getElementById('create-btn');
+    const modal = document.getElementById('modal');
 
-    function closeModal() {
-      document.getElementById('modal').classList.remove('active');
-    }
+    let isEmployer = false;
+
+    // Переключение режимов
+    executorBtn.onclick = () => {
+      isEmployer = false;
+      executorBtn.classList.add('active');
+      employerBtn.classList.remove('active');
+      createBtn.style.display = 'none';
+      loadTasks();
+    };
+
+    employerBtn.onclick = () => {
+      isEmployer = true;
+      employerBtn.classList.add('active');
+      executorBtn.classList.remove('active');
+      createBtn.style.display = 'block';
+      loadTasks();
+    };
+
+    createBtn.onclick = () => modal.classList.add('active');
+    window.closeModal = () => modal.classList.remove('active');
 
     document.getElementById('task-price').addEventListener('input', (e) => {
       const price = parseFloat(e.target.value) || 0;
-      document.getElementById('reward').innerText = (price * 0.85).toFixed(2) + " ₽";
+      document.getElementById('reward').innerText = Math.round(price * 0.85);
     });
 
-    function createTask() {
+    window.createTask = () => {
       const text = document.getElementById('task-text').value.trim();
       const link = document.getElementById('task-link').value.trim();
       const price = parseFloat(document.getElementById('task-price').value);
-      const type = document.getElementById('task-type').value;
 
       if (!text || !link || price < 100) {
-        alert("Заполните все поля! Цена ≥ 100 ₽");
+        alert("Заполни всё! Цена ≥ 100 ₽");
         return;
       }
 
-      tg.sendData(JSON.stringify({ action: "add_task", text, link, price, type }));
+      tg.sendData(JSON.stringify({
+        action: "add_task",
+        text, link, price,
+        type: document.getElementById('task-type').value
+      }));
+
       closeModal();
-    }
+      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#00ff88; font-size:20px;'>Задание создаётся...</p>";
+    };
 
     function loadTasks() {
-      document.getElementById('tasks-list').innerHTML = "Загрузка...";
+      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#88c0d0;'>Загрузка...</p>";
       tg.sendData(JSON.stringify({ action: "get_tasks" }));
     }
 
@@ -107,29 +299,28 @@
       try {
         const res = JSON.parse(data);
         if (res.tasks) {
-          const html = res.tasks.map(t => `
+          const html = res.tasks.length ? res.tasks.map(t => `
             <div class="task-card">
-              <div style="display:flex; justify-content:space-between;">
-                <span style="color:var(--neon); font-weight:bold;">${t.type.toUpperCase()}</span>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="task-type">${t.type.toUpperCase()}</span>
                 <span class="task-reward">${t.price} ₽</span>
               </div>
-              <p style="margin:12px 0;">${t.text}</p>
-              <a href="${t.link}" style="color:#88c0d0;" target="_blank">${t.link}</a>
+              <div class="task-text">${t.text}</div>
+              <a href="${t.link}" class="task-link" target="_blank">${t.link}</a>
             </div>
-          `).join('') || "<p style='text-align:center; color:#88c0d0;'>Нет заданий</p>";
+          `).join('') : "<p style='text-align:center; color:#88c0d0; padding:80px; font-size:20px;'>Нет заданий<br><br>Переключись на «Работодатель» и создай первое!</p>";
           document.getElementById('tasks-list').innerHTML = html;
         }
         if (res.success) {
-          alert(`Задание создано! Исполнитель получит ${res.reward} ₽`);
+          alert(`Задание создано!\nИсполнитель получит ${res.reward} ₽`);
           loadTasks();
         }
       } catch (e) { console.log(e); }
     });
 
-    window.onload = () => {
-      loadTasks();
-      setInterval(loadTasks, 10000);
-    };
+    // Авто-обновление
+    loadTasks();
+    setInterval(loadTasks, 10000);
   </script>
 </body>
 </html>
