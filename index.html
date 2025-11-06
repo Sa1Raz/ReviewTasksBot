@@ -12,7 +12,11 @@
       --glass: rgba(20,20,38,0.9); --border: rgba(0,255,255,0.4); --text: #e0f7ff;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body { 
+      background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+      min-height: 100vh; overflow-x: hidden; 
+      -webkit-overflow-scrolling: touch;
+    }
     .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(0,255,255,0.15), transparent 70%); pointer-events: none; z-index: -1; }
 
     .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 140px; }
@@ -45,11 +49,26 @@
     }
     @keyframes glow { from { box-shadow: 0 0 50px rgba(0,255,255,0.9); } to { box-shadow: 0 0 70px rgba(0,255,255,1); } }
 
+    /* ПОЛНОЕ УДАЛЕНИЕ ЛЮБОГО СКРОЛЛБАРА В МОДАЛКЕ */
+    .modal, .modal-scroll, .price-scroll {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    .modal::-webkit-scrollbar,
+    .modal-scroll::-webkit-scrollbar,
+    .price-scroll::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+    }
+    .modal * { -webkit-overflow-scrolling: touch; }
+
     .modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
       z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(25px);
       padding-top: 60px; overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
     }
     .modal.active { display: flex; }
 
@@ -59,17 +78,8 @@
       margin: 20px auto; max-height: 90vh;
     }
 
-    /* УБРАЛ СКРОЛЛБАР ПОЛНОСТЬЮ — ЧИСТО! */
     .modal-scroll {
-      max-height: 78vh; overflow-y: auto; padding-right: 10px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none !important;
-      -ms-overflow-style: none !important;
-    }
-    .modal-scroll::-webkit-scrollbar {
-      display: none !important;
-      width: 0 !important;
-      background: transparent !important;
+      max-height: 78vh; overflow-y: auto; padding-right: 16px; margin-right: -16px;
     }
 
     input, .custom-select {
@@ -109,10 +119,8 @@
     }
     .price-scroll {
       display: flex; gap: 20px; overflow-x: auto; padding: 0 32px;
-      scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch; height: 100px; align-items: center;
+      scroll-snap-type: x mandatory; height: 100px; align-items: center;
     }
-    .price-scroll::-webkit-scrollbar { display: none; }
 
     .price-btn {
       flex: 0 0 130px; background: rgba(255,255,255,0.1); border: 2px solid rgba(0,255,255,0.3);
