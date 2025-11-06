@@ -45,13 +45,28 @@
     }
     @keyframes glow { from { box-shadow: 0 0 50px rgba(0,255,255,0.9); } to { box-shadow: 0 0 70px rgba(0,255,255,1); } }
 
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
-             z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(25px); }
-    .modal.active { display: flex; }
-    .modal-content {
-      position: relative; background: var(--card); border-radius: 36px; padding: 70px 32px 50px;
-      width: 94%; max-width: 460px; border: 3px solid var(--neon); box-shadow: 0 0 120px rgba(0,255,255,0.8);
+    /* МОДАЛКА СКРОЛЛИТСЯ! */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
+      z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(25px);
+      padding-top: 60px; overflow-y: auto;
     }
+    .modal.active { display: flex; }
+
+    .modal-content {
+      position: relative; background: var(--card); border-radius: 36px; padding: 70px 32px 60px;
+      width: 94%; max-width: 460px; border: 3px solid var(--neon); box-shadow: 0 0 120px rgba(0,255,255,0.8);
+      margin: 20px auto; max-height: 90vh;
+    }
+
+    /* ВНУТРЕННИЙ СКРОЛЛ ДЛЯ КОНТЕНТА */
+    .modal-scroll {
+      max-height: 78vh; overflow-y: auto; padding-right: 10px;
+      scrollbar-width: thin; scrollbar-color: var(--neon) transparent;
+    }
+    .modal-scroll::-webkit-scrollbar { width: 6px; }
+    .modal-scroll::-webkit-scrollbar-track { background: transparent; }
+    .modal-scroll::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 10px; }
 
     input, .custom-select {
       width: 100%; padding: 22px; margin: 18px 0; background: rgba(255,255,255,0.08);
@@ -70,7 +85,6 @@
       letter-spacing: 3px; font-weight: 900;
     }
 
-    /* НЕОНОВЫЙ ПОЛЗУНОК С КРУГЛЫМ БЕЛЫМ ПОЛЗУНКОМ */
     .price-range {
       -webkit-appearance: none; appearance: none; width: 100%; height: 20px;
       background: linear-gradient(to right, #00ffff 0%, #00ff88 100%);
@@ -82,9 +96,7 @@
       background: #ffffff; cursor: grab; border: 4px solid #000;
       box-shadow: 0 0 40px rgba(0,255,255,0.9), 0 0 80px rgba(0,255,136,0.7);
     }
-    .price-range:active::-webkit-slider-thumb { transform: scale(1.15); }
 
-    /* ОТДАЛЁННЫЕ КНОПКИ ЦЕН — ВСЁ ВИДНО! */
     .price-container {
       margin: 40px 0; padding: 20px 0;
       border-radius: 32px; background: rgba(255,255,255,0.05);
@@ -145,23 +157,25 @@
       <button class="back-btn" onclick="closeModal()">←</button>
       <h2 style="color:var(--neon); text-align:center; font-size:30px; margin-bottom:32px;">Новое задание</h2>
       
-      <input type="text" id="task-text" placeholder="Что нужно сделать?">
-      <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
+      <div class="modal-scroll">
+        <input type="text" id="task-text" placeholder="Что нужно сделать?">
+        <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
 
-      <select id="task-type" class="custom-select" onchange="updatePrices()">
-        <option value="yandex">Яндекс Отзыв</option>
-        <option value="google">Google Отзыв</option>
-        <option value="tg">Telegram Подписка</option>
-      </select>
+        <select id="task-type" class="custom-select" onchange="updatePrices()">
+          <option value="yandex">Яндекс Отзыв</option>
+          <option value="google">Google Отзыв</option>
+          <option value="tg">Telegram Подписка</option>
+        </select>
 
-      <div class="current-price" id="current-price">100 ₽</div>
-      <input type="range" id="price-range" class="price-range" min="0" max="49" value="0">
+        <div class="current-price" id="current-price">100 ₽</div>
+        <input type="range" id="price-range" class="price-range" min="0" max="49" value="0">
 
-      <div class="price-container">
-        <div class="price-scroll" id="price-scroll"></div>
+        <div class="price-container">
+          <div class="price-scroll" id="price-scroll"></div>
+        </div>
+
+        <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
       </div>
-
-      <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
     </div>
   </div>
 
