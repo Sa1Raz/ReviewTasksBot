@@ -56,37 +56,41 @@
     input, .custom-select {
       width: 100%; padding: 20px; margin: 18px 0; background: rgba(255,255,255,0.12);
       border: 2px solid var(--border); border-radius: 24px; color: var(--text); font-size: 18px;
-      position: relative;
     }
-
-    /* КРАСИВЕЙШИЙ ВЫПАДАЮЩИЙ СПИСОК */
     .custom-select {
-      appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 20px center;
     }
-    .custom-select:focus {
-      border: 2px solid var(--neon); box-shadow: 0 0 30px rgba(0,255,255,0.6); outline: none;
+    .custom-select:focus { border: 2px solid var(--neon); box-shadow: 0 0 30px rgba(0,255,255,0.6); }
+
+    /* КРАСИВЫЙ НЕОНОВЫЙ ПОЛЗУНОК */
+    .price-range {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 12px;
+      background: rgba(255,255,255,0.1); border-radius: 12px; outline: none;
+      margin: 30px 0; backdrop-filter: blur(10px);
+      box-shadow: inset 0 0 20px rgba(0,255,255,0.2);
     }
-    .custom-select option {
-      background: #141426; color: #e0f7ff; padding: 20px; font-size: 18px;
-      border-bottom: 1px solid rgba(0,255,255,0.2);
+    .price-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(45deg, #00ffff, #00ff88); cursor: grab;
+      box-shadow: 0 0 30px rgba(0,255,255,0.8), 0 0 60px rgba(0,255,136,0.6);
+      border: 3px solid #000;
     }
-    .custom-select option:checked {
-      background: linear-gradient(45deg, #00ff88, #00cc66); color: #000; font-weight: 900;
+    .price-range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.2); }
+
+    .current-price {
+      text-align: center; font-family: 'Orbitron'; font-size: 36px; color: var(--gold);
+      margin: 20px 0; text-shadow: 0 0 20px rgba(255,215,0,0.7);
     }
 
-    /* СЕНСОРНЫЕ ЦЕНЫ ОТ 100 ДО 10000 */
-    .price-scroll {
-      display: flex; gap: 16px; overflow-x: auto; padding: 20px 0; margin: 20px 0;
-      scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-    }
+    .price-scroll { display: flex; gap: 16px; overflow-x: auto; padding: 20px 0; margin: 20px 0;
+                    scrollbar-width: none; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
     .price-scroll::-webkit-scrollbar { display: none; }
     .price-btn {
       flex: 0 0 120px; background: rgba(255,255,255,0.1); border: 2px solid var(--border);
       color: var(--text); padding: 20px 8px; border-radius: 28px; font-weight: 900;
       font-size: 19px; text-align: center; transition: all 0.4s; scroll-snap-align: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     }
     .price-btn.active {
       background: linear-gradient(45deg, #00ff88, #00cc66); color: #000;
@@ -130,26 +134,16 @@
       <input type="text" id="task-text" placeholder="Что нужно сделать?">
       <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
 
-      <p style="color:#88c0d0; font-weight:bold; margin:24px 0 12px; font-size:18px;">Зажми и листай цены →</p>
-      <div class="price-scroll" id="price-scroll">
-        <!-- ВСЕ КРУГЛЫЕ ЦЕНЫ ОТ 100 ДО 10000 -->
-        <script>
-          let prices = [];
-          for(let i = 100; i <= 10000; i += 100) {
-            prices.push(i);
-          }
-          document.write(prices.map((p, idx) => `
-            <button class="price-btn ${idx===0?'active':''}" data-price="${p}">${p} ₽</button>
-          `).join(''));
-        </script>
-      </div>
-
-      <select id="task-type" class="custom-select">
+      <select id="task-type" class="custom-select" onchange="updatePrices()">
         <option value="yandex">Яндекс Отзыв</option>
         <option value="google">Google Отзыв</option>
         <option value="tg">Telegram Подписка</option>
-        <option value="custom">Другое</option>
       </select>
+
+      <div class="current-price" id="current-price">100 ₽</div>
+      <input type="range" id="price-range" class="price-range" min="0" max="49" value="0">
+
+      <div class="price-scroll" id="price-scroll"></div>
 
       <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
     </div>
@@ -164,33 +158,53 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
-    const employerBtn = document.getElementById('employer-mode');
-    const executorBtn = document.getElementById('executor-mode');
-    const createBtn = document.getElementById('create-btn');
-    const modal = document.getElementById('modal');
+    const prices = {
+      yandex: Array.from({length: 100}, (_, i) => (i + 1) * 100),  // 100, 200, ..., 10000
+      google: Array.from({length: 50}, (_, i) => (i + 1) * 65),   // 65, 130, ..., 3250
+      tg: Array.from({length: 50}, (_, i) => (i + 1) * 10)         // 10, 20, ..., 500
+    };
+
+    let currentPrices = prices.yandex;
     let selectedPrice = 100;
 
-    employerBtn.onclick = () => {
-      employerBtn.classList.add('active'); executorBtn.classList.remove('active');
-      createBtn.style.display = 'block'; loadTasks();
+    const priceScroll = document.getElementById('price-scroll');
+    const priceRange = document.getElementById('price-range');
+    const currentPriceDisplay = document.getElementById('current-price');
+
+    function updatePrices() {
+      const type = document.getElementById('task-type').value;
+      currentPrices = prices[type];
+      priceRange.max = currentPrices.length - 1;
+      priceRange.value = 0;
+      selectedPrice = currentPrices[0];
+      currentPriceDisplay.innerText = selectedPrice + ' ₽';
+      renderPriceButtons();
+    }
+
+    function renderPriceButtons() {
+      priceScroll.innerHTML = currentPrices.map((p, i) => `
+        <button class="price-btn ${i===0?'active':''}" data-price="${p}">${p} ₽</button>
+      `).join('');
+      
+      document.querySelectorAll('.price-btn').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedPrice = parseInt(btn.dataset.price);
+          currentPriceDisplay.innerText = selectedPrice + ' ₽';
+          priceRange.value = currentPrices.indexOf(selectedPrice);
+        };
+      });
+    }
+
+    priceRange.oninput = () => {
+      const idx = priceRange.value;
+      selectedPrice = currentPrices[idx];
+      currentPriceDisplay.innerText = selectedPrice + ' ₽';
+      document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.price-btn')[idx].classList.add('active');
+      document.querySelectorAll('.price-btn')[idx].scrollIntoView({ behavior: 'smooth', inline: 'center' });
     };
-
-    executorBtn.onclick = () => {
-      executorBtn.classList.add('active'); employerBtn.classList.remove('active');
-      createBtn.style.display = 'none'; loadTasks();
-    };
-
-    createBtn.onclick = () => modal.classList.add('active');
-    window.closeModal = () => modal.classList.remove('active');
-
-    document.querySelectorAll('.price-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedPrice = parseInt(btn.dataset.price);
-        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      };
-    });
 
     window.createTask = () => {
       const text = document.getElementById('task-text').value.trim();
@@ -206,6 +220,20 @@
       closeModal();
       document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#00ff88; font-size:22px;'>Создаётся...</p>";
     };
+
+    // Инициализация
+    updatePrices();
+    renderPriceButtons();
+
+    const employerBtn = document.getElementById('employer-mode');
+    const executorBtn = document.getElementById('executor-mode');
+    const createBtn = document.getElementById('create-btn');
+    const modal = document.getElementById('modal');
+
+    employerBtn.onclick = () => { employerBtn.classList.add('active'); executorBtn.classList.remove('active'); createBtn.style.display = 'block'; loadTasks(); };
+    executorBtn.onclick = () => { executorBtn.classList.add('active'); employerBtn.classList.remove('active'); createBtn.style.display = 'none'; loadTasks(); };
+    createBtn.onclick = () => modal.classList.add('active');
+    window.closeModal = () => modal.classList.remove('active');
 
     function loadTasks() {
       document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#88c0d0;'>Загрузка...</p>";
