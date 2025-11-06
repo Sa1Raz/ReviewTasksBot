@@ -17,7 +17,6 @@
 
     .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 120px; }
 
-    /* КНОПКИ РЕЖИМА */
     .mode-switch {
       display: flex; background: rgba(255,255,255,0.08); border-radius: 28px; padding: 8px;
       margin-bottom: 28px; border: 2px solid var(--border); backdrop-filter: blur(16px);
@@ -35,52 +34,69 @@
 
     #create-btn { background: linear-gradient(45deg, #00ff88, #00cc66); color: #000; padding: 20px;
                   border: none; border-radius: 28px; font-weight: 900; font-size: 19px; width: 100%;
-                  margin: 24px 0; box-shadow: 0 0 45px rgba(0,255,136,0.7); }
+                  margin: 24px 0; box-shadow: 0 0 45px rgba(0,255,136,0.7); animation: float 4s infinite; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-    /* КНОПКА НАЗАД В МОДАЛКЕ */
     .back-btn {
-      position: absolute; top: 16px; left: 16px; background: rgba(255,255,255,0.1);
-      border: 2px solid var(--border); color: var(--text); width: 44px; height: 44px;
-      border-radius: 50%; font-size: 24px; display: flex; align-items: center;
-      justify-content: center; backdrop-filter: blur(10px); z-index: 10;
+      position: absolute; top: 16px; left: 16px; background: rgba(255,255,255,0.15);
+      border: 2px solid var(--neon); color: var(--neon); width: 48px; height: 48px;
+      border-radius: 50%; font-size: 28px; display: flex; align-items: center;
+      justify-content: center; backdrop-filter: blur(12px); z-index: 10;
+      box-shadow: 0 0 30px rgba(0,255,255,0.5);
     }
-
-    .tasks-list { display: flex; flex-direction: column; gap: 20px; }
-    .task-card { background: var(--glass); border-radius: 28px; padding: 24px; border: 2px solid var(--border); backdrop-filter: blur(14px); }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
              z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(25px); }
     .modal.active { display: flex; }
     .modal-content {
-      position: relative; background: var(--card); border-radius: 36px; padding: 48px 36px 36px;
-      width: 94%; max-width: 440px; border: 3px solid var(--neon); box-shadow: 0 0 90px rgba(0,255,255,0.7);
+      position: relative; background: var(--card); border-radius: 36px; padding: 56px 36px 36px;
+      width: 94%; max-width: 460px; border: 3px solid var(--neon); box-shadow: 0 0 100px rgba(0,255,255,0.7);
     }
 
-    input, select {
-      width: 100%; padding: 18px; margin: 16px 0; background: rgba(255,255,255,0.12);
-      border: 2px solid var(--border); border-radius: 22px; color: var(--text); font-size: 17px;
+    input, .custom-select {
+      width: 100%; padding: 20px; margin: 18px 0; background: rgba(255,255,255,0.12);
+      border: 2px solid var(--border); border-radius: 24px; color: var(--text); font-size: 18px;
+      position: relative;
     }
 
-    /* СЕНСОРНАЯ ПРОКРУТКА ЦЕН */
+    /* КРАСИВЕЙШИЙ ВЫПАДАЮЩИЙ СПИСОК */
+    .custom-select {
+      appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 20px center;
+    }
+    .custom-select:focus {
+      border: 2px solid var(--neon); box-shadow: 0 0 30px rgba(0,255,255,0.6); outline: none;
+    }
+    .custom-select option {
+      background: #141426; color: #e0f7ff; padding: 20px; font-size: 18px;
+      border-bottom: 1px solid rgba(0,255,255,0.2);
+    }
+    .custom-select option:checked {
+      background: linear-gradient(45deg, #00ff88, #00cc66); color: #000; font-weight: 900;
+    }
+
+    /* СЕНСОРНЫЕ ЦЕНЫ ОТ 100 ДО 10000 */
     .price-scroll {
-      display: flex; gap: 14px; overflow-x: auto; padding: 16px 0; margin: 20px 0;
-      scrollbar-width: none; -ms-overflow-style: none;
-      scroll-snap-type: x mandatory;
+      display: flex; gap: 16px; overflow-x: auto; padding: 20px 0; margin: 20px 0;
+      scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
     }
     .price-scroll::-webkit-scrollbar { display: none; }
     .price-btn {
-      flex: 0 0 110px; background: rgba(255,255,255,0.1); border: 2px solid var(--border);
-      color: var(--text); padding: 18px 8px; border-radius: 24px; font-weight: 900;
-      font-size: 18px; text-align: center; transition: all 0.3s; scroll-snap-align: center;
+      flex: 0 0 120px; background: rgba(255,255,255,0.1); border: 2px solid var(--border);
+      color: var(--text); padding: 20px 8px; border-radius: 28px; font-weight: 900;
+      font-size: 19px; text-align: center; transition: all 0.4s; scroll-snap-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     }
     .price-btn.active {
       background: linear-gradient(45deg, #00ff88, #00cc66); color: #000;
-      border: 2px solid #00ff88; box-shadow: 0 0 35px rgba(0,255,136,0.8); transform: scale(1.1);
+      border: 3px solid #00ff88; box-shadow: 0 0 40px rgba(0,255,136,0.9);
+      transform: scale(1.15); font-size: 22px;
     }
 
-    .btn-create { background: linear-gradient(45deg, var(--success), #00cc66); color: white; padding: 20px;
-                  border: none; border-radius: 24px; font-weight: 900; font-size: 19px; width: 100%; margin-top: 32px; }
+    .btn-create { background: linear-gradient(45deg, var(--success), #00cc66); color: white; padding: 22px;
+                  border: none; border-radius: 28px; font-weight: 900; font-size: 20px; width: 100%; margin-top: 32px;
+                  box-shadow: 0 0 50px rgba(0,255,136,0.7); }
 
     .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass);
                   border-radius: 36px; padding: 18px; display: flex; backdrop-filter: blur(25px);
@@ -106,32 +122,29 @@
     </div>
   </div>
 
-  <!-- МОДАЛКА С КНОПКОЙ НАЗАД И СЕНСОРНЫМИ ЦЕНАМИ -->
   <div id="modal" class="modal">
     <div class="modal-content">
       <button class="back-btn" onclick="closeModal()">←</button>
-      <h2 style="color:var(--neon); text-align:center; font-size:28px; margin-bottom:30px;">Новое задание</h2>
+      <h2 style="color:var(--neon); text-align:center; font-size:30px; margin-bottom:32px;">Новое задание</h2>
       
       <input type="text" id="task-text" placeholder="Что нужно сделать?">
       <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
 
-      <p style="color:#88c0d0; font-weight:bold; margin:20px 0 10px; font-size:17px;">Зажми и листай →</p>
+      <p style="color:#88c0d0; font-weight:bold; margin:24px 0 12px; font-size:18px;">Зажми и листай цены →</p>
       <div class="price-scroll" id="price-scroll">
-        <button class="price-btn active" data-price="100">100 ₽</button>
-        <button class="price-btn" data-price="200">200 ₽</button>
-        <button class="price-btn" data-price="300">300 ₽</button>
-        <button class="price-btn" data-price="400">400 ₽</button>
-        <button class="price-btn" data-price="500">500 ₽</button>
-        <button class="price-btn" data-price="700">700 ₽</button>
-        <button class="price-btn" data-price="1000">1000 ₽</button>
-        <button class="price-btn" data-price="1500">1500 ₽</button>
-        <button class="price-btn" data-price="2000">2000 ₽</button>
-        <button class="price-btn" data-price="3000">3000 ₽</button>
-        <button class="price-btn" data-price="5000">5000 ₽</button>
-        <button class="price-btn" data-price="10000">10000 ₽</button>
+        <!-- ВСЕ КРУГЛЫЕ ЦЕНЫ ОТ 100 ДО 10000 -->
+        <script>
+          let prices = [];
+          for(let i = 100; i <= 10000; i += 100) {
+            prices.push(i);
+          }
+          document.write(prices.map((p, idx) => `
+            <button class="price-btn ${idx===0?'active':''}" data-price="${p}">${p} ₽</button>
+          `).join(''));
+        </script>
       </div>
 
-      <select id="task-type">
+      <select id="task-type" class="custom-select">
         <option value="yandex">Яндекс Отзыв</option>
         <option value="google">Google Отзыв</option>
         <option value="tg">Telegram Подписка</option>
@@ -170,13 +183,11 @@
     createBtn.onclick = () => modal.classList.add('active');
     window.closeModal = () => modal.classList.remove('active');
 
-    // СЕНСОРНЫЙ ВЫБОР ЦЕНЫ
     document.querySelectorAll('.price-btn').forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedPrice = parseInt(btn.dataset.price);
-        // Плавно скроллим к выбранной кнопке
         btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       };
     });
@@ -184,7 +195,7 @@
     window.createTask = () => {
       const text = document.getElementById('task-text').value.trim();
       const link = document.getElementById('task-link').value.trim();
-      if (!text || !link) { alert("Заполни текст и ссылку!"); return; }
+      if (!text || !link) { alert("Заполни всё!"); return; }
 
       tg.sendData(JSON.stringify({
         action: "add_task",
@@ -193,7 +204,7 @@
       }));
 
       closeModal();
-      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#00ff88; font-size:20px;'>Задание создаётся...</p>";
+      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#00ff88; font-size:22px;'>Создаётся...</p>";
     };
 
     function loadTasks() {
@@ -206,15 +217,15 @@
         const res = JSON.parse(data);
         if (res.tasks) {
           const html = res.tasks.length ? res.tasks.map(t => `
-            <div class="task-card">
+            <div style="background:var(--glass); border-radius:28px; padding:24px; border:2px solid var(--border); backdrop-filter:blur(14px); margin:20px 0;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="task-type">${t.type.toUpperCase()}</span>
-                <span class="task-reward">${t.price} ₽</span>
+                <span style="color:var(--neon); font-weight:900; font-size:15px;">${t.type.toUpperCase()}</span>
+                <span style="font-family:'Orbitron'; font-size:32px; color:var(--gold);">${t.price} ₽</span>
               </div>
-              <div class="task-text">${t.text}</div>
-              <a href="${t.link}" class="task-link" target="_blank">${t.link}</a>
+              <div style="margin:16px 0; font-size:18px;">${t.text}</div>
+              <a href="${t.link}" target="_blank" style="color:#88c0d0; word-break:break-all;">${t.link}</a>
             </div>
-          `).join('') : "<p style='text-align:center; color:#88c0d0; padding:100px; font-size:20px;'>Нет заданий<br><br>Создай первое!</p>";
+          `).join('') : "<p style='text-align:center; color:#88c0d0; padding:120px; font-size:22px;'>Нет заданий<br>Создай первое!</p>";
           document.getElementById('tasks-list').innerHTML = html;
         }
         if (res.success) {
