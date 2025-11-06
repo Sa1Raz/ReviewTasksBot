@@ -9,10 +9,11 @@
   <style>
     :root {
       --bg: #0a0a14; --card: #141426; --neon: #00ffff; --success: #00ff88; --gold: #ffd700;
-      --glass: rgba(20,20,38,0.9); --border: rgba(0,255,255,0.4); --text: #e0f7ff;
+      --glass: rgba(20,20,38,0.92); --border: rgba(0,255,255,0.4); --text: #e0f7ff;
+      --select-bg: #1a1a2e; --select-text: #ffffff;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
     .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(0,255,255,0.15), transparent 70%); pointer-events: none; z-index: -1; }
 
     .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 140px; }
@@ -25,6 +26,7 @@
     .mode-btn {
       flex: 1; padding: 16px 10px; border: none; border-radius: 20px; font-weight: 900;
       font-size: 15px; text-align: center; background: transparent; color: #88c0d0;
+      transition: all 0.3s;
     }
     .mode-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; }
 
@@ -34,7 +36,7 @@
 
     #create-btn { background: linear-gradient(45deg, #00ff88, #00cc66); color: #000; padding: 20px;
                   border: none; border-radius: 28px; font-weight: 900; font-size: 19px; width: 100%;
-                  margin: 24px 0; box-shadow: 0 0 45px rgba(0,255,136,0.7); }
+                  margin: 24px 0; box-shadow: 0 0 45px rgba(0,255,136,0.7); cursor: pointer; }
 
     .back-btn {
       position: absolute; top: 16px; left: 16px; background: transparent;
@@ -42,50 +44,58 @@
       border-radius: 50%; font-size: 30px; display: flex; align-items: center;
       justify-content: center; backdrop-filter: blur(15px); z-index: 10;
       box-shadow: 0 0 50px rgba(0,255,255,0.9); animation: glow 2s infinite alternate;
+      cursor: pointer;
     }
     @keyframes glow { from { box-shadow: 0 0 50px rgba(0,255,255,0.9); } to { box-shadow: 0 0 70px rgba(0,255,255,1); } }
 
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
-             z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(25px);
-             padding-top: 60px; overflow-y: auto;
+    /* МОДАЛКА — ВСЁ ВНУТРИ */
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
+      z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(25px);
+      padding: 60px 0 100px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    .modal::-webkit-scrollbar { display: none; }
     .modal.active { display: flex; }
 
     .modal-content {
-      position: relative; background: var(--card); border-radius: 36px; padding: 70px 32px 60px;
+      position: relative; background: var(--card); border-radius: 36px; padding: 70px 28px 40px;
       width: 94%; max-width: 460px; border: 3px solid var(--neon); box-shadow: 0 0 120px rgba(0,255,255,0.8);
       margin: 0 auto; max-height: 90vh;
     }
 
     .modal-scroll {
-      max-height: 78vh; overflow-y: auto; padding-right: 16px; margin-right: -16px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none !important;
+      max-height: 76vh; overflow-y: auto; padding-right: 12px; margin-right: -12px;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
-    .modal-scroll::-webkit-scrollbar { display: none !important; }
+    .modal-scroll::-webkit-scrollbar { display: none; }
 
     input, .custom-select {
       width: 100%; padding: 22px; margin: 18px 0; background: rgba(255,255,255,0.08);
       border: 2px solid rgba(0,255,255,0.3); border-radius: 28px; color: var(--text); font-size: 18px;
       backdrop-filter: blur(10px);
     }
+
+    /* КРАСИВЫЙ СЕЛЕКТ — ЧЁРНЫЙ ФОН, БЕЛЫЙ ТЕКСТ, НЕОНОВАЯ СТРЕЛКА */
     .custom-select {
-      appearance: none; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      appearance: none; cursor: pointer; background: var(--select-bg) !important;
+      color: var(--select-text) !important; font-weight: 600;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 20px center;
+      padding-right: 60px !important;
     }
+    .custom-select:focus { border: 2px solid var(--neon); box-shadow: 0 0 30px rgba(0,255,255,0.6); }
 
     .current-price {
       text-align: center; font-family: 'Orbitron'; font-size: 64px; color: var(--gold);
-      margin: 40px 0 30px; text-shadow: 0 0 30px #ffd700, 0 0 60px #ffaa00;
+      margin: 35px 0; text-shadow: 0 0 30px #ffd700, 0 0 60px #ffaa00;
       letter-spacing: 3px; font-weight: 900;
     }
 
     .price-range {
       -webkit-appearance: none; appearance: none; width: 100%; height: 20px;
-      background: linear-gradient(to right, #00ffff 0%, #00ff88 100%);
-      border-radius: 20px; outline: none; margin: 50px 0;
-      box-shadow: 0 0 40px rgba(0,255,255,0.7), inset 0 0 20px rgba(0,0,0,0.5);
+      background: linear-gradient(to right, #00ffff, #00ff88); border-radius: 20px;
+      outline: none; margin: 45px 0; box-shadow: 0 0 40px rgba(0,255,255,0.7);
     }
     .price-range::-webkit-slider-thumb {
       -webkit-appearance: none; width: 50px; height: 50px; border-radius: 50%;
@@ -94,41 +104,43 @@
     }
 
     .price-container {
-      margin: 40px 0; padding: 20px 0;
+      margin: 35px 0; padding: 18px 0;
       border-radius: 32px; background: rgba(255,255,255,0.05);
       border: 2px solid var(--border); backdrop-filter: blur(12px);
       overflow: hidden;
     }
     .price-scroll {
-      display: flex; gap: 20px; overflow-x: auto; padding: 0 32px;
-      scroll-snap-type: x mandatory; height: 100px; align-items: center;
+      display: flex; gap: 18px; overflow-x: auto; padding: 0 28px;
+      scroll-snap-type: x mandatory; height: 96px; align-items: center;
       -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
     .price-scroll::-webkit-scrollbar { display: none; }
 
     .price-btn {
-      flex: 0 0 130px; background: rgba(255,255,255,0.1); border: 2px solid rgba(0,255,255,0.3);
-      color: #88c0d0; padding: 20px 10px; border-radius: 32px; font-weight: 900;
-      font-size: 20px; text-align: center; transition: all 0.4s; scroll-snap-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(8px);
-      cursor: pointer;
+      flex: 0 0 128px; background: rgba(255,255,255,0.1); border: 2px solid rgba(0,255,255,0.3);
+      color: #88c0d0; padding: 18px 8px; border-radius: 30px; font-weight: 900;
+      font-size: 19px; text-align: center; transition: all 0.4s; scroll-snap-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4); backdrop-filter: blur(8px); cursor: pointer;
     }
     .price-btn.active {
       background: linear-gradient(45deg, #00ff88, #00cc66); color: #000;
       border: 3px solid #00ff88; box-shadow: 0 0 50px rgba(0,255,136,1);
-      transform: scale(1.15); font-size: 24px;
+      transform: scale(1.14); font-size: 23px;
     }
 
+    /* КНОПКА ВЛЕЗАЕТ ПОЛНОСТЬЮ! */
     .btn-create {
       background: linear-gradient(45deg, #00ff88, #00cc66); color: white;
-      padding: 24px; border: none; border-radius: 32px; font-weight: 900;
-      font-size: 21px; width: 100%; margin-top: 50px;
-      box-shadow: 0 0 70px rgba(0,255,136,0.9);
+      padding: 26px; border: none; border-radius: 32px; font-weight: 900;
+      font-size: 21px; width: 100%; margin: 45px 0 20px;
+      box-shadow: 0 0 70px rgba(0,255,136,0.9); cursor: pointer;
+      letter-spacing: 0.5px; transition: all 0.3s;
     }
+    .btn-create:hover { transform: translateY(-3px); }
 
     .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass);
                   border-radius: 36px; padding: 18px; display: flex; backdrop-filter: blur(25px);
-                  border: 2px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+                  border: 2px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 999; }
     .nav-btn { flex: 1; padding: 18px; background: none; border: none; color: #88c0d0; font-weight: 900; font-size: 16px; }
     .nav-btn.active { background: var(--neon); color: #000; border-radius: 22px; }
   </style>
@@ -238,7 +250,10 @@
     window.createTask = () => {
       const text = document.getElementById('task-text').value.trim();
       const link = document.getElementById('task-link').value.trim();
-      if (!text || !link) { alert("Заполни всё!"); return; }
+      if (!text || !link) { 
+        tg.showAlert("Заполни все поля!"); 
+        return; 
+      }
 
       tg.sendData(JSON.stringify({
         action: "add_task",
@@ -255,7 +270,7 @@
     window.closeModal = () => document.getElementById('modal').classList.remove('active');
 
     function loadTasks() {
-      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#88c0d0;'>Загрузка...</p>";
+      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#88c0d0; padding:80px; font-size:20px;'>Загрузка заданий...</p>";
       tg.sendData(JSON.stringify({ action: "get_tasks" }));
     }
 
@@ -270,13 +285,13 @@
                 <span style="font-family:'Orbitron'; font-size:32px; color:var(--gold);">${t.price} ₽</span>
               </div>
               <div style="margin:16px 0; font-size:18px;">${t.text}</div>
-              <a href="${t.link}" target="_blank" style="color:#88c0d0; word-break:break-all;">${t.link}</a>
+              <a href="${t.link}" target="_blank" style="color:#88c0d0; word-break:break-all; font-size:15px;">${t.link}</a>
             </div>
           `).join('') : "<p style='text-align:center; color:#88c0d0; padding:120px; font-size:22px;'>Нет заданий<br>Создай первое!</p>";
           document.getElementById('tasks-list').innerHTML = html;
         }
         if (res.success) {
-          alert(`Задание создано за ${selectedPrice} ₽!`);
+          tg.showAlert(`Задание создано за ${selectedPrice} ₽!`);
           loadTasks();
         }
       } catch (e) { console.log(e); }
