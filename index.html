@@ -17,6 +17,7 @@
 
     .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 120px; }
 
+    /* КНОПКИ РЕЖИМА */
     .mode-switch {
       display: flex; background: rgba(255,255,255,0.08); border-radius: 28px; padding: 8px;
       margin-bottom: 28px; border: 2px solid var(--border); backdrop-filter: blur(16px);
@@ -25,7 +26,6 @@
     .mode-btn {
       flex: 1; padding: 16px 10px; border: none; border-radius: 20px; font-weight: 900;
       font-size: 15px; text-align: center; background: transparent; color: #88c0d0;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .mode-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.8); }
 
@@ -37,32 +37,50 @@
                   border: none; border-radius: 28px; font-weight: 900; font-size: 19px; width: 100%;
                   margin: 24px 0; box-shadow: 0 0 45px rgba(0,255,136,0.7); }
 
+    /* КНОПКА НАЗАД В МОДАЛКЕ */
+    .back-btn {
+      position: absolute; top: 16px; left: 16px; background: rgba(255,255,255,0.1);
+      border: 2px solid var(--border); color: var(--text); width: 44px; height: 44px;
+      border-radius: 50%; font-size: 24px; display: flex; align-items: center;
+      justify-content: center; backdrop-filter: blur(10px); z-index: 10;
+    }
+
     .tasks-list { display: flex; flex-direction: column; gap: 20px; }
     .task-card { background: var(--glass); border-radius: 28px; padding: 24px; border: 2px solid var(--border); backdrop-filter: blur(14px); }
-    .task-type { color: var(--neon); font-weight: 900; font-size: 14px; text-transform: uppercase; }
-    .task-reward { font-family: 'Orbitron', sans-serif; font-size: 30px; color: var(--gold); text-align: right; margin: 10px 0; }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
              z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(25px); }
     .modal.active { display: flex; }
-    .modal-content { background: var(--card); border-radius: 36px; padding: 36px; width: 94%; max-width: 440px;
-                     border: 3px solid var(--neon); box-shadow: 0 0 90px rgba(0,255,255,0.7); }
+    .modal-content {
+      position: relative; background: var(--card); border-radius: 36px; padding: 48px 36px 36px;
+      width: 94%; max-width: 440px; border: 3px solid var(--neon); box-shadow: 0 0 90px rgba(0,255,255,0.7);
+    }
 
-    input, select { width: 100%; padding: 18px; margin: 16px 0; background: rgba(255,255,255,0.12);
-                    border: 2px solid var(--border); border-radius: 22px; color: var(--text); font-size: 17px; }
+    input, select {
+      width: 100%; padding: 18px; margin: 16px 0; background: rgba(255,255,255,0.12);
+      border: 2px solid var(--border); border-radius: 22px; color: var(--text); font-size: 17px;
+    }
 
-    /* СЕТКА ЦЕН С ГОРИЗОНТАЛЬНОЙ ПРОКРУТКОЙ */
-    .price-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; margin: 20px 0;
-                    scrollbar-width: none; -ms-overflow-style: none; }
+    /* СЕНСОРНАЯ ПРОКРУТКА ЦЕН */
+    .price-scroll {
+      display: flex; gap: 14px; overflow-x: auto; padding: 16px 0; margin: 20px 0;
+      scrollbar-width: none; -ms-overflow-style: none;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
     .price-scroll::-webkit-scrollbar { display: none; }
-    .price-btn { flex: 0 0 auto; background: rgba(255,255,255,0.1); border: 2px solid var(--border);
-                 color: var(--text); padding: 16px 20px; border-radius: 20px; font-weight: 900;
-                 font-size: 17px; min-width: 100px; text-align: center; transition: all 0.3s; }
-    .price-btn.active { background: linear-gradient(45deg, #00ff88, #00cc66); color: #000;
-                        border: 2px solid #00ff88; box-shadow: 0 0 30px rgba(0,255,136,0.7); }
+    .price-btn {
+      flex: 0 0 110px; background: rgba(255,255,255,0.1); border: 2px solid var(--border);
+      color: var(--text); padding: 18px 8px; border-radius: 24px; font-weight: 900;
+      font-size: 18px; text-align: center; transition: all 0.3s; scroll-snap-align: center;
+    }
+    .price-btn.active {
+      background: linear-gradient(45deg, #00ff88, #00cc66); color: #000;
+      border: 2px solid #00ff88; box-shadow: 0 0 35px rgba(0,255,136,0.8); transform: scale(1.1);
+    }
 
     .btn-create { background: linear-gradient(45deg, var(--success), #00cc66); color: white; padding: 20px;
-                  border: none; border-radius: 24px; font-weight: 900; font-size: 19px; width: 100%; margin-top: 28px; }
+                  border: none; border-radius: 24px; font-weight: 900; font-size: 19px; width: 100%; margin-top: 32px; }
 
     .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass);
                   border-radius: 36px; padding: 18px; display: flex; backdrop-filter: blur(25px);
@@ -88,37 +106,39 @@
     </div>
   </div>
 
+  <!-- МОДАЛКА С КНОПКОЙ НАЗАД И СЕНСОРНЫМИ ЦЕНАМИ -->
   <div id="modal" class="modal">
     <div class="modal-content">
+      <button class="back-btn" onclick="closeModal()">←</button>
       <h2 style="color:var(--neon); text-align:center; font-size:28px; margin-bottom:30px;">Новое задание</h2>
+      
       <input type="text" id="task-text" placeholder="Что нужно сделать?">
       <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
 
-      <p style="color:#88c0d0; font-weight:bold; margin:20px 0 10px; font-size:17px;">Цена (круглая):</p>
-      <div class="price-scroll">
-        <button class="price-btn active" data-price="100">100</button>
-        <button class="price-btn" data-price="200">200</button>
-        <button class="price-btn" data-price="300">300</button>
-        <button class="price-btn" data-price="400">400</button>
-        <button class="price-btn" data-price="500">500</button>
-        <button class="price-btn" data-price="700">700</button>
-        <button class="price-btn" data-price="1000">1000</button>
-        <button class="price-btn" data-price="1500">1500</button>
-        <button class="price-btn" data-price="2000">2000</button>
-        <button class="price-btn" data-price="3000">3000</button>
-        <button class="price-btn" data-price="5000">5000</button>
-        <button class="price-btn" data-price="10000">10000</button>
+      <p style="color:#88c0d0; font-weight:bold; margin:20px 0 10px; font-size:17px;">Зажми и листай →</p>
+      <div class="price-scroll" id="price-scroll">
+        <button class="price-btn active" data-price="100">100 ₽</button>
+        <button class="price-btn" data-price="200">200 ₽</button>
+        <button class="price-btn" data-price="300">300 ₽</button>
+        <button class="price-btn" data-price="400">400 ₽</button>
+        <button class="price-btn" data-price="500">500 ₽</button>
+        <button class="price-btn" data-price="700">700 ₽</button>
+        <button class="price-btn" data-price="1000">1000 ₽</button>
+        <button class="price-btn" data-price="1500">1500 ₽</button>
+        <button class="price-btn" data-price="2000">2000 ₽</button>
+        <button class="price-btn" data-price="3000">3000 ₽</button>
+        <button class="price-btn" data-price="5000">5000 ₽</button>
+        <button class="price-btn" data-price="10000">10000 ₽</button>
       </div>
 
       <select id="task-type">
         <option value="yandex">Яндекс Отзыв</option>
         <option value="google">Google Отзыв</option>
         <option value="tg">Telegram Подписка</option>
-        <button class="price-btn" data-price="custom">Другое</button>
+        <option value="custom">Другое</option>
       </select>
 
       <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
-      <button style="margin-top:16px; background:#ff3366; color:white; padding:16px; border:none; border-radius:24px; width:100%; font-weight:900;" onclick="closeModal()">Отмена</button>
     </div>
   </div>
 
@@ -137,32 +157,27 @@
     const modal = document.getElementById('modal');
     let selectedPrice = 100;
 
-    let isEmployer = true;
-
     employerBtn.onclick = () => {
-      isEmployer = true;
-      employerBtn.classList.add('active');
-      executorBtn.classList.remove('active');
-      createBtn.style.display = 'block';
-      loadTasks();
+      employerBtn.classList.add('active'); executorBtn.classList.remove('active');
+      createBtn.style.display = 'block'; loadTasks();
     };
 
     executorBtn.onclick = () => {
-      isEmployer = false;
-      executorBtn.classList.add('active');
-      employerBtn.classList.remove('active');
-      createBtn.style.display = 'none';
-      loadTasks();
+      executorBtn.classList.add('active'); employerBtn.classList.remove('active');
+      createBtn.style.display = 'none'; loadTasks();
     };
 
     createBtn.onclick = () => modal.classList.add('active');
     window.closeModal = () => modal.classList.remove('active');
 
+    // СЕНСОРНЫЙ ВЫБОР ЦЕНЫ
     document.querySelectorAll('.price-btn').forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedPrice = parseInt(btn.dataset.price);
+        // Плавно скроллим к выбранной кнопке
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       };
     });
 
