@@ -13,7 +13,12 @@
       --select-bg: #1a1a2e; --select-text: #ffffff;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    html, body {
+      height: 100%;
+      overflow: hidden; /* ГЛАВНЫЙ ФИКС — НИКАКОГО СКРОЛЛА ПО ВСЕЙ СТРАНИЦЕ */
+      -webkit-overflow-scrolling: touch;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
     .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(0,255,255,0.15), transparent 70%); pointer-events: none; z-index: -1; }
 
     .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 140px; }
@@ -26,7 +31,7 @@
     .mode-btn {
       flex: 1; padding: 16px 10px; border: none; border-radius: 20px; font-weight: 900;
       font-size: 15px; text-align: center; background: transparent; color: #88c0d0;
-      transition: all 0.3s;
+      transition: all 0.3s; cursor: pointer;
     }
     .mode-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; }
 
@@ -48,27 +53,27 @@
     }
     @keyframes glow { from { box-shadow: 0 0 50px rgba(0,255,255,0.9); } to { box-shadow: 0 0 70px rgba(0,255,255,1); } }
 
-    /* МОДАЛКА — ВСЁ ВНУТРИ */
+    /* МОДАЛКА — ПОЛНОСТЬЮ ЗАФИКСИРОВАНА */
     .modal {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98);
-      z-index: 1000; justify-content: center; align-items: flex-start; backdrop-filter: blur(25px);
-      padding: 60px 0 100px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.98); z-index: 1000; justify-content: center; align-items: center;
+      backdrop-filter: blur(25px); overflow: hidden; /* БЛОКИРУЕМ СКРОЛЛ В МОДАЛКЕ */
     }
-    .modal::-webkit-scrollbar { display: none; }
     .modal.active { display: flex; }
 
     .modal-content {
-      position: relative; background: var(--card); border-radius: 36px; padding: 70px 28px 40px;
-      width: 94%; max-width: 460px; border: 3px solid var(--neon); box-shadow: 0 0 120px rgba(0,255,255,0.8);
-      margin: 0 auto; max-height: 90vh;
+      position: relative; background: var(--card); border-radius: 36px;
+      padding: 70px 28px 40px; width: 94%; max-width: 460px;
+      border: 3px solid var(--neon); box-shadow: 0 0 120px rgba(0,255,255,0.8);
+      max-height: 90vh; overflow: hidden; /* КОНТЕНТ НЕ ВЫХОДИТ */
+      display: flex; flex-direction: column;
     }
 
     .modal-scroll {
-      max-height: 76vh; overflow-y: auto; padding-right: 12px; margin-right: -12px;
+      flex: 1; overflow-y: auto; padding-right: 12px; margin-right: -12px;
       -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
-    .modal-scroll::-webkit-scrollbar { display: none; }
+    .modal-scroll::-webkit-scrollbar { display: none !important; }
 
     input, .custom-select {
       width: 100%; padding: 22px; margin: 18px 0; background: rgba(255,255,255,0.08);
@@ -76,7 +81,6 @@
       backdrop-filter: blur(10px);
     }
 
-    /* КРАСИВЫЙ СЕЛЕКТ — ЧЁРНЫЙ ФОН, БЕЛЫЙ ТЕКСТ, НЕОНОВАЯ СТРЕЛКА */
     .custom-select {
       appearance: none; cursor: pointer; background: var(--select-bg) !important;
       color: var(--select-text) !important; font-weight: 600;
@@ -84,7 +88,6 @@
       background-repeat: no-repeat; background-position: right 20px center;
       padding-right: 60px !important;
     }
-    .custom-select:focus { border: 2px solid var(--neon); box-shadow: 0 0 30px rgba(0,255,255,0.6); }
 
     .current-price {
       text-align: center; font-family: 'Orbitron'; font-size: 64px; color: var(--gold);
@@ -128,20 +131,20 @@
       transform: scale(1.14); font-size: 23px;
     }
 
-    /* КНОПКА ВЛЕЗАЕТ ПОЛНОСТЬЮ! */
     .btn-create {
       background: linear-gradient(45deg, #00ff88, #00cc66); color: white;
       padding: 26px; border: none; border-radius: 32px; font-weight: 900;
-      font-size: 21px; width: 100%; margin: 45px 0 20px;
+      font-size: 21px; width: 100%; margin: 30px 0 10px;
       box-shadow: 0 0 70px rgba(0,255,136,0.9); cursor: pointer;
-      letter-spacing: 0.5px; transition: all 0.3s;
+      flex-shrink: 0; /* КНОПКА НЕ СЖИМАЕТСЯ */
     }
-    .btn-create:hover { transform: translateY(-3px); }
 
-    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass);
-                  border-radius: 36px; padding: 18px; display: flex; backdrop-filter: blur(25px);
-                  border: 2px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 999; }
-    .nav-btn { flex: 1; padding: 18px; background: none; border: none; color: #88c0d0; font-weight: 900; font-size: 16px; }
+    .bottom-nav {
+      position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass);
+      border-radius: 36px; padding: 18px; display: flex; backdrop-filter: blur(25px);
+      border: 2px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 999;
+    }
+    .nav-btn { flex: 1; padding: 18px; background: none; border: none; color: #88c0d0; font-weight: 900; font-size: 16px; cursor: pointer; }
     .nav-btn.active { background: var(--neon); color: #000; border-radius: 22px; }
   </style>
 </head>
@@ -183,9 +186,10 @@
         <div class="price-container">
           <div class="price-scroll" id="price-scroll"></div>
         </div>
-
-        <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
       </div>
+
+      <!-- КНОПКА ВСЕГДА ВНИЗУ И НЕ ПРЫГАЕТ -->
+      <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
     </div>
   </div>
 
@@ -266,8 +270,15 @@
 
     updatePrices();
 
-    document.getElementById('create-btn').onclick = () => document.getElementById('modal').classList.add('active');
-    window.closeModal = () => document.getElementById('modal').classList.remove('active');
+    document.getElementById('create-btn').onclick = () => {
+      document.getElementById('modal').classList.add('active');
+      document.body.style.overflow = 'hidden'; // Дополнительная блокировка
+    };
+
+    window.closeModal = () => {
+      document.getElementById('modal').classList.remove('active');
+      document.body.style.overflow = 'hidden';
+    };
 
     function loadTasks() {
       document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#88c0d0; padding:80px; font-size:20px;'>Загрузка заданий...</p>";
