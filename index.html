@@ -57,10 +57,11 @@
       border-radius: 24px; color: #fff !important; font-size: 18px; font-weight: 600;
     }
 
+    /* ЦЕНА — НЕМНОГО МЕНЬШЕ, НО КРАСИВАЯ */
     .reward-box {
       background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,255,136,0.2));
       border: 5px solid var(--neon); border-radius: 40px;
-      padding: 40px 20px; margin: 40px 0;
+      padding: 32px 20px; margin: 40px 0;
       text-align: center; cursor: pointer;
       box-shadow: 0 0 80px rgba(0,255,255,0.8);
       position: relative; overflow: hidden;
@@ -71,14 +72,14 @@
     .reward-box:active { transform: scale(0.98); }
 
     .reward-value {
-      font-size: 110px; font-weight: 900; color: white;
-      text-shadow: 0 0 50px var(--neon), 0 0 100px var(--neon);
-      letter-spacing: 5px;
+      font-size: 88px; font-weight: 900; color: white; /* УМЕНЬШИЛ С 110px ДО 88px */
+      text-shadow: 0 0 40px var(--neon), 0 0 80px var(--neon);
+      letter-spacing: 4px;
     }
 
     .rub {
-      font-size: 80px; font-weight: 900; color: white;
-      text-shadow: 0 0 50px var(--neon);
+      font-size: 64px; font-weight: 900; color: white;
+      text-shadow: 0 0 40px var(--neon);
       margin-left: 10px;
     }
 
@@ -208,7 +209,6 @@
       document.getElementById('reward-value').innerText = currentReward;
     }
 
-    // ИСПРАВЛЕНО: ОКРУГЛЕНИЕ ВНИЗ (floor)
     function snapValue(val) {
       const snapped = Math.floor(val / currentStep) * currentStep;
       return Math.max(currentMin, Math.min(10000, snapped));
