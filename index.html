@@ -3,313 +3,211 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReviewCash — Задания</title>
+  <title>Задания | ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #0a0a14; --card: #141426; --neon: #00ffff; --success: #00ff88; --gold: #ffd700;
-      --glass: rgba(20,20,38,0.92); --border: rgba(0,255,255,0.4); --text: #e0f7ff;
-      --select-bg: #1a1a2e; --select-text: #ffffff;
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0a14;color:#fff;font-family:system-ui,sans-serif;min-height:100vh}
+    .container{max-width:420px;margin:0 auto;padding:16px}
+    h1{text-align:center;color:#00ffff;font-size:28px;font-weight:900;margin:20px 0}
+
+    /* ПЕРЕКЛЮЧАТЕЛЬ РАБОТОДАТЕЛЬ / ИСПОЛНИТЕЛЬ */
+    .role-switch {
+      display: flex; background: #141426; border-radius: 30px; padding: 6px; margin: 20px 0;
+      border: 2px solid rgba(0,255,255,0.4); width: 100%; overflow: hidden;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      height: 100%;
-      overflow: hidden; /* ГЛАВНЫЙ ФИКС — НИКАКОГО СКРОЛЛА ПО ВСЕЙ СТРАНИЦЕ */
-      -webkit-overflow-scrolling: touch;
+    .role-btn {
+      flex: 1; padding: 16px; border-radius: 25px; font-weight: 800; font-size: 17px;
+      cursor: pointer; transition: all 0.4s; text-align: center;
     }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
-    .bg-glow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, rgba(0,255,255,0.15), transparent 70%); pointer-events: none; z-index: -1; }
-
-    .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; padding-bottom: 140px; }
-
-    .mode-switch {
-      display: flex; background: rgba(255,255,255,0.08); border-radius: 28px; padding: 8px;
-      margin-bottom: 28px; border: 2px solid var(--border); backdrop-filter: blur(16px);
-      box-shadow: 0 0 40px rgba(0,255,255,0.3); overflow: hidden;
+    .role-btn.active {
+      background: linear-gradient(135deg, #00ffff, #00ff88); color: #000;
+      box-shadow: 0 0 20px rgba(0,255,255,0.6); transform: translateY(-2px);
     }
-    .mode-btn {
-      flex: 1; padding: 16px 10px; border: none; border-radius: 20px; font-weight: 900;
-      font-size: 15px; text-align: center; background: transparent; color: #88c0d0;
-      transition: all 0.3s; cursor: pointer;
-    }
-    .mode-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; }
+    .role-btn:not(.active) { color: #88c0d0; }
 
-    h1 { font-family: 'Orbitron', sans-serif; font-size: 32px; text-align: center;
-         background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text;
-         -webkit-text-fill-color: transparent; margin-bottom: 24px; }
-
-    #create-btn { background: linear-gradient(45deg, #00ff88, #00cc66); color: #000; padding: 20px;
-                  border: none; border-radius: 28px; font-weight: 900; font-size: 19px; width: 100%;
-                  margin: 24px 0; box-shadow: 0 0 45px rgba(0,255,136,0.7); cursor: pointer; }
-
-    .back-btn {
-      position: absolute; top: 16px; left: 16px; background: transparent;
-      border: 3px solid var(--neon); color: var(--neon); width: 52px; height: 52px;
-      border-radius: 50%; font-size: 30px; display: flex; align-items: center;
-      justify-content: center; backdrop-filter: blur(15px); z-index: 10;
-      box-shadow: 0 0 50px rgba(0,255,255,0.9); animation: glow 2s infinite alternate;
-      cursor: pointer;
-    }
-    @keyframes glow { from { box-shadow: 0 0 50px rgba(0,255,255,0.9); } to { box-shadow: 0 0 70px rgba(0,255,255,1); } }
-
-    /* МОДАЛКА — ПОЛНОСТЬЮ ЗАФИКСИРОВАНА */
-    .modal {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.98); z-index: 1000; justify-content: center; align-items: center;
-      backdrop-filter: blur(25px); overflow: hidden; /* БЛОКИРУЕМ СКРОЛЛ В МОДАЛКЕ */
-    }
-    .modal.active { display: flex; }
-
-    .modal-content {
-      position: relative; background: var(--card); border-radius: 36px;
-      padding: 70px 28px 40px; width: 94%; max-width: 460px;
-      border: 3px solid var(--neon); box-shadow: 0 0 120px rgba(0,255,255,0.8);
-      max-height: 90vh; overflow: hidden; /* КОНТЕНТ НЕ ВЫХОДИТ */
-      display: flex; flex-direction: column;
+    /* КНОПКА СОЗДАТЬ ЗАДАНИЕ */
+    .create-btn {
+      width:100%; padding:20px; background:#0066ff; color:#fff; border:none; border-radius:20px;
+      font-size:18px; font-weight:700; margin:20px 0; cursor:pointer;
     }
 
-    .modal-scroll {
-      flex: 1; overflow-y: auto; padding-right: 12px; margin-right: -12px;
-      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    /* ФОРМА СОЗДАНИЯ ЗАДАНИЯ */
+    .create-form {
+      background:#141426; border-radius:20px; padding:20px; margin:20px 0; border:2px solid rgba(0,255,255,0.4); display:none;
     }
-    .modal-scroll::-webkit-scrollbar { display: none !important; }
+    .create-form.active { display:block; animation: fadeIn 0.4s; }
+    @keyframes fadeIn { from {opacity:0; transform:translateY(10px)} to {opacity:1; transform:translateY(0)} }
 
-    input, .custom-select {
-      width: 100%; padding: 22px; margin: 18px 0; background: rgba(255,255,255,0.08);
-      border: 2px solid rgba(0,255,255,0.3); border-radius: 28px; color: var(--text); font-size: 18px;
-      backdrop-filter: blur(10px);
+    input, select {
+      width:100%; padding:16px; margin:10px 0; background:rgba(255,255,255,0.1); border:2px solid #00ffff;
+      border-radius:16px; color:#fff; font-size:16px;
     }
+    select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2300ffff' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 16px center; }
 
-    .custom-select {
-      appearance: none; cursor: pointer; background: var(--select-bg) !important;
-      color: var(--select-text) !important; font-weight: 600;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 20px center;
-      padding-right: 60px !important;
+    .submit-btn {
+      width:100%; padding:18px; background:#00ff88; color:#000; border:none; border-radius:16px;
+      font-weight:700; font-size:17px; margin-top:20px; cursor:pointer;
     }
 
-    .current-price {
-      text-align: center; font-family: 'Orbitron'; font-size: 64px; color: var(--gold);
-      margin: 35px 0; text-shadow: 0 0 30px #ffd700, 0 0 60px #ffaa00;
-      letter-spacing: 3px; font-weight: 900;
+    /* СПИСОК ЗАДАНИЙ */
+    .task {
+      background:rgba(255,255,255,0.08); border-radius:16px; padding:16px; margin:12px 0;
+      border:1px solid rgba(0,255,255,0.3);
     }
+    .task-title { font-size:18px; font-weight:700; margin-bottom:8px; }
+    .task-reward { color:#00ff88; font-size:20px; font-weight:900; }
+    .task-do { background:#00ff88; color:#000; padding:12px 20px; border:none; border-radius:12px; font-weight:700; margin-top:10px; width:100%; }
 
-    .price-range {
-      -webkit-appearance: none; appearance: none; width: 100%; height: 20px;
-      background: linear-gradient(to right, #00ffff, #00ff88); border-radius: 20px;
-      outline: none; margin: 45px 0; box-shadow: 0 0 40px rgba(0,255,255,0.7);
-    }
-    .price-range::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 50px; height: 50px; border-radius: 50%;
-      background: #ffffff; cursor: grab; border: 4px solid #000;
-      box-shadow: 0 0 40px rgba(0,255,255,0.9), 0 0 80px rgba(0,255,136,0.7);
-    }
-
-    .price-container {
-      margin: 35px 0; padding: 18px 0;
-      border-radius: 32px; background: rgba(255,255,255,0.05);
-      border: 2px solid var(--border); backdrop-filter: blur(12px);
-      overflow: hidden;
-    }
-    .price-scroll {
-      display: flex; gap: 18px; overflow-x: auto; padding: 0 28px;
-      scroll-snap-type: x mandatory; height: 96px; align-items: center;
-      -webkit-overflow-scrolling: touch; scrollbar-width: none;
-    }
-    .price-scroll::-webkit-scrollbar { display: none; }
-
-    .price-btn {
-      flex: 0 0 128px; background: rgba(255,255,255,0.1); border: 2px solid rgba(0,255,255,0.3);
-      color: #88c0d0; padding: 18px 8px; border-radius: 30px; font-weight: 900;
-      font-size: 19px; text-align: center; transition: all 0.4s; scroll-snap-align: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.4); backdrop-filter: blur(8px); cursor: pointer;
-    }
-    .price-btn.active {
-      background: linear-gradient(45deg, #00ff88, #00cc66); color: #000;
-      border: 3px solid #00ff88; box-shadow: 0 0 50px rgba(0,255,136,1);
-      transform: scale(1.14); font-size: 23px;
-    }
-
-    .btn-create {
-      background: linear-gradient(45deg, #00ff88, #00cc66); color: white;
-      padding: 26px; border: none; border-radius: 32px; font-weight: 900;
-      font-size: 21px; width: 100%; margin: 30px 0 10px;
-      box-shadow: 0 0 70px rgba(0,255,136,0.9); cursor: pointer;
-      flex-shrink: 0; /* КНОПКА НЕ СЖИМАЕТСЯ */
-    }
-
+    /* НИЖНИЕ КНОПКИ */
     .bottom-nav {
-      position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--glass);
-      border-radius: 36px; padding: 18px; display: flex; backdrop-filter: blur(25px);
-      border: 2px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.6); z-index: 999;
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      width:340px; max-width:90%; background:rgba(15,15,35,0.95); backdrop-filter:blur(20px);
+      border-radius:30px; padding:8px; display:flex; border:1px solid rgba(0,255,255,0.4);
+      box-shadow:0 10px 30px rgba(0,0,0,0.6); z-index:999; overflow:hidden;
     }
-    .nav-btn { flex: 1; padding: 18px; background: none; border: none; color: #88c0d0; font-weight: 900; font-size: 16px; cursor: pointer; }
-    .nav-btn.active { background: var(--neon); color: #000; border-radius: 22px; }
+    .nav-btn-left, .nav-btn-right {
+      flex:1; padding:16px 24px; border:none; border-radius:25px; font-weight:800; font-size:18px;
+      cursor:pointer; transition:all .4s;
+    }
+    .nav-btn-left.active {
+      background:linear-gradient(135deg,#00ffff,#00ff88); color:#000;
+      box-shadow:0 0 30px rgba(0,255,255,0.8); transform:translateY(-3px);
+    }
+    .nav-btn-right { background:transparent; color:#88c0d0; }
   </style>
 </head>
 <body>
-  <div class="bg-glow"></div>
-
   <div class="container">
-    <div class="mode-switch">
-      <button id="employer-mode" class="mode-btn active">РАБОТОДАТЕЛЬ</button>
-      <button id="executor-mode" class="mode-btn">ИСПОЛНИТЕЛЬ</button>
-    </div>
-
     <h1>ЗАДАНИЯ</h1>
-    <button id="create-btn">+ Создать задание</button>
 
-    <div id="tasks-list">
-      <p style="text-align:center; color:#88c0d0; padding:80px; font-size:20px;">Загрузка заданий...</p>
+    <!-- ПЕРЕКЛЮЧАТЕЛЬ -->
+    <div class="role-switch">
+      <div class="role-btn active" id="employer-btn" onclick="switchRole('employer')">
+        РАБОТОДАТЕЛЬ
+      </div>
+      <div class="role-btn" id="worker-btn" onclick="switchRole('worker')">
+        ИСПОЛНИТЕЛЬ
+      </div>
     </div>
-  </div>
 
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <button class="back-btn" onclick="closeModal()">←</button>
-      <h2 style="color:var(--neon); text-align:center; font-size:30px; margin-bottom:32px;">Новое задание</h2>
-      
-      <div class="modal-scroll">
-        <input type="text" id="task-text" placeholder="Что нужно сделать?">
+    <!-- РЕЖИМ РАБОТОДАТЕЛЯ -->
+    <div id="employer-mode">
+      <button class="create-btn" onclick="toggleCreateForm()">
+        + СОЗДАТЬ ЗАДАНИЕ
+      </button>
+
+      <div class="create-form" id="create-form">
+        <input type="text" id="task-title" placeholder="Что нужно сделать?">
         <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
-
-        <select id="task-type" class="custom-select" onchange="updatePrices()">
+        
+        <select id="task-type">
+          <option value="">Выберите тип задания</option>
           <option value="yandex">Яндекс Отзыв</option>
           <option value="google">Google Отзыв</option>
-          <option value="tg">Telegram Подписка</option>
+          <option value="telegram">Telegram Подписка</option>
+          <option value="youtube">YouTube Лайк + Коммент</option>
+          <option value="tiktok">TikTok Фоллоу</option>
         </select>
 
-        <div class="current-price" id="current-price">100 ₽</div>
-        <input type="range" id="price-range" class="price-range" min="0" max="49" value="0">
+        <input type="number" id="task-reward" placeholder="Награда в ₽ (мин. 50)" min="50">
+        
+        <button class="submit-btn" onclick="createTask()">
+          ОПУБЛИКОВАТЬ ЗАДАНИЕ
+        </button>
+      </div>
+    </div>
 
-        <div class="price-container">
-          <div class="price-scroll" id="price-scroll"></div>
+    <!-- РЕЖИМ ИСПОЛНИТЕЛЯ -->
+    <div id="worker-mode" style="display:none">
+      <div id="tasks-list">
+        <!-- Задания будут тут -->
+        <div class="task">
+          <div class="task-title">Оставить отзыв в Яндекс</div>
+          <div class="task-reward">+120 ₽</div>
+          <button class="task-do" onclick="doTask(this, 'https://yandex.ru')">ВЫПОЛНИТЬ</button>
         </div>
       </div>
-
-      <!-- КНОПКА ВСЕГДА ВНИЗУ И НЕ ПРЫГАЕТ -->
-      <button class="btn-create" onclick="createTask()">Создать и опубликовать</button>
     </div>
   </div>
 
+  <!-- НИЖНИЕ КНОПКИ -->
   <div class="bottom-nav">
-    <button class="nav-btn active">Задания</button>
-    <button class="nav-btn" onclick="location.href='profile.html' + location.search">Профиль</button>
+    <button class="nav-btn-left active">Задания</button>
+    <button class="nav-btn-right" onclick="location.href='profile.html'">Профиль</button>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
-    const prices = {
-      yandex: Array.from({length: 100}, (_, i) => (i + 1) * 100),
-      google: Array.from({length: 50}, (_, i) => (i + 1) * 65),
-      tg: Array.from({length: 50}, (_, i) => (i + 1) * 10)
-    };
-
-    let currentPrices = prices.yandex;
-    let selectedPrice = 100;
-
-    const priceScroll = document.getElementById('price-scroll');
-    const priceRange = document.getElementById('price-range');
-    const currentPriceDisplay = document.getElementById('current-price');
-
-    function updatePrices() {
-      const type = document.getElementById('task-type').value;
-      currentPrices = prices[type];
-      priceRange.max = currentPrices.length - 1;
-      priceRange.value = 0;
-      selectedPrice = currentPrices[0];
-      currentPriceDisplay.innerText = selectedPrice + ' ₽';
-      renderPriceButtons();
+    // Переключение ролей
+    function switchRole(role) {
+      document.getElementById('employer-btn').classList.toggle('active', role === 'employer');
+      document.getElementById('worker-btn').classList.toggle('active', role === 'worker');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
     }
 
-    function renderPriceButtons() {
-      priceScroll.innerHTML = currentPrices.map((p, i) => `
-        <button class="price-btn ${i===0?'active':''}" data-price="${p}">${p} ₽</button>
-      `).join('');
-      
-      document.querySelectorAll('.price-btn').forEach(btn => {
-        btn.onclick = () => {
-          document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          selectedPrice = parseInt(btn.dataset.price);
-          currentPriceDisplay.innerText = selectedPrice + ' ₽';
-          priceRange.value = currentPrices.indexOf(selectedPrice);
-          btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-        };
-      });
+    // Показать/скрыть форму
+    function toggleCreateForm() {
+      const form = document.getElementById('create-form');
+      form.classList.toggle('active');
     }
 
-    priceRange.oninput = () => {
-      const idx = priceRange.value;
-      selectedPrice = currentPrices[idx];
-      currentPriceDisplay.innerText = selectedPrice + ' ₽';
-      document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.price-btn')[idx].classList.add('active');
-      document.querySelectorAll('.price-btn')[idx].scrollIntoView({ behavior: 'smooth', inline: 'center' });
-    };
-
-    window.createTask = () => {
-      const text = document.getElementById('task-text').value.trim();
+    // Создать задание
+    function createTask() {
+      const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
-      if (!text || !link) { 
-        tg.showAlert("Заполни все поля!"); 
-        return; 
+      const type = document.getElementById('task-type').value;
+      const reward = parseFloat(document.getElementById('task-reward').value);
+
+      if (!title || !link || !type || !reward || reward < 50) {
+        tg.showAlert("Заполни все поля правильно!");
+        return;
       }
 
       tg.sendData(JSON.stringify({
-        action: "add_task",
-        text, link, price: selectedPrice,
-        type: document.getElementById('task-type').value
+        action: "create_task",
+        title, link, type, reward
       }));
 
-      closeModal();
-    };
-
-    updatePrices();
-
-    document.getElementById('create-btn').onclick = () => {
-      document.getElementById('modal').classList.add('active');
-      document.body.style.overflow = 'hidden'; // Дополнительная блокировка
-    };
-
-    window.closeModal = () => {
-      document.getElementById('modal').classList.remove('active');
-      document.body.style.overflow = 'hidden';
-    };
-
-    function loadTasks() {
-      document.getElementById('tasks-list').innerHTML = "<p style='text-align:center; color:#88c0d0; padding:80px; font-size:20px;'>Загрузка заданий...</p>";
-      tg.sendData(JSON.stringify({ action: "get_tasks" }));
+      tg.showAlert("Задание опубликовано!");
+      document.getElementById('create-form').classList.remove('active');
+      // Очистка формы
+      document.getElementById('task-title').value = '';
+      document.getElementById('task-link').value = '';
+      document.getElementById('task-type').value = '';
+      document.getElementById('task-reward').value = '';
     }
+
+    // Выполнить задание
+    function doTask(btn, link) {
+      btn.innerText = "ОТКРЫВАЮ...";
+      tg.openLink(link);
+      
+      setTimeout(() => {
+        tg.sendData(JSON.stringify({
+          action: "complete_task",
+          task_id: btn.dataset.id || Date.now()
+        }));
+        btn.innerText = "ГОТОВО!";
+        btn.style.background = "#00cc66";
+        btn.disabled = true;
+      }, 3000);
+    }
+
+    // Получение заданий
+    tg.sendData(JSON.stringify({action: "get_tasks"}));
 
     tg.onEvent('webAppDataReceived', data => {
       try {
         const res = JSON.parse(data);
         if (res.tasks) {
-          const html = res.tasks.length ? res.tasks.map(t => `
-            <div style="background:var(--glass); border-radius:28px; padding:24px; border:2px solid var(--border); backdrop-filter:blur(14px); margin:20px 0;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="color:var(--neon); font-weight:900; font-size:15px;">${t.type.toUpperCase()}</span>
-                <span style="font-family:'Orbitron'; font-size:32px; color:var(--gold);">${t.price} ₽</span>
-              </div>
-              <div style="margin:16px 0; font-size:18px;">${t.text}</div>
-              <a href="${t.link}" target="_blank" style="color:#88c0d0; word-break:break-all; font-size:15px;">${t.link}</a>
-            </div>
-          `).join('') : "<p style='text-align:center; color:#88c0d0; padding:120px; font-size:22px;'>Нет заданий<br>Создай первое!</p>";
-          document.getElementById('tasks-list').innerHTML = html;
+          // Здесь можно вставить рендер заданий
         }
-        if (res.success) {
-          tg.showAlert(`Задание создано за ${selectedPrice} ₽!`);
-          loadTasks();
-        }
-      } catch (e) { console.log(e); }
+      } catch(e) {}
     });
-
-    loadTasks();
-    setInterval(loadTasks, 10000);
   </script>
 </body>
 </html>
