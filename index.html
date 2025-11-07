@@ -57,7 +57,6 @@
       border-radius: 24px; color: #fff !important; font-size: 18px; font-weight: 600;
     }
 
-    /* САМАЯ ПРОСТАЯ ЦЕНА В МИРЕ */
     .reward-box {
       background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,255,136,0.2));
       border: 5px solid var(--neon); border-radius: 40px;
@@ -156,7 +155,6 @@
             <div class="quick-btn" onclick="setReward(1500)">1500 ₽</div>
           </div>
 
-          <!-- САМАЯ ПРОСТАЯ ЦЕНА — КЛИКНИ И ВВЕДИ! -->
           <div class="reward-box" onclick="editReward()">
             <div class="reward-value" id="reward-value">100</div>
             <div class="rub">₽</div>
@@ -210,8 +208,9 @@
       document.getElementById('reward-value').innerText = currentReward;
     }
 
+    // ИСПРАВЛЕНО: ОКРУГЛЕНИЕ ВНИЗ (floor)
     function snapValue(val) {
-      const snapped = Math.round(val / currentStep) * currentStep;
+      const snapped = Math.floor(val / currentStep) * currentStep;
       return Math.max(currentMin, Math.min(10000, snapped));
     }
 
@@ -220,10 +219,9 @@
       updateReward();
     }
 
-    // САМАЯ ПРОСТАЯ ФУНКЦИЯ — КЛИК ПО ЦЕНЕ
     function editReward() {
       const newPrice = prompt(
-        `Введи сумму от ${currentMin} до 10000 ₽\n\n(будет округлено по шагу ${currentStep} ₽)`,
+        `Введи сумму от ${currentMin} до 10000 ₽\n\nОкругляется вниз по шагу ${currentStep} ₽\n\nПример: 250 → 200`,
         currentReward
       );
       
@@ -248,7 +246,6 @@
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward: currentReward}));
       tg.showAlert(`Задание создано за ${currentReward} ₽!`);
       
-      // Сброс
       document.getElementById('create-form').classList.remove('active');
       document.getElementById('task-title').value = '';
       document.getElementById('task-link').value = '';
