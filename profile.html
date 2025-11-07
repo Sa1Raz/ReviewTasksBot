@@ -24,15 +24,18 @@
       </button>
     </div>
 
-    <button onclick="openTopup()" style="width:100%;padding:18px;margin:12px 0;background:#00ff88;color:#000;border:none;border-radius:16px;font-weight:700;font-size:17px">
-      ПОПОЛНИТЬ
-    </button>
-    <button onclick="openWithdraw()" style="width:100%;padding:18px;margin:12px 0;background:#ff3366;color:#fff;border:none;border-radius:16px;font-weight:700;font-size:17px">
-      ВЫВОД
-    </button>
+    <!-- ДВЕ КНОПКИ — ВИДНЫ ВСЕГДА -->
+    <div style="display:flex;gap:12px;margin:20px 0">
+      <button onclick="openTopup()" style="flex:1;padding:18px;background:#00ff88;color:#000;border:none;border-radius:16px;font-weight:700;font-size:17px">
+        ПОПОЛНИТЬ
+      </button>
+      <button onclick="openWithdraw()" style="flex:1;padding:18px;background:#ff3366;color:#fff;border:none;border-radius:16px;font-weight:700;font-size:17px">
+        ВЫВОД
+      </button>
+    </div>
   </div>
 
-  <!-- НИЖНИЕ КНОПКИ — ТОЧНО КАК НА СКРИНЕ -->
+  <!-- НИЖНИЕ КНОПКИ — КАК НА ТВОЁМ СКРИНЕ -->
   <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:340px;max-width:90%;background:rgba(15,15,35,0.95);backdrop-filter:blur(20px);border-radius:30px;padding:8px;display:flex;border:1px solid rgba(0,255,255,0.4);box-shadow:0 10px 30px rgba(0,0,0,0.6);z-index:999;overflow:hidden">
     <button onclick="location.href='index.html'" style="flex:1;padding:16px 24px;border:none;border-radius:25px;font-weight:800;font-size:18px;background:transparent;color:#88c0d0;transition:all .4s">
       Задания
@@ -63,17 +66,17 @@
     </div>
   </div>
 
-  <!-- ВЫВОД -->
+  <!-- ВЫВОД — ВЕРНУЛ! -->
   <div id="withdraw-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;justify-content:center;align-items:center;padding:20px">
     <div style="background:#1a1a2e;border:2px solid #ff3366;border-radius:24px;padding:24px;width:100%;max-width:400px;position:relative">
       <button onclick="closeWithdraw()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#ff3366;font-size:32px">×</button>
-      <h2 style="color:#ff3366;text-align:center;margin-bottom:20px">Вывод</h2>
-      <input type="text" id="withdraw-method" placeholder="Карта/телефон">
-      <input type="text" id="withdraw-fio" placeholder="ФИО">
-      <input type="text" id="withdraw-bank" placeholder="Банк">
-      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 500)">
+      <h2 style="color:#ff3366;text-align:center;margin-bottom:20px">Вывод средств</h2>
+      <input type="text" id="withdraw-method" placeholder="Карта или телефон" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <input type="text" id="withdraw-fio" placeholder="ФИО получателя" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <input type="text" id="withdraw-bank" placeholder="Банк (Тинькофф, Сбер и т.д.)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 500 ₽)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
       <button onclick="sendWithdraw()" style="width:100%;padding:18px;background:#ff3366;color:#fff;border:none;border-radius:16px;font-weight:700;margin-top:20px">
-        ОТПРАВИТЬ
+        ОТПРАВИТЬ ЗАЯВКУ
       </button>
     </div>
   </div>
@@ -93,7 +96,7 @@
       try {
         const r = JSON.parse(d);
         if (r.balance !== undefined) document.getElementById('balance').innerText = r.balance.toFixed(2);
-        if (r.success) tg.showAlert("Готово!");
+        if (r.success) tg.showAlert("Заявка отправлена!");
       } catch(e) {}
     });
 
@@ -118,7 +121,7 @@
       const fio = document.getElementById('withdraw-fio').value.trim();
       const bank = document.getElementById('withdraw-bank').value.trim();
       const amount = parseFloat(document.getElementById('withdraw-amount').value);
-      if (!method || !fio || !bank || !amount || amount < 500) return tg.showAlert("Заполни всё! Мин. 500 ₽");
+      if (!method || !fio || !bank || !amount || amount < 500) return tg.showAlert("Заполни все поля! Мин. 500 ₽");
       tg.sendData(JSON.stringify({action:"request_withdraw", method, fio, bank, amount}));
     }
 
