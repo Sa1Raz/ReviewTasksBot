@@ -69,9 +69,23 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 16px center; background-size: 24px;
     }
-    option { background: #000000 !important; color: #00ffff !important; font-weight: 700; padding: 16px; }
 
-    /* СКРЫТЫЕ БЛОКИ — ПОЯВЛЯЮТСЯ ТОЛЬКО ПОСЛЕ ВЫБОРА ТИПА */
+    /* ТОЧНО КАК НА СКРИНЕ — ЧЁРНАЯ ПАНЕЛЬ С НЕОНОВОЙ РАМКОЙ */
+    .reward-input-box {
+      display: flex; align-items: center; justify-content: center;
+      background: #000; border: 4px solid var(--neon); border-radius: 20px;
+      padding: 12px 20px; margin: 20px 0; box-shadow: 0 0 30px rgba(0,255,255,0.5);
+      font-size: 42px; font-weight: 900; color: white;
+    }
+    #reward-input-box-value {
+      min-width: 120px; text-align: center;
+    }
+    .arrow-btn {
+      background: none; border: none; color: var(--neon); font-size: 36px;
+      cursor: pointer; padding: 0 10px; user-select: none;
+    }
+    .arrow-btn:active { transform: scale(0.9); }
+
     .reward-section {
       opacity: 0; transform: translateY(20px); transition: all 0.6s ease-out;
       pointer-events: none;
@@ -94,16 +108,6 @@
       transform: scale(1.05);
     }
 
-    .reward-input-wrapper {
-      display: flex; align-items: center; gap: 12px; margin: 20px 0;
-    }
-    #reward-input {
-      flex: 1; text-align: center; font-size: 36px; font-weight: 900; color: var(--neon);
-      background: rgba(0,0,0,0.5); border: 2px solid var(--neon); border-radius: 20px;
-      padding: 12px; outline: none;
-    }
-    #reward-input:focus { box-shadow: 0 0 30px rgba(0,255,255,0.6); }
-
     .range-slider {
       margin: 30px 0;
     }
@@ -118,15 +122,10 @@
       cursor: pointer; box-shadow: 0 0 30px rgba(0,255,255,0.9);
     }
 
-    .reward-display {
-      text-align: center; color: var(--neon); font-size: 36px; font-weight: 900;
-      margin: 10px 0; text-shadow: 0 0 20px rgba(0,255,255,0.6);
-    }
-
     .submit-btn {
       width: 100%; padding: 20px; background: linear-gradient(45deg, var(--success), #00cc66);
       color: white; border: none; border-radius: 24px; font-weight: 900; font-size: 18px;
-      margin-top: 30px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+      margin-top: 30px; cursor: pointer; text-transform: uppercase;
       box-shadow: 0 10px 30px rgba(0,255,136,0.4);
     }
 
@@ -180,7 +179,6 @@
           <option value="telegram">Telegram Подписка</option>
         </select>
 
-        <!-- ЭТА ЧАСТЬ ПОЯВЛЯЕТСЯ ТОЛЬКО ПОСЛЕ ВЫБОРА ТИПА -->
         <div class="reward-section" id="reward-section">
           <div class="quick-amounts">
             <div class="quick-btn" onclick="setReward(500)">500 ₽</div>
@@ -188,17 +186,16 @@
             <div class="quick-btn" onclick="setReward(1500)">1500 ₽</div>
           </div>
 
-          <div class="reward-input-wrapper">
-            <input type="number" id="reward-input" placeholder="529" oninput="syncSliderFromInput()">
-            <span style="color:var(--neon);font-size:36px;font-weight:900">₽</span>
+          <!-- ТОЧНО КАК НА СКРИНЕ -->
+          <div class="reward-input-box">
+            <button class="arrow-btn" onclick="adjustReward(-1)">Down</button>
+            <span id="reward-input-box-value">100</span>
+            <button class="arrow-btn" onclick="adjustReward(1)">Up</button>
+            <span style="margin-left: 12px; color: white;">₽</span>
           </div>
 
           <div class="range-slider">
-            <input type="range" min="100" max="10000" value="500" step="1" id="reward-slider" oninput="syncInputFromSlider()">
-          </div>
-
-          <div class="reward-display">
-            <span id="reward-value">500</span> ₽
+            <input type="range" min="100" max="10000" value="100" step="1" id="reward-slider" oninput="syncFromSlider()">
           </div>
         </div>
 
@@ -230,6 +227,7 @@
 
     let currentStep = 100;
     let currentMin = 100;
+    let currentReward = 100;
 
     function toggleRewardSection() {
       const type = document.getElementById('task-type').value;
@@ -237,52 +235,42 @@
 
       if (type) {
         section.classList.add('visible');
-        updateRewardSettings();
+        currentStep = settings[type].step;
+        currentMin = settings[type].min;
+        currentReward = currentMin;
+        updateDisplay();
+        document.getElementById('reward-slider').min = currentMin;
+        document.getElementById('reward-slider').step = currentStep;
+        document.getElementById('reward-slider').value = currentReward;
       } else {
         section.classList.remove('visible');
       }
     }
 
-    function updateRewardSettings() {
-      const type = document.getElementById('task-type').value;
-      currentStep = settings[type].step;
-      currentMin = settings[type].min;
-
-      document.getElementById('reward-slider').min = currentMin;
-      document.getElementById('reward-slider').step = currentStep;
-
-      // Устанавливаем начальное значение = минимум
-      const initialValue = currentMin;
-      document.getElementById('reward-slider').value = initialValue;
-      document.getElementById('reward-input').value = initialValue;
-      document.getElementById('reward-value').innerText = initialValue;
+    function updateDisplay() {
+      document.getElementById('reward-input-box-value').innerText = currentReward;
+      document.getElementById('reward-slider').value = currentReward;
     }
 
-    function syncInputFromSlider() {
-      const slider = document.getElementById('reward-slider');
-      const value = parseInt(slider.value);
-      const snapped = Math.round(value / currentStep) * currentStep;
-      const finalValue = Math.max(currentMin, Math.min(10000, snapped));
-
-      slider.value = finalValue;
-      document.getElementById('reward-input').value = finalValue;
-      document.getElementById('reward-value').innerText = finalValue;
+    function snapValue() {
+      const snapped = Math.round(currentReward / currentStep) * currentStep;
+      currentReward = Math.max(currentMin, Math.min(10000, snapped));
+      updateDisplay();
     }
 
-    function syncSliderFromInput() {
-      const input = document.getElementById('reward-input');
-      let value = parseInt(input.value) || currentMin;
-      const snapped = Math.round(value / currentStep) * currentStep;
-      const finalValue = Math.max(currentMin, Math.min(10000, snapped));
+    function adjustReward(direction) {
+      currentReward += direction * currentStep;
+      snapValue();
+    }
 
-      input.value = finalValue;
-      document.getElementById('reward-slider').value = finalValue;
-      document.getElementById('reward-value').innerText = finalValue;
+    function syncFromSlider() {
+      currentReward = parseInt(document.getElementById('reward-slider').value);
+      snapValue();
     }
 
     function setReward(amount) {
-      document.getElementById('reward-input').value = amount;
-      syncSliderFromInput();
+      currentReward = amount;
+      snapValue();
       document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
     }
@@ -291,20 +279,14 @@
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
       const type = document.getElementById('task-type').value;
-      const reward = parseInt(document.getElementById('reward-input').value);
 
       if (!title || !link || !type) {
         tg.showAlert("Заполните все поля!");
         return;
       }
 
-      if (reward < currentMin) {
-        tg.showAlert(`Минимальная награда: ${currentMin} ₽`);
-        return;
-      }
-
-      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
-      tg.showAlert(`Задание создано за ${reward} ₽!`);
+      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward: currentReward}));
+      tg.showAlert(`Задание создано за ${currentReward} ₽!`);
       document.getElementById('create-form').classList.remove('active');
       document.getElementById('task-title').value = '';
       document.getElementById('task-link').value = '';
@@ -319,9 +301,6 @@
       document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
       if (role === 'worker') tg.sendData(JSON.stringify({action: "get_tasks"}));
     }
-
-    // Инициализация
-    document.getElementById('reward-section').classList.remove('visible');
   </script>
 </body>
 </html>
