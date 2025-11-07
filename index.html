@@ -6,82 +6,120 @@
   <title>Задания | ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#0a0a14;color:#fff;font-family:system-ui,sans-serif;min-height:100vh}
-    .container{max-width:420px;margin:0 auto;padding:16px}
-    h1{text-align:center;color:#00ffff;font-size:28px;font-weight:900;margin:20px 0}
+    :root {
+      --bg: #0a0a14; --card: #141426; --neon: #00ffff; --success: #00ff88;
+      --glass: rgba(20,20,38,0.6); --border: rgba(0,255,255,0.3);
+      --text: #e0f7ff; --text-muted: #88c0d0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+    .container { max-width: 420px; margin: 16px auto; padding: 0 16px; }
 
-    /* ПЕРЕКЛЮЧАТЕЛЬ РАБОТОДАТЕЛЬ / ИСПОЛНИТЕЛЬ */
+    .header h1 {
+      text-align: center; font-size: 28px; font-weight: 900; margin: 20px 0;
+      background: linear-gradient(90deg, #00ffff, #00ff88);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
     .role-switch {
-      display: flex; background: #141426; border-radius: 30px; padding: 6px; margin: 20px 0;
-      border: 2px solid rgba(0,255,255,0.4); width: 100%; overflow: hidden;
+      display: flex; background: var(--card); border: 2px solid var(--border);
+      border-radius: 30px; padding: 8px; margin: 20px 0; overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
     .role-btn {
       flex: 1; padding: 16px; border-radius: 25px; font-weight: 800; font-size: 17px;
       cursor: pointer; transition: all 0.4s; text-align: center;
     }
     .role-btn.active {
-      background: linear-gradient(135deg, #00ffff, #00ff88); color: #000;
-      box-shadow: 0 0 20px rgba(0,255,255,0.6); transform: translateY(-2px);
+      background: linear-gradient(135deg, #00ffff, #00ff88);
+      color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.6); transform: translateY(-3px);
     }
-    .role-btn:not(.active) { color: #88c0d0; }
+    .role-btn:not(.active) { color: var(--text-muted); }
 
-    /* КНОПКА СОЗДАТЬ ЗАДАНИЕ */
     .create-btn {
-      width:100%; padding:20px; background:#0066ff; color:#fff; border:none; border-radius:20px;
-      font-size:18px; font-weight:700; margin:20px 0; cursor:pointer;
+      width: 100%; padding: 20px; background: linear-gradient(45deg, #0066ff, #00ccff);
+      color: white; border: none; border-radius: 24px; font-size: 18px; font-weight: 700;
+      margin: 20px 0; cursor: pointer; box-shadow: 0 10px 30px rgba(0,102,255,0.4);
     }
 
-    /* ФОРМА СОЗДАНИЯ ЗАДАНИЯ */
     .create-form {
-      background:#141426; border-radius:20px; padding:20px; margin:20px 0; border:2px solid rgba(0,255,255,0.4); display:none;
+      background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border);
+      border-radius: 28px; padding: 24px; margin: 20px 0; display: none;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     }
-    .create-form.active { display:block; animation: fadeIn 0.4s; }
-    @keyframes fadeIn { from {opacity:0; transform:translateY(10px)} to {opacity:1; transform:translateY(0)} }
+    .create-form.active { display: block; animation: slideDown 0.5s ease-out; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
     input, select {
-      width:100%; padding:16px; margin:10px 0; background:rgba(255,255,255,0.1); border:2px solid #00ffff;
-      border-radius:16px; color:#fff; font-size:16px;
+      width: 100%; padding: 18px; margin: 12px 0;
+      background: #ffffff !important; /* ЧИСТО БЕЛЫЙ ФОН */
+      border: 3px solid var(--neon) !important; /* НЕОНОВАЯ РАМКА */
+      border-radius: 20px;
+      color: #000000 !important; /* ЧЁРНЫЙ ТЕКСТ */
+      font-size: 16px; font-weight: 600;
+      appearance: none;
+      -webkit-appearance: none;
     }
-    select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2300ffff' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 16px center; }
+
+    /* СТРЕЛКА В SELECT — НЕОНОВАЯ */
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      background-size: 20px;
+    }
+
+    /* ОПЦИИ — ЧИТАЕМЫЕ */
+    option {
+      background: #ffffff !important;
+      color: #000000 !important;
+      padding: 10px;
+    }
 
     .submit-btn {
-      width:100%; padding:18px; background:#00ff88; color:#000; border:none; border-radius:16px;
-      font-weight:700; font-size:17px; margin-top:20px; cursor:pointer;
+      width: 100%; padding: 18px; background: linear-gradient(45deg, var(--success), #00cc66);
+      color: white; border: none; border-radius: 20px; font-weight: 700; font-size: 16px;
+      margin-top: 20px; cursor: pointer; text-transform: uppercase;
     }
 
-    /* СПИСОК ЗАДАНИЙ */
+    #tasks-list:empty::before {
+      content: "Нет доступных заданий"; display: block; text-align: center;
+      color: var(--text-muted); margin: 60px 0; font-size: 18px;
+    }
+
     .task {
-      background:rgba(255,255,255,0.08); border-radius:16px; padding:16px; margin:12px 0;
-      border:1px solid rgba(0,255,255,0.3);
+      background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border);
+      border-radius: 24px; padding: 20px; margin: 16px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
-    .task-title { font-size:18px; font-weight:700; margin-bottom:8px; }
-    .task-reward { color:#00ff88; font-size:20px; font-weight:900; }
-    .task-do { background:#00ff88; color:#000; padding:12px 20px; border:none; border-radius:12px; font-weight:700; margin-top:10px; width:100%; }
+    .task-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .task-reward { color: var(--success); font-size: 22px; font-weight: 900; }
+    .task-do {
+      width: 100%; padding: 16px; background: linear-gradient(45deg, var(--success), #00cc66);
+      color: black; border: none; border-radius: 20px; font-weight: 700; margin-top: 16px;
+      cursor: pointer; font-size: 16px; text-transform: uppercase;
+    }
 
-    /* НИЖНИЕ КНОПКИ */
     .bottom-nav {
-      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
-      width:340px; max-width:90%; background:rgba(15,15,35,0.95); backdrop-filter:blur(20px);
-      border-radius:30px; padding:8px; display:flex; border:1px solid rgba(0,255,255,0.4);
-      box-shadow:0 10px 30px rgba(0,0,0,0.6); z-index:999; overflow:hidden;
+      position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.9);
+      backdrop-filter: blur(20px); border: 2px solid rgba(0,255,255,0.3); border-radius: 30px;
+      padding: 8px; display: flex; justify-content: space-around; box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 999;
     }
-    .nav-btn-left, .nav-btn-right {
-      flex:1; padding:16px 24px; border:none; border-radius:25px; font-weight:800; font-size:18px;
-      cursor:pointer; transition:all .4s;
+    .nav-btn {
+      flex: 1; padding: 16px 24px; border: none; border-radius: 25px; font-weight: 800;
+      font-size: 18px; cursor: pointer; background: transparent; color: #88c0d0;
     }
-    .nav-btn-left.active {
-      background:linear-gradient(135deg,#00ffff,#00ff88); color:#000;
-      box-shadow:0 0 30px rgba(0,255,255,0.8); transform:translateY(-3px);
+    .nav-btn.active {
+      background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
+      box-shadow: 0 0 40px rgba(0,255,255,0.8); transform: translateY(-4px);
     }
-    .nav-btn-right { background:transparent; color:#88c0d0; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>ЗАДАНИЯ</h1>
+    <div class="header">
+      <h1>ЗАДАНИЯ</h1>
+    </div>
 
-    <!-- ПЕРЕКЛЮЧАТЕЛЬ -->
     <div class="role-switch">
       <div class="role-btn active" id="employer-btn" onclick="switchRole('employer')">
         РАБОТОДАТЕЛЬ
@@ -91,71 +129,57 @@
       </div>
     </div>
 
-    <!-- РЕЖИМ РАБОТОДАТЕЛЯ -->
+    <!-- РАБОТОДАТЕЛЬ -->
     <div id="employer-mode">
-      <button class="create-btn" onclick="toggleCreateForm()">
+      <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">
         + СОЗДАТЬ ЗАДАНИЕ
       </button>
 
       <div class="create-form" id="create-form">
         <input type="text" id="task-title" placeholder="Что нужно сделать?">
         <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
-        
+
         <select id="task-type">
           <option value="">Выберите тип задания</option>
           <option value="yandex">Яндекс Отзыв</option>
           <option value="google">Google Отзыв</option>
           <option value="telegram">Telegram Подписка</option>
-          <option value="youtube">YouTube Лайк + Коммент</option>
-          <option value="tiktok">TikTok Фоллоу</option>
         </select>
 
         <input type="number" id="task-reward" placeholder="Награда в ₽ (мин. 50)" min="50">
-        
+
         <button class="submit-btn" onclick="createTask()">
           ОПУБЛИКОВАТЬ ЗАДАНИЕ
         </button>
       </div>
     </div>
 
-    <!-- РЕЖИМ ИСПОЛНИТЕЛЯ -->
+    <!-- ИСПОЛНИТЕЛЬ -->
     <div id="worker-mode" style="display:none">
-      <div id="tasks-list">
-        <!-- Задания будут тут -->
-        <div class="task">
-          <div class="task-title">Оставить отзыв в Яндекс</div>
-          <div class="task-reward">+120 ₽</div>
-          <button class="task-do" onclick="doTask(this, 'https://yandex.ru')">ВЫПОЛНИТЬ</button>
-        </div>
-      </div>
+      <div id="tasks-list"></div>
     </div>
   </div>
 
-  <!-- НИЖНИЕ КНОПКИ -->
   <div class="bottom-nav">
-    <button class="nav-btn-left active">Задания</button>
-    <button class="nav-btn-right" onclick="location.href='profile.html'">Профиль</button>
+    <button class="nav-btn active">Задания</button>
+    <button class="nav-btn" onclick="location.href='profile.html'">Профиль</button>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
-    // Переключение ролей
     function switchRole(role) {
       document.getElementById('employer-btn').classList.toggle('active', role === 'employer');
       document.getElementById('worker-btn').classList.toggle('active', role === 'worker');
       document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
       document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      
+      if (role === 'worker') {
+        tg.sendData(JSON.stringify({action: "get_tasks"}));
+      }
     }
 
-    // Показать/скрыть форму
-    function toggleCreateForm() {
-      const form = document.getElementById('create-form');
-      form.classList.toggle('active');
-    }
-
-    // Создать задание
     function createTask() {
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
@@ -163,51 +187,57 @@
       const reward = parseFloat(document.getElementById('task-reward').value);
 
       if (!title || !link || !type || !reward || reward < 50) {
-        tg.showAlert("Заполни все поля правильно!");
+        tg.showAlert("Заполните все поля!");
         return;
       }
 
-      tg.sendData(JSON.stringify({
-        action: "create_task",
-        title, link, type, reward
-      }));
-
-      tg.showAlert("Задание опубликовано!");
+      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
+      tg.showAlert("Задание создано!");
       document.getElementById('create-form').classList.remove('active');
-      // Очистка формы
+      
       document.getElementById('task-title').value = '';
       document.getElementById('task-link').value = '';
       document.getElementById('task-type').value = '';
       document.getElementById('task-reward').value = '';
     }
 
-    // Выполнить задание
+    tg.onEvent('webAppDataReceived', data => {
+      try {
+        const res = JSON.parse(data);
+        if (res.tasks && Array.isArray(res.tasks)) {
+          const list = document.getElementById('tasks-list');
+          list.innerHTML = '';
+          res.tasks.forEach(task => {
+            const div = document.createElement('div');
+            div.className = 'task';
+            div.innerHTML = `
+              <div class="task-title">${task.title}</div>
+              <div class="task-reward">+${task.reward} ₽</div>
+              <button class="task-do" onclick="doTask(this, '${task.link}')">
+                ВЫПОЛНИТЬ
+              </button>
+            `;
+            list.appendChild(div);
+          });
+        }
+      } catch(e) {}
+    });
+
     function doTask(btn, link) {
       btn.innerText = "ОТКРЫВАЮ...";
       tg.openLink(link);
-      
       setTimeout(() => {
-        tg.sendData(JSON.stringify({
-          action: "complete_task",
-          task_id: btn.dataset.id || Date.now()
-        }));
+        tg.sendData(JSON.stringify({action: "complete_task", task_id: Date.now()}));
         btn.innerText = "ГОТОВО!";
         btn.style.background = "#00cc66";
         btn.disabled = true;
       }, 3000);
     }
 
-    // Получение заданий
-    tg.sendData(JSON.stringify({action: "get_tasks"}));
-
-    tg.onEvent('webAppDataReceived', data => {
-      try {
-        const res = JSON.parse(data);
-        if (res.tasks) {
-          // Здесь можно вставить рендер заданий
-        }
-      } catch(e) {}
-    });
+    // Загрузка при старте
+    if (document.getElementById('worker-btn').classList.contains('active')) {
+      tg.sendData(JSON.stringify({action: "get_tasks"}));
+    }
   </script>
 </body>
 </html>
