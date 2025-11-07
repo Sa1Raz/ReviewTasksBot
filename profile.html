@@ -9,18 +9,17 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{background:#0f0f23;color:#fff;font-family:system-ui,sans-serif;min-height:100vh}
     .container{max-width:420px;margin:0 auto;padding:16px}
-    .card{background:rgba(255,255,255,0.08);border-radius:20px;padding:20px;margin:16px 0;border:1px solid rgba(0,255,255,0.3)}
     h1{text-align:center;color:#00ffff;font-size:28px;margin:20px 0;font-weight:900}
     .avatar{width:80px;height:80px;border-radius:50%;border:3px solid #00ffff;margin:0 auto 10px;display:block}
-    .balance{text-align:center;background:#1a1a2e;padding:16px;border-radius:16px;margin:16px 0}
+    .balance{text-align:center;background:#1a1a2e;padding:20px;border-radius:20px;margin:20px 0;border:1px solid rgba(0,255,255,0.3)}
     .balance span{font-size:32px;font-weight:900;color:#00ff88}
     .btn{display:block;width:100%;padding:18px;margin:12px 0;border:none;border-radius:16px;font-weight:700;font-size:17px;cursor:pointer}
     .topup{background:#00ff88;color:#000}
     .withdraw{background:#ff3366;color:#fff}
-    .create{background:#0066ff;color:#fff;font-size:18px !important;padding:20px !important}
-    .bottom-nav{position:fixed;bottom:16px;left:16px;right:16px;background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);border-radius:20px;padding:12px;display:flex;gap:10px;border:1px solid rgba(0,255,255,0.4)}
+    .bottom-nav{position:fixed;bottom:16px;left:16px;right:16px;background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);border-radius:20px;padding:12px;display:flex;gap:10px;border:1px solid rgba(0,255,255,0.4);z-index:999}
     .nav-btn{flex:1;padding:16px;border-radius:16px;font-weight:800;background:transparent;color:#88c0d0}
     .nav-btn.active{background:#00ffff;color:#000}
+    .refresh{background:rgba(255,255,255,0.2);padding:10px 20px;border-radius:12px;border:none;font-size:14px;margin-top:10px}
   </style>
 </head>
 <body>
@@ -28,31 +27,47 @@
     <h1>ПРОФИЛЬ</h1>
     
     <img id="avatar" src="" class="avatar">
-    <div style="text-align:center;font-size:20px;font-weight:700;margin-bottom:20px" id="username">@User</div>
+    <div style="text-align:center;font-size:20px;font-weight:700;margin:12px 0" id="username">@User</div>
 
-    <div class="balance card">
+    <div class="balance">
       БАЛАНС<br>
       <span id="balance">0.00</span> ₽
-      <button onclick="fetchBalance()" style="margin-top:10px;padding:8px 20px;background:rgba(255,255,255,0.2);border-radius:12px;border:none;color:#fff;font-size:14px">Обновить</button>
+      <button class="refresh" onclick="fetchBalance()">Обновить</button>
     </div>
 
     <button class="btn topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
     <button class="btn withdraw" onclick="openWithdraw()">ВЫВОД</button>
-    
-    <button class="btn create" onclick="openCreateTask()">+ СОЗДАТЬ ЗАДАНИЕ</button>
   </div>
 
-  <!-- ФОРМА СОЗДАНИЯ ЗАДАНИЯ -->
-  <div id="create-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;justify-content:center;align-items:center;padding:20px">
+  <!-- ПОПОЛНЕНИЕ -->
+  <div id="topup-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;justify-content:center;align-items:center;padding:20px">
     <div style="background:#1a1a2e;border:2px solid #00ffff;border-radius:24px;padding:24px;width:100%;max-width:400px">
-      <h2 style="color:#00ffff;text-align:center;margin-bottom:20px">Создать задание</h2>
-      <input type="text" id="task-title" placeholder="Название (напр. Подписка)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #00ffff;color:#fff;font-size:16px">
-      <input type="number" id="task-reward" placeholder="Награда в ₽" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #00ffff;color:#fff;font-size:16px">
-      <input type="url" id="task-link" placeholder="Ссылка (Telegram, YouTube и т.д.)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #00ffff;color:#fff;font-size:16px">
-      <div style="display:flex;gap:10px;margin-top:20px">
-        <button onclick="document.getElementById('create-modal').style.display='none'" style="flex:1;padding:16px;background:#666;border-radius:12px">Отмена</button>
-        <button onclick="sendTask()" style="flex:1;padding:16px;background:#00ff88;color:#000;border-radius:12px;font-weight:700">Создать</button>
+      <button onclick="closeTopup()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#00ffff;font-size:32px;cursor:pointer">×</button>
+      <h2 style="color:#00ffff;text-align:center;margin-bottom:20px">Пополнение</h2>
+      <input type="number" id="topup-amount" placeholder="Сумма (мин. 100 ₽)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #00ffff;color:#fff;font-size:16px">
+      <div id="topup-details" style="display:none;margin:20px 0">
+        <p style="text-align:center">Переведи <b>ровно</b>:</p>
+        <div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;border:1px solid #00ffff;margin:10px 0;font-size:18px">
+          <p><b>Номер:</b> +7 (960) 073-85-59</p>
+          <p><b>Имя:</b> Раяз Н.</p>
+          <p><b>Банк:</b> Т-Банк</p>
+        </div>
+        <p style="text-align:center">В комментарии: <span id="topup-code" style="font-size:36px;color:#ffd700;font-weight:900">000000</span></p>
       </div>
+      <button class="btn topup" onclick="sendTopup()">ОТПРАВИТЬ ЗАЯВКУ</button>
+    </div>
+  </div>
+
+  <!-- ВЫВОД -->
+  <div id="withdraw-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;justify-content:center;align-items:center;padding:20px">
+    <div style="background:#1a1a2e;border:2px solid #ff3366;border-radius:24px;padding:24px;width:100%;max-width:400px">
+      <button onclick="closeWithdraw()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#ff3366;font-size:32px;cursor:pointer">×</button>
+      <h2 style="color:#ff3366;text-align:center;margin-bottom:20px">Вывод</h2>
+      <input type="text" id="withdraw-method" placeholder="Карта/телефон" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <input type="text" id="withdraw-fio" placeholder="ФИО" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <input type="text" id="withdraw-bank" placeholder="Банк" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 500)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
+      <button class="btn withdraw" onclick="sendWithdraw()">ОТПРАВИТЬ</button>
     </div>
   </div>
 
@@ -75,21 +90,31 @@
     tg.onEvent('webAppDataReceived', d => {
       try { const r = JSON.parse(d);
         if (r.balance !== undefined) document.getElementById('balance').innerText = r.balance.toFixed(2);
-        if (r.task_created) { tg.showAlert("Задание создано!"); document.getElementById('create-modal').style.display='none'; }
+        if (r.success) tg.showAlert("Готово!");
       } catch(e) {}
     });
 
-    function openCreateTask() { document.getElementById('create-modal').style.display = 'flex'; }
-    function sendTask() {
-      const title = document.getElementById('task-title').value.trim();
-      const reward = document.getElementById('task-reward').value;
-      const link = document.getElementById('task-link').value.trim();
-      if (!title || !reward || !link) return tg.showAlert("Заполни все поля!");
-      tg.sendData(JSON.stringify({action:"create_task", title, reward: parseFloat(reward), link}));
+    function openTopup() { document.getElementById('topup-modal').style.display = 'flex'; }
+    function closeTopup() { document.getElementById('topup-modal').style.display = 'none'; document.getElementById('topup-details').style.display = 'none'; }
+    function sendTopup() {
+      const amount = parseFloat(document.getElementById('topup-amount').value);
+      if (!amount || amount < 100) return tg.showAlert("Минимум 100 ₽");
+      const code = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('topup-code').innerText = code;
+      document.getElementById('topup-details').style.display = 'block';
+      tg.sendData(JSON.stringify({action:"request_topup", amount, code}));
     }
 
-    function openTopup() { /* твой код пополнения */ }
-    function openWithdraw() { /* твой код вывода */ }
+    function openWithdraw() { document.getElementById('withdraw-modal').style.display = 'flex'; }
+    function closeWithdraw() { document.getElementById('withdraw-modal').style.display = 'none'; }
+    function sendWithdraw() {
+      const method = document.getElementById('withdraw-method').value.trim();
+      const fio = document.getElementById('withdraw-fio').value.trim();
+      const bank = document.getElementById('withdraw-bank').value.trim();
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      if (!method || !fio || !bank || !amount || amount < 500) return tg.showAlert("Заполни всё! Мин. 500 ₽");
+      tg.sendData(JSON.stringify({action:"request_withdraw", method, fio, bank, amount}));
+    }
 
     window.onload = () => { fetchBalance(); setInterval(fetchBalance, 8000); };
   </script>
