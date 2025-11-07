@@ -12,8 +12,9 @@
       --gold: #ffd700; --glass: rgba(20,20,38,0.6); --border: rgba(0,255,255,0.3);
       --text: #e0f7ff; --text-muted: #88c0d0;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    * { margin: 0; padding: 0; overflow-x: hidden; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
     .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;
       background: linear-gradient(45deg, #0a0a14, #141426); overflow: hidden; }
     .bg-animation::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
@@ -21,37 +22,36 @@
       animation: rotate 30s linear infinite; }
     @keyframes rotate { to { transform: rotate(360deg); } }
 
-    .container { max-width: 420px; margin: 20px auto; padding: 0 16px; }
+    .container { max-width: 420px; margin: 16px auto; padding: 0 16px; }
     .profile-card { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border);
-      border-radius: 28px; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .header h1 { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900;
-      background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .status { background: linear-gradient(45deg, var(--success), #00cc66); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+      border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
 
-    .avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 4px solid var(--neon); box-shadow: 0 0 30px rgba(0,255,255,0.3); }
-    #username { font-weight: 700; font-size: 20px; color: var(--text); display: block; margin-bottom: 4px; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h1 { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900;
+      background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .avatar { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 4px solid var(--neon);
+      box-shadow: 0 0 30px rgba(0,255,255,0.3); display: block; margin: 0 auto 12px; }
 
     .balance-card {
-      background: linear-gradient(135deg, #1e3c72, #2a5298); border-radius: 24px; padding: 24px; text-align: center; margin: 20px 0;
-      border: 1px solid rgba(0,255,255,0.3); box-shadow: 0 10px 30px rgba(30,60,114,0.4);
+      background: linear-gradient(135deg, #1e3c72, #2a5298); border-radius: 24px; padding: 20px; text-align: center;
+      margin: 20px 0; border: 1px solid rgba(0,255,255,0.3); box-shadow: 0 10px 30px rgba(30,60,114,0.4);
     }
-    .balance-label { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 1px; }
+    .balance-label { font-size: 13px; color: var(--text-muted); letter-spacing: 1.5px; margin-bottom: 6px; }
     .balance-amount {
-      font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 900;
+      font-family: 'Orbitron', sans-serif; font-size: 28px !important; font-weight: 900; margin: 8px 0;
       background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px rgba(0,255,255,0.6); margin-bottom: 12px;
     }
     .refresh-balance {
       background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);
-      padding: 10px 20px; border-radius: 16px; font-size: 14px; font-weight: 600; cursor: pointer;
-      transition: all 0.3s; backdrop-filter: blur(10px);
+      padding: 12px 28px; border-radius: 30px; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.3s; backdrop-filter: blur(10px); margin-top: 8px;
     }
-    .refresh-balance:hover { background: rgba(0,255,255,0.2); box-shadow: 0 0 20px rgba(0,255,255,0.4); transform: translateY(-2px); }
+    .refresh-balance:hover { background: rgba(0,255,255,0.2); box-shadow: 0 0 20px rgba(0,255,255,0.4); }
 
     .btn {
-      padding: 18px; border: none; border-radius: 20px; font-weight: 700; font-size: 17px; cursor: pointer;
-      text-transform: uppercase; letter-spacing: 1px; margin: 10px 0; width: 100%; transition: all 0.3s;
+      padding: 18px 0; border: none; border-radius: 20px; font-weight: 700; font-size: 16px; cursor: pointer;
+      text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; flex: 1;
     }
     .btn-topup { background: linear-gradient(45deg, var(--success), #00cc66); color: white; }
     .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; }
@@ -63,13 +63,13 @@
       padding: 40px 32px; width: 100%; max-width: 460px; text-align: center; box-shadow: 0 0 120px rgba(0,255,255,0.7); position: relative; }
     .close-modal { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; }
 
-    input, textarea { width: 100%; padding: 18px; margin: 12px 0; background: rgba(255,255,255,0.08);
+    input { width: 100%; padding: 18px; margin: 12px 0; background: rgba(255,255,255,0.08);
       border: 2px solid rgba(0,255,255,0.3); border-radius: 20px; color: white; font-size: 16px; }
 
     .code {
       font-family: 'Orbitron', monospace; font-size: 42px; font-weight: 900; color: var(--gold);
       letter-spacing: 8px; background: rgba(0,0,0,0.5); padding: 24px 16px; border-radius: 24px;
-      margin: 24px 0; cursor: pointer; user-select: none; text-align: center; word-break: break-all;
+      margin: 24px 0; cursor: pointer; text-align: center; word-break: break-all;
       border: 2px solid rgba(255,215,0,0.4); box-shadow: 0 0 30px rgba(255,215,0,0.3);
     }
     @media (max-width: 380px) { .code { font-size: 38px !important; letter-spacing: 6px; padding: 20px 12px; } }
@@ -82,7 +82,7 @@
     .nav-btn {
       flex: 1; padding: 16px 24px; border: none; border-radius: 25px; font-weight: 800;
       font-size: 18px; cursor: pointer; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-      position: relative; overflow: hidden; background: transparent; color: #88c0d0;
+      background: transparent; color: #88c0d0; position: relative; overflow: hidden;
     }
     .nav-btn.active {
       background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
@@ -93,6 +93,12 @@
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.6s;
     }
     .nav-btn:hover::before { left: 100%; }
+
+    @media (max-height: 680px) {
+      .balance-card { padding: 16px !important; }
+      .balance-amount { font-size: 24px !important; margin: 4px 0 !important; }
+      .refresh-balance { padding: 10px 20px !important; font-size: 13px !important; }
+    }
   </style>
 </head>
 <body>
@@ -100,19 +106,22 @@
   <div class="container">
     <div class="profile-card">
       <div class="header">
-        <h1>ПРОФИЛЬ</h1>
-        <div class="status">ПРЕМИУМ</div>
+        <h1 style="margin:0 auto;">ПРОФИЛЬ</h1>
       </div>
-      <div style="text-align:center; margin:28px 0;">
+      <div style="text-align:center; margin:20px 0;">
         <img id="avatar" src="" alt="Аватар" class="avatar">
         <span id="username" style="display:block; margin-top:12px; font-size:20px; font-weight:700;">@User</span>
       </div>
+
       <div class="balance-card">
         <div class="balance-label">БАЛАНС</div>
-        <div class="balance-amount"><span id="balance">0.00</span> ₽</div>
+        <div class="balance-amount">
+          <span id="balance">0.00</span> ₽
+        </div>
         <button class="refresh-balance" onclick="fetchBalance()">Обновить</button>
       </div>
-      <div style="margin-top:20px;">
+
+      <div style="margin:30px 0 100px 0; display:flex; gap:12px;">
         <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
         <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД</button>
       </div>
@@ -148,21 +157,16 @@
       <button class="close-modal" onclick="closeWithdraw()">×</button>
       <h2 style="color:var(--danger); font-size:32px;">Вывод на банк</h2>
       <input type="text" id="withdraw-method" placeholder="Карта или телефон">
-      <input type="text" id="withdraw-fio" placeholder="ФИО или ник в банке">
-      <input type="text" id="withdraw-bank" placeholder="Банк (Тинькофф, Сбер и т.д.)">
+      <input type="text" id="withdraw-fio" placeholder="ФИО или ник">
+      <input type="text" id="withdraw-bank" placeholder="Банк">
       <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 500 ₽)" min="500">
       <button class="btn btn-withdraw" onclick="sendWithdraw()">ОТПРАВИТЬ ЗАЯВКУ</button>
     </div>
   </div>
 
-  <!-- НИЖНИЕ КНОПКИ -->
   <div class="bottom-nav">
-    <button class="nav-btn nav-tasks" onclick="location.href='index.html'">
-      Задания
-    </button>
-    <button class="nav-btn nav-profile active">
-      Профиль
-    </button>
+    <button class="nav-btn nav-tasks" onclick="location.href='index.html'">Задания</button>
+    <button class="nav-btn nav-profile active">Профиль</button>
   </div>
 
   <script>
@@ -187,7 +191,7 @@
         const res = JSON.parse(data);
         if (res.balance !== undefined) document.getElementById('balance').innerText = res.balance.toFixed(2);
         if (res.success) {
-          tg.showAlert("Заявка отправлена! Ожидай.");
+          tg.showAlert("Заявка отправлена!");
           closeTopup(); closeWithdraw();
           fetchBalance();
         }
@@ -222,9 +226,9 @@
     }
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', () => {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
+        btn.classList.add('active');
       });
     });
 
