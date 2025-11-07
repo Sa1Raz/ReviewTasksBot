@@ -71,6 +71,15 @@
     }
     option { background: #000000 !important; color: #00ffff !important; font-weight: 700; padding: 16px; }
 
+    /* СКРЫТЫЕ БЛОКИ — ПОЯВЛЯЮТСЯ ТОЛЬКО ПОСЛЕ ВЫБОРА ТИПА */
+    .reward-section {
+      opacity: 0; transform: translateY(20px); transition: all 0.6s ease-out;
+      pointer-events: none;
+    }
+    .reward-section.visible {
+      opacity: 1; transform: translateY(0); pointer-events: all;
+    }
+
     .quick-amounts {
       display: flex; gap: 12px; margin: 16px 0; justify-content: center;
     }
@@ -84,6 +93,16 @@
       background: var(--neon); color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.8);
       transform: scale(1.05);
     }
+
+    .reward-input-wrapper {
+      display: flex; align-items: center; gap: 12px; margin: 20px 0;
+    }
+    #reward-input {
+      flex: 1; text-align: center; font-size: 36px; font-weight: 900; color: var(--neon);
+      background: rgba(0,0,0,0.5); border: 2px solid var(--neon); border-radius: 20px;
+      padding: 12px; outline: none;
+    }
+    #reward-input:focus { box-shadow: 0 0 30px rgba(0,255,255,0.6); }
 
     .range-slider {
       margin: 30px 0;
@@ -154,25 +173,33 @@
         <input type="text" id="task-title" placeholder="Что нужно сделать?">
         <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
 
-        <select id="task-type" onchange="updateRewardSettings()">
+        <select id="task-type" onchange="toggleRewardSection()">
           <option value="">Выберите тип задания</option>
           <option value="yandex">Яндекс Отзыв</option>
           <option value="google">Google Отзыв</option>
           <option value="telegram">Telegram Подписка</option>
         </select>
 
-        <div class="quick-amounts">
-          <div class="quick-btn" onclick="setReward(500)">500 ₽</div>
-          <div class="quick-btn" onclick="setReward(1000)">1000 ₽</div>
-          <div class="quick-btn" onclick="setReward(1500)">1500 ₽</div>
-        </div>
+        <!-- ЭТА ЧАСТЬ ПОЯВЛЯЕТСЯ ТОЛЬКО ПОСЛЕ ВЫБОРА ТИПА -->
+        <div class="reward-section" id="reward-section">
+          <div class="quick-amounts">
+            <div class="quick-btn" onclick="setReward(500)">500 ₽</div>
+            <div class="quick-btn" onclick="setReward(1000)">1000 ₽</div>
+            <div class="quick-btn" onclick="setReward(1500)">1500 ₽</div>
+          </div>
 
-        <div class="range-slider">
-          <input type="range" min="100" max="10000" value="500" id="reward-slider" oninput="snapToStep()">
-        </div>
+          <div class="reward-input-wrapper">
+            <input type="number" id="reward-input" placeholder="529" oninput="syncSliderFromInput()">
+            <span style="color:var(--neon);font-size:36px;font-weight:900">₽</span>
+          </div>
 
-        <div class="reward-display">
-          <span id="reward-value">500</span> ₽
+          <div class="range-slider">
+            <input type="range" min="100" max="10000" value="500" step="1" id="reward-slider" oninput="syncInputFromSlider()">
+          </div>
+
+          <div class="reward-display">
+            <span id="reward-value">500</span> ₽
+          </div>
         </div>
 
         <button class="submit-btn" onclick="createTask()">
@@ -201,60 +228,78 @@
       telegram: { min: 10, step: 10 }
     };
 
-    function updateRewardSettings() {
+    let currentStep = 100;
+    let currentMin = 100;
+
+    function toggleRewardSection() {
       const type = document.getElementById('task-type').value;
-      const slider = document.getElementById('reward-slider');
-      const config = type ? settings[type] : { min: 100, step: 100 };
+      const section = document.getElementById('reward-section');
 
-      slider.min = config.min;
-      slider.step = config.step;
-      slider.value = Math.max(config.min, Math.ceil(slider.value / config.step) * config.step);
-      snapToStep();
-    }
-
-    function snapToStep() {
-      const slider = document.getElementById('reward-slider');
-      const type = document.getElementById('task-type').value;
-      if (!type) return;
-
-      const step = settings[type].step;
-      const value = parseInt(slider.value);
-      const snapped = Math.round(value / step) * step;
-
-      if (snapped >= settings[type].min && snapped <= 10000) {
-        slider.value = snapped;
-        document.getElementById('reward-value').innerText = snapped;
+      if (type) {
+        section.classList.add('visible');
+        updateRewardSettings();
+      } else {
+        section.classList.remove('visible');
       }
     }
 
-    function setReward(amount) {
-      const slider = document.getElementById('reward-slider');
+    function updateRewardSettings() {
       const type = document.getElementById('task-type').value;
-      if (!type) return;
+      currentStep = settings[type].step;
+      currentMin = settings[type].min;
 
-      const step = settings[type].step;
-      const snapped = Math.round(amount / step) * step;
-      slider.value = snapped > 10000 ? 10000 : snapped;
-      document.getElementById('reward-value').innerText = slider.value;
-      
+      document.getElementById('reward-slider').min = currentMin;
+      document.getElementById('reward-slider').step = currentStep;
+
+      // Устанавливаем начальное значение = минимум
+      const initialValue = currentMin;
+      document.getElementById('reward-slider').value = initialValue;
+      document.getElementById('reward-input').value = initialValue;
+      document.getElementById('reward-value').innerText = initialValue;
+    }
+
+    function syncInputFromSlider() {
+      const slider = document.getElementById('reward-slider');
+      const value = parseInt(slider.value);
+      const snapped = Math.round(value / currentStep) * currentStep;
+      const finalValue = Math.max(currentMin, Math.min(10000, snapped));
+
+      slider.value = finalValue;
+      document.getElementById('reward-input').value = finalValue;
+      document.getElementById('reward-value').innerText = finalValue;
+    }
+
+    function syncSliderFromInput() {
+      const input = document.getElementById('reward-input');
+      let value = parseInt(input.value) || currentMin;
+      const snapped = Math.round(value / currentStep) * currentStep;
+      const finalValue = Math.max(currentMin, Math.min(10000, snapped));
+
+      input.value = finalValue;
+      document.getElementById('reward-slider').value = finalValue;
+      document.getElementById('reward-value').innerText = finalValue;
+    }
+
+    function setReward(amount) {
+      document.getElementById('reward-input').value = amount;
+      syncSliderFromInput();
       document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-      if (event) event.target.classList.add('active');
+      event.target.classList.add('active');
     }
 
     function createTask() {
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
       const type = document.getElementById('task-type').value;
-      const reward = parseInt(document.getElementById('reward-slider').value);
+      const reward = parseInt(document.getElementById('reward-input').value);
 
       if (!title || !link || !type) {
         tg.showAlert("Заполните все поля!");
         return;
       }
 
-      const min = settings[type].min;
-      if (reward < min) {
-        tg.showAlert(`Минимальная награда: ${min} ₽`);
+      if (reward < currentMin) {
+        tg.showAlert(`Минимальная награда: ${currentMin} ₽`);
         return;
       }
 
@@ -264,8 +309,7 @@
       document.getElementById('task-title').value = '';
       document.getElementById('task-link').value = '';
       document.getElementById('task-type').value = '';
-      document.getElementById('reward-slider').value = 500;
-      document.getElementById('reward-value').innerText = '500';
+      document.getElementById('reward-section').classList.remove('visible');
     }
 
     function switchRole(role) {
@@ -277,7 +321,7 @@
     }
 
     // Инициализация
-    document.getElementById('reward-value').innerText = '500';
+    document.getElementById('reward-section').classList.remove('visible');
   </script>
 </body>
 </html>
