@@ -5,127 +5,208 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Профиль | ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body style="margin:0;background:#0f0f23;color:#fff;font-family:system-ui,sans-serif;min-height:100vh;overflow-x:hidden">
-  
-  <div style="max-width:420px;margin:0 auto;padding:16px;text-align:center">
-    <h1 style="color:#00ffff;font-size:28px;font-weight:900;margin:20px 0">ПРОФИЛЬ</h1>
+  <style>
+    :root {
+      --bg: #0a0a14; --card: #141426; --neon: #00ffff; --success: #00ff88; --danger: #ff3366;
+      --gold: #ffd700; --glass: rgba(20,20,38,0.8); --border: rgba(0,255,255,0.4);
+      --text: #e0f7ff; --text-muted: #88c0d0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
     
-    <img id="avatar" src="" style="width:80px;height:80px;border-radius:50%;border:3px solid #00ffff;margin:0 auto 10px;display:block">
-    <div id="username" style="font-size:20px;font-weight:700;margin:12px 0">@User</div>
+    /* УБРАЛ ВСЁ ТЯЖЁЛОЕ — ГРУЗИТСЯ МГНОВЕННО */
+    .container { max-width: 420px; margin: 16px auto; padding: 0 16px; }
+    .profile-card { background: var(--glass); border: 1px solid var(--border); border-radius: 28px; padding: 24px; }
 
-    <div style="background:#1a1a2e;padding:20px;border-radius:20px;margin:20px 0;border:1px solid rgba(0,255,255,0.3)">
-      <div style="font-size:14px;color:#88c0d0">БАЛАНС</div>
-      <div style="font-size:32px;font-weight:900;color:#00ff88;margin:8px 0">
-        <span id="balance">0.00</span> ₽
+    .header h1 { 
+      text-align: center; font-size: 28px; font-weight: 900; margin: 0 0 20px;
+      background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--neon); margin: 0 auto 12px; display: block; }
+    
+    .balance-card {
+      background: linear-gradient(135deg, #1e3c72, #2a5298); border-radius: 24px; padding: 20px; text-align: center;
+      margin: 20px 0; border: 1px solid rgba(0,255,255,0.4);
+    }
+    .balance-label { font-size: 13px; color: var(--text-muted); letter-spacing: 1.5px; margin-bottom: 6px; }
+    .balance-amount {
+      font-size: 28px; font-weight: 900; margin: 8px 0;
+      background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .refresh-balance {
+      background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);
+      padding: 12px 28px; border-radius: 30px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    .btn-row { margin: 30px 0 100px; display: flex; gap: 12px; }
+    .btn {
+      flex: 1; padding: 18px 0; border: none; border-radius: 20px; font-weight: 700; font-size: 16px;
+      text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+    }
+    .btn-topup { background: linear-gradient(45deg, var(--success), #00cc66); color: white; }
+    .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
+             z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--card); border: 2px solid var(--neon); border-radius: 32px;
+      padding: 40px 32px; width: 100%; max-width: 460px; text-align: center; position: relative; }
+    .close-modal { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; }
+
+    input { width: 100%; padding: 18px; margin: 12px 0; background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(0,255,255,0.3); border-radius: 20px; color: white; font-size: 16px; }
+
+    .code {
+      font-family: monospace; font-size: 42px; font-weight: 900; color: var(--gold);
+      letter-spacing: 8px; background: rgba(0,0,0,0.5); padding: 24px 16px; border-radius: 24px;
+      margin: 24px 0; cursor: pointer; text-align: center; border: 2px solid rgba(255,215,0,0.4);
+    }
+
+    .bottom-nav {
+      position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.9);
+      border: 2px solid rgba(0,255,255,0.3); border-radius: 30px; padding: 8px; display: flex; z-index: 999;
+    }
+    .nav-btn {
+      flex: 1; padding: 16px 24px; border: none; border-radius: 25px; font-weight: 800;
+      font-size: 18px; cursor: pointer; background: transparent; color: #88c0d0;
+    }
+    .nav-btn.active {
+      background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="profile-card">
+      <div class="header">
+        <h1>ПРОФИЛЬ</h1>
       </div>
-      <button onclick="fetchBalance()" style="padding:10px 24px;background:rgba(255,255,255,0.2);border:none;border-radius:30px;font-size:14px;font-weight:600">
-        Обновить
-      </button>
+      <div style="text-align:center; margin:20px 0;">
+        <img id="avatar" src="" alt="Аватар" class="avatar">
+        <span id="username" style="display:block; margin-top:12px; font-size:20px; font-weight:700;">@User</span>
+      </div>
+      <div class="balance-card">
+        <div class="balance-label">БАЛАНС</div>
+        <div class="balance-amount">
+          <span id="balance">0.00</span> ₽
+        </div>
+        <button class="refresh-balance" onclick="fetchBalance()">Обновить</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
+        <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД</button>
+      </div>
     </div>
-
-    <!-- ДВЕ КНОПКИ — ВИДНЫ ВСЕГДА -->
-    <div style="display:flex;gap:12px;margin:20px 0">
-      <button onclick="openTopup()" style="flex:1;padding:18px;background:#00ff88;color:#000;border:none;border-radius:16px;font-weight:700;font-size:17px">
-        ПОПОЛНИТЬ
-      </button>
-      <button onclick="openWithdraw()" style="flex:1;padding:18px;background:#ff3366;color:#fff;border:none;border-radius:16px;font-weight:700;font-size:17px">
-        ВЫВОД
-      </button>
-    </div>
-  </div>
-
-  <!-- НИЖНИЕ КНОПКИ — КАК НА ТВОЁМ СКРИНЕ -->
-  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:340px;max-width:90%;background:rgba(15,15,35,0.95);backdrop-filter:blur(20px);border-radius:30px;padding:8px;display:flex;border:1px solid rgba(0,255,255,0.4);box-shadow:0 10px 30px rgba(0,0,0,0.6);z-index:999;overflow:hidden">
-    <button onclick="location.href='index.html'" style="flex:1;padding:16px 24px;border:none;border-radius:25px;font-weight:800;font-size:18px;background:transparent;color:#88c0d0;transition:all .4s">
-      Задания
-    </button>
-    <button style="flex:1;padding:16px 24px;border:none;border-radius:25px;font-weight:900;font-size:18px;background:linear-gradient(135deg,#00ffff,#00ff88);color:#000;box-shadow:0 0 30px rgba(0,255,255,0.8);transform:translateY(-3px)">
-      Профиль
-    </button>
   </div>
 
   <!-- ПОПОЛНЕНИЕ -->
-  <div id="topup-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;justify-content:center;align-items:center;padding:20px">
-    <div style="background:#1a1a2e;border:2px solid #00ffff;border-radius:24px;padding:24px;width:100%;max-width:400px;position:relative">
-      <button onclick="closeTopup()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#00ffff;font-size:32px">×</button>
-      <h2 style="color:#00ffff;text-align:center;margin-bottom:20px">Пополнение</h2>
-      <input type="number" id="topup-amount" placeholder="Сумма (мин. 100 ₽)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #00ffff;color:#fff;font-size:16px">
-      <div id="topup-details" style="display:none;margin:20px 0">
-        <p style="text-align:center">Переведи <b>ровно</b>:</p>
-        <div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;border:1px solid #00ffff;margin:10px 0;font-size:18px">
+  <div id="topup-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeTopup()">×</button>
+      <h2 style="color:var(--neon); font-size:32px;">Пополнение</h2>
+      <input type="number" id="topup-amount" placeholder="Сумма (мин. 100 ₽)" min="100">
+      <div id="topup-details" style="display:none;">
+        <p>Переведи <b>ровно</b> на телефон:</p>
+        <div style="background:rgba(255,255,255,0.05); padding:24px; border-radius:20px; border:1px solid var(--border); font-size:20px; text-align:center;">
           <p><b>Номер:</b> +7 (960) 073-85-59</p>
           <p><b>Имя:</b> Раяз Н.</p>
-          <p><b>Банк:</b> Т-Банк</p>
+          <p><b>Банк:</b> Т-Банк (Тинькофф)</p>
         </div>
-        <p style="text-align:center">Код: <span id="topup-code" style="font-size:36px;color:#ffd700;font-weight:900">000000</span></p>
+        <p style="margin:20px 0 10px;">В комментарии напиши код:</p>
+        <div class="code" id="topup-code" onclick="copyCode(this)">000000</div>
+        <p style="color:var(--success); font-weight:900; margin-top:20px;">
+          Я увижу перевод → зачислю за 1–5 минут!
+        </p>
       </div>
-      <button onclick="sendTopup()" style="width:100%;padding:18px;background:#00ff88;color:#000;border:none;border-radius:16px;font-weight:700">
-        ОТПРАВИТЬ ЗАЯВКУ
-      </button>
+      <button class="btn btn-topup" onclick="sendTopup()">ОТПРАВИТЬ ЗАЯВКУ</button>
     </div>
   </div>
 
-  <!-- ВЫВОД — ВЕРНУЛ! -->
-  <div id="withdraw-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;justify-content:center;align-items:center;padding:20px">
-    <div style="background:#1a1a2e;border:2px solid #ff3366;border-radius:24px;padding:24px;width:100%;max-width:400px;position:relative">
-      <button onclick="closeWithdraw()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#ff3366;font-size:32px">×</button>
-      <h2 style="color:#ff3366;text-align:center;margin-bottom:20px">Вывод средств</h2>
-      <input type="text" id="withdraw-method" placeholder="Карта или телефон" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
-      <input type="text" id="withdraw-fio" placeholder="ФИО получателя" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
-      <input type="text" id="withdraw-bank" placeholder="Банк (Тинькофф, Сбер и т.д.)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
-      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 500 ₽)" style="width:100%;padding:16px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid #ff3366;color:#fff">
-      <button onclick="sendWithdraw()" style="width:100%;padding:18px;background:#ff3366;color:#fff;border:none;border-radius:16px;font-weight:700;margin-top:20px">
-        ОТПРАВИТЬ ЗАЯВКУ
-      </button>
+  <!-- ВЫВОД -->
+  <div id="withdraw-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeWithdraw()">×</button>
+      <h2 style="color:var(--danger); font-size:32px;">Вывод на банк</h2>
+      <input type="text" id="withdraw-method" placeholder="Карта или телефон">
+      <input type="text" id="withdraw-fio" placeholder="ФИО или ник">
+      <input type="text" id="withdraw-bank" placeholder="Банк">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250">
+      <button class="btn btn-withdraw" onclick="sendWithdraw()">ОТПРАВИТЬ ЗАЯВКУ</button>
     </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn nav-tasks" onclick="location.href='index.html'">Задания</button>
+    <button class="nav-btn nav-profile active">Профиль</button>
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
 
-    document.getElementById('avatar').src = tg.initDataUnsafe.user?.photo_url || 'https://via.placeholder.com/80/00ffff/000?text=RC';
+    document.getElementById('avatar').src = tg.initDataUnsafe.user?.photo_url || 'https://via.placeholder.com/90/00ffff/000000?text=RC';
     document.getElementById('username').innerText = '@' + (tg.initDataUnsafe.user?.username || 'User');
 
     function fetchBalance() {
       document.getElementById('balance').innerText = '...';
-      tg.sendData(JSON.stringify({action:"get_balance"}));
+      tg.sendData(JSON.stringify({ action: "get_balance" }));
     }
 
-    tg.onEvent('webAppDataReceived', d => {
+    function copyCode(el) {
+      navigator.clipboard.writeText(el.innerText);
+      tg.showAlert("Код скопирован!");
+    }
+
+    tg.onEvent('webAppDataReceived', data => {
       try {
-        const r = JSON.parse(d);
-        if (r.balance !== undefined) document.getElementById('balance').innerText = r.balance.toFixed(2);
-        if (r.success) tg.showAlert("Заявка отправлена!");
-      } catch(e) {}
+        const res = JSON.parse(data);
+        if (res.balance !== undefined) document.getElementById('balance').innerText = res.balance.toFixed(2);
+        if (res.success) {
+          tg.showAlert("Заявка отправлена!");
+          closeTopup(); closeWithdraw();
+          fetchBalance();
+        }
+      } catch (e) {}
     });
 
-    function openTopup() { document.getElementById('topup-modal').style.display = 'flex'; }
-    function closeTopup() { 
-      document.getElementById('topup-modal').style.display = 'none'; 
-      document.getElementById('topup-details').style.display = 'none'; 
+    function openTopup() { document.getElementById('topup-modal').classList.add('active'); }
+    function closeTopup() {
+      document.getElementById('topup-modal').classList.remove('active');
+      document.getElementById('topup-details').style.display = 'none';
     }
+
     function sendTopup() {
       const amount = parseFloat(document.getElementById('topup-amount').value);
       if (!amount || amount < 100) return tg.showAlert("Минимум 100 ₽");
       const code = Math.floor(100000 + Math.random() * 900000);
       document.getElementById('topup-code').innerText = code;
       document.getElementById('topup-details').style.display = 'block';
-      tg.sendData(JSON.stringify({action:"request_topup", amount, code}));
+      tg.sendData(JSON.stringify({ action: "request_topup", amount, code }));
     }
 
-    function openWithdraw() { document.getElementById('withdraw-modal').style.display = 'flex'; }
-    function closeWithdraw() { document.getElementById('withdraw-modal').style.display = 'none'; }
+    function openWithdraw() { document.getElementById('withdraw-modal').classList.add('active'); }
+    function closeWithdraw() { document.getElementById('withdraw-modal').classList.remove('active'); }
+
     function sendWithdraw() {
       const method = document.getElementById('withdraw-method').value.trim();
       const fio = document.getElementById('withdraw-fio').value.trim();
       const bank = document.getElementById('withdraw-bank').value.trim();
       const amount = parseFloat(document.getElementById('withdraw-amount').value);
       if (!method || !fio || !bank || !amount || amount < 500) return tg.showAlert("Заполни все поля! Мин. 500 ₽");
-      tg.sendData(JSON.stringify({action:"request_withdraw", method, fio, bank, amount}));
+      tg.sendData(JSON.stringify({ action: "request_withdraw", method, fio, bank, amount }));
     }
 
-    window.onload = () => { fetchBalance(); setInterval(fetchBalance, 8000); };
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    window.onload = () => {
+      fetchBalance();
+      setInterval(fetchBalance, 10000);
+    };
   </script>
 </body>
 </html>
