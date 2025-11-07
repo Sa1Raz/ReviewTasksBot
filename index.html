@@ -71,7 +71,6 @@
     }
     option { background: #000000 !important; color: #00ffff !important; font-weight: 700; padding: 16px; }
 
-    /* БЫСТРЫЕ КНОПКИ — 500 / 1000 / 1500 */
     .quick-amounts {
       display: flex; gap: 12px; margin: 16px 0; justify-content: center;
     }
@@ -86,7 +85,6 @@
       transform: scale(1.05);
     }
 
-    /* ПОЛЗУНОК — ШАГ 100, ДО 10 000 */
     .range-slider {
       margin: 30px 0;
     }
@@ -170,7 +168,7 @@
         </div>
 
         <div class="range-slider">
-          <input type="range" min="100" max="10000" value="500" step="100" id="reward-slider" oninput="updateRewardValue()">
+          <input type="range" min="100" max="10000" value="500" id="reward-slider" oninput="snapToStep()">
         </div>
 
         <div class="reward-display">
@@ -197,31 +195,50 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
-    const minRewards = { yandex: 100, google: 65, telegram: 10 };
+    const settings = {
+      yandex: { min: 100, step: 100 },
+      google: { min: 65, step: 65 },
+      telegram: { min: 10, step: 10 }
+    };
 
     function updateRewardSettings() {
       const type = document.getElementById('task-type').value;
       const slider = document.getElementById('reward-slider');
-      const min = type ? minRewards[type] : 100;
+      const config = type ? settings[type] : { min: 100, step: 100 };
 
-      // Округляем минимум до ближайшего 100
-      const roundedMin = Math.ceil(min / 100) * 100;
-      slider.min = roundedMin;
-      slider.value = roundedMin > slider.value ? roundedMin : slider.value;
-      updateRewardValue();
+      slider.min = config.min;
+      slider.step = config.step;
+      slider.value = Math.max(config.min, Math.ceil(slider.value / config.step) * config.step);
+      snapToStep();
+    }
+
+    function snapToStep() {
+      const slider = document.getElementById('reward-slider');
+      const type = document.getElementById('task-type').value;
+      if (!type) return;
+
+      const step = settings[type].step;
+      const value = parseInt(slider.value);
+      const snapped = Math.round(value / step) * step;
+
+      if (snapped >= settings[type].min && snapped <= 10000) {
+        slider.value = snapped;
+        document.getElementById('reward-value').innerText = snapped;
+      }
     }
 
     function setReward(amount) {
       const slider = document.getElementById('reward-slider');
-      slider.value = amount;
-      updateRewardValue();
-      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-    }
+      const type = document.getElementById('task-type').value;
+      if (!type) return;
 
-    function updateRewardValue() {
-      const val = document.getElementById('reward-slider').value;
-      document.getElementById('reward-value').innerText = val;
+      const step = settings[type].step;
+      const snapped = Math.round(amount / step) * step;
+      slider.value = snapped > 10000 ? 10000 : snapped;
+      document.getElementById('reward-value').innerText = slider.value;
+      
+      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+      if (event) event.target.classList.add('active');
     }
 
     function createTask() {
@@ -235,20 +252,20 @@
         return;
       }
 
-      const min = minRewards[type];
+      const min = settings[type].min;
       if (reward < min) {
-        tg.showAlert(`Мин. для этого типа: ${min} ₽`);
+        tg.showAlert(`Минимальная награда: ${min} ₽`);
         return;
       }
 
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
-      tg.showAlert("Задание создано за " + reward + " ₽!");
+      tg.showAlert(`Задание создано за ${reward} ₽!`);
       document.getElementById('create-form').classList.remove('active');
       document.getElementById('task-title').value = '';
       document.getElementById('task-link').value = '';
       document.getElementById('task-type').value = '';
       document.getElementById('reward-slider').value = 500;
-      updateRewardValue();
+      document.getElementById('reward-value').innerText = '500';
     }
 
     function switchRole(role) {
@@ -260,7 +277,7 @@
     }
 
     // Инициализация
-    updateRewardValue();
+    document.getElementById('reward-value').innerText = '500';
   </script>
 </body>
 </html>
