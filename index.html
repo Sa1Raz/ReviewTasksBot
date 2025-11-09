@@ -15,10 +15,6 @@
     body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; overflow-x: hidden; }
     .container { max-width: 420px; margin: 0 auto; padding: 16px 16px 140px; }
 
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
-
     .page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 10; padding-bottom: 120px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .page.hidden-left { transform: translateX(-100%); }
     .page.hidden-right { transform: translateX(100%); }
@@ -179,7 +175,6 @@
       <button class="close-btn" onclick="closeTopup()">×</button>
       <h2 style="color:#ffd700; font-size:32px;">ПОПОЛНЕНИЕ</h2>
       <input type="number" id="topup-amount" placeholder="Сумма (от 100 ₽)" min="100">
-      
       <div id="topup-details" style="display:none;">
         <div style="background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,140,0,0.2)); padding:24px; border-radius:24px; border:3px solid #ffd700; margin:20px 0;">
           <p><b>Получатель:</b> <span style="color:#ffd700;">Раяз Н.</span></p>
@@ -190,7 +185,6 @@
         <div class="copy-block" id="topup-code" onclick="copyText(this.innerText)">000000</div>
         <p style="color:#00ff88; font-weight:900; margin:25px 0;">Зачислю в течение дня!</p>
       </div>
-      
       <button style="background:linear-gradient(45deg,#ffd700,#ff8c00); color:#000; padding:20px; font-size:20px; font-weight:900; border-radius:28px;" 
               onclick="createTopupRequest()">СОЗДАТЬ ЗАЯВКУ</button>
     </div>
@@ -202,6 +196,7 @@
 
     const user = tg.initDataUnsafe?.user || {};
     const userId = user.id || 0;
+    let userBalance = 0;
 
     document.getElementById('user-name').innerText = (user.first_name || '') + (user.last_name ? ' ' + user.last_name : '');
     document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
@@ -218,6 +213,14 @@
       document.getElementById('profile-page').classList.toggle('visible', page === 'profile');
       document.getElementById('profile-page').classList.toggle('hidden-right', page !== 'profile');
       document.querySelectorAll('.nav-btn').forEach((b, i) => b.classList.toggle('active', i === (page === 'profile' ? 1 : 0)));
+    }
+
+    function switchRole(role) {
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(role + '-btn').classList.add('active');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      if (role === 'worker') filterTasks('all');
     }
 
     function toggleRewardSection() {
@@ -255,8 +258,10 @@
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
       const type = document.getElementById('task-type').value;
+
       if (!title || !link || !type) return tg.showAlert("Заполни все поля!");
       if (!/^https?:\/\/.+/i.test(link)) return tg.showAlert("Неверная ссылка!");
+      if (currentReward > userBalance) return tg.showAlert("Недостаточно средств на балансе!");
 
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward: currentReward}));
       tg.showAlert("Задание создано!");
@@ -288,27 +293,15 @@
       tg.showAlert("Скопировано!");
     }
 
-    // АВТОПРОВЕРКА ТОЛЬКО ДЛЯ ТГ — НАДЁЖНО И БЫСТРО
     async function doTelegramTask(taskId, link, reward, button) {
       if (button.disabled) return;
       button.disabled = true;
       button.innerText = "ОТКРЫВАЮ...";
-      
       tg.openLink(link);
-      
       button.innerText = "ПРОВЕРЯЮ...";
-      
       setTimeout(() => {
-        tg.sendData(JSON.stringify({ 
-          action: "check_telegram_subscription", 
-          task_id: taskId, 
-          link: link 
-        }));
-        
-        // Через 2 сек сервер ответит — обновим список
-        setTimeout(() => {
-          tg.sendData(JSON.stringify({action: "get_tasks"}));
-        }, 2000);
+        tg.sendData(JSON.stringify({ action: "check_telegram_subscription", task_id: taskId, link }));
+        setTimeout(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 3000);
       }, 4000);
     }
 
@@ -351,21 +344,20 @@
         const res = JSON.parse(data);
         if (res.tasks) {
           allTasks = res.tasks;
-          filterTasks(document.querySelector('.filter-btn.active').innerText.trim().toLowerCase() === 'все' ? 'all' : 
-                     document.querySelector('.filter-btn.active').innerText.trim().toLowerCase());
+          if (document.getElementById('worker-mode').style.display !== 'none') filterTasks('all');
+        }
+        if (res.user) {
+          userBalance = res.user.balance || 0;
+          document.getElementById('user-balance').innerText = userBalance + ' ₽';
         }
         if (res.completed) {
           res.completed.forEach(id => completedTasks.add(id));
           localStorage.setItem('completedTasks', JSON.stringify([...completedTasks]));
         }
-        if (res.user) document.getElementById('user-balance').innerText = (res.user.balance || 0) + ' ₽';
-      } catch(e) { console.error(e); }
+      } catch(e) {}
     });
 
-    // Обновление каждые 8 сек
     setInterval(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 8000);
-
-    // Первая загрузка
     tg.sendData(JSON.stringify({action: "get_tasks"}));
   </script>
 </body>
