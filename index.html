@@ -63,13 +63,15 @@
 
     .task { background: var(--glass); backdrop-filter: blur(16px); border: 2px solid var(--border); border-radius: 28px; padding: 20px; margin: 16px 0; position: relative; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
     .task::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #00ffff, #00ff88); }
+    .task-title { font-size: 18px; font-weight: 900; margin: 8px 0; }
+    .task-reward { font-size: 24px; font-weight: 900; color: var(--success); margin: 12px 0; text-align: center; }
 
     .task-do { 
-      width: 100%; padding: 16px; background: linear-gradient(45deg, var(--success), #00cc66); 
-      color: black; border: none; border-radius: 22px; font-weight: 900; font-size: 17px; 
-      margin-top: 14px; cursor: pointer; text-transform: uppercase; 
+      width: 100%; padding: 18px; background: linear-gradient(45deg, var(--success), #00cc66); 
+      color: black; border: none; border-radius: 24px; font-weight: 900; font-size: 18px; 
+      margin-top: 16px; cursor: pointer; text-transform: uppercase; 
     }
-    .task-do.done { background: #333; color: #888; cursor: not-allowed; }
+    .task-do:disabled { background: #333; color: #888; cursor: not-allowed; opacity: 0.7; }
 
     .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
     .nav-btn { flex: 1; padding: 18px; border: none; border-radius: 28px; font-weight: 800; font-size: 17px; background: transparent; color: var(--muted); transition: all 0.4s ease; }
@@ -114,7 +116,7 @@
           <input type="url" id="task-link" placeholder="Ссылка (обязательно)" oninput="validateLink(this)">
           <select id="task-type" onchange="toggleRewardSection()">
             <option value="">Выберите тип</option>
-            <option value="yandex">Яндекс Отзыв</option
+            <option value="yandex">Яндекс Отзыв</option>
             <option value="google">Google Отзыв</option>
             <option value="telegram">Telegram Подписка</option>
           </select>
@@ -172,7 +174,6 @@
     <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
   </div>
 
-  <!-- ПОПОЛНЕНИЕ -->
   <div id="topup-modal" class="modal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeTopup()">×</button>
@@ -187,15 +188,11 @@
         </div>
         <p>В комментарии укажи код:</p>
         <div class="copy-block" id="topup-code" onclick="copyText(this.innerText)">000000</div>
-        <p style="color:#00ff88; font-weight:900; margin:25px 0;">
-          Зачислю в течение дня!
-        </p>
+        <p style="color:#00ff88; font-weight:900; margin:25px 0;">Зачислю в течение дня!</p>
       </div>
       
       <button style="background:linear-gradient(45deg,#ffd700,#ff8c00); color:#000; padding:20px; font-size:20px; font-weight:900; border-radius:28px;" 
-              onclick="createTopupRequest()">
-        СОЗДАТЬ ЗАЯВКУ
-      </button>
+              onclick="createTopupRequest()">СОЗДАТЬ ЗАЯВКУ</button>
     </div>
   </div>
 
@@ -203,7 +200,6 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
-    const MAIN_ADMIN_ID = 777777777; // ← ЗАМЕНИ НА СВОЙ ID!
     const user = tg.initDataUnsafe?.user || {};
     const userId = user.id || 0;
 
@@ -211,10 +207,10 @@
     document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
     document.getElementById('user-avatar').src = user.photo_url || 'https://telegram.org/img/t_logo.png';
 
-    let currentReward = 100, currentStep = 100, currentMin = 100;
+    let currentReward = 100, currentMin = 100, currentStep = 100;
     const settings = { yandex: { min: 100, step: 100 }, google: { min: 65, step: 65 }, telegram: { min: 10, step: 10 } };
     let allTasks = [];
-    let completedTasks = new Set();
+    let completedTasks = localStorage.getItem('completedTasks') ? new Set(JSON.parse(localStorage.getItem('completedTasks'))) : new Set();
 
     function showPage(page) {
       document.getElementById('tasks-page').classList.toggle('visible', page === 'tasks');
@@ -222,6 +218,31 @@
       document.getElementById('profile-page').classList.toggle('visible', page === 'profile');
       document.getElementById('profile-page').classList.toggle('hidden-right', page !== 'profile');
       document.querySelectorAll('.nav-btn').forEach((b, i) => b.classList.toggle('active', i === (page === 'profile' ? 1 : 0)));
+    }
+
+    function toggleRewardSection() {
+      const type = document.getElementById('task-type').value;
+      const section = document.getElementById('reward-section');
+      if (type) {
+        section.style.display = 'block';
+        currentMin = settings[type].min;
+        currentStep = settings[type].step;
+        currentReward = currentMin;
+        document.getElementById('reward-value').innerText = currentReward;
+      } else section.style.display = 'none';
+    }
+
+    function setReward(amount) {
+      currentReward = Math.max(currentMin, Math.floor(amount / currentStep) * currentStep);
+      document.getElementById('reward-value').innerText = currentReward;
+    }
+
+    function editReward() {
+      const val = prompt(`От ${currentMin} ₽`, currentReward);
+      if (val && !isNaN(val) && parseInt(val) >= currentMin) {
+        currentReward = Math.floor(parseInt(val) / currentStep) * currentStep;
+        document.getElementById('reward-value').innerText = currentReward;
+      }
     }
 
     function validateLink(input) {
@@ -242,70 +263,6 @@
       document.getElementById('create-form').classList.remove('active');
     }
 
-    // АВТОПРОВЕРКА ПОДПИСКИ НА ТЕЛЕГРАМ
-    async function checkTelegramSubscription(channelUsername) {
-      try {
-        const chat = await tg.invoke('getChat', { chat_id: channelUsername });
-        const member = await tg.invoke('getChatMember', { chat_id: channelUsername, user_id: userId });
-        return ['member', 'administrator', 'creator'].includes(member.status);
-      } catch (e) {
-        return false;
-      }
-    }
-
-    async function doTask(taskId, link, type, reward) {
-      const btn = event.target;
-      if (btn.classList.contains('done')) return;
-
-      tg.openLink(link);
-
-      if (type === 'telegram') {
-        btn.innerText = 'ПРОВЕРЯЮ...';
-        const username = link.match(/t\.me\/([a-zA-Z0-9_]+)/i)[1];
-        const isSubscribed = await checkTelegramSubscription('@' + username);
-        
-        if (isSubscribed) {
-          tg.sendData(JSON.stringify({ action: "complete_task", task_id: taskId, reward }));
-          btn.innerText = 'ВЫПОЛНЕНО!';
-          btn.classList.add('done');
-          completedTasks.add(taskId);
-          tg.showAlert(`+${reward} ₽ за подписку!`);
-        } else {
-          btn.innerText = 'ПОДПИШИСЬ!';
-          setTimeout(() => { if (!completedTasks.has(taskId)) btn.innerText = 'ВЫПОЛНИТЬ'; }, 3000);
-        }
-      }
-    }
-
-    function filterTasks(filter) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      event.target.closest('.filter-btn').classList.add('active');
-
-      const list = document.getElementById('tasks-list');
-      list.innerHTML = '';
-      const filtered = filter === 'all' ? allTasks : allTasks.filter(t => t.type === filter);
-      if (filtered.length === 0) { list.innerHTML = '<p style="text-align:center;color:#88c0d0;margin:60px 0;">Нет заданий</p>'; return; }
-
-      filtered.forEach(task => {
-        const icon = task.type === 'yandex' ? '<i class="fab fa-yandex" style="color:#ffcc00"></i>' :
-                     task.type === 'google' ? '<i class="fab fa-google" style="color:#4285f4"></i>' :
-                     '<i class="fab fa-telegram-plane" style="color:#229ed9"></i>';
-        const btnText = completedTasks.has(task.id) ? 'ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ';
-        const btnClass = completedTasks.has(task.id) ? 'done' : '';
-
-        list.innerHTML += `
-          <div class="task">
-            <div class="task-icon">${icon}</div>
-            <div class="task-title">${task.title}</div>
-            <div class="task-link">${task.link}</div>
-            <div class="task-reward">+${task.reward} ₽</div>
-            <button class="task-do ${btnClass}" onclick="doTask(${task.id}, '${task.link}', '${task.type}', ${task.reward})">
-              ${btnText}
-            </button>
-          </div>`;
-      });
-    }
-
     function createTopupRequest() {
       const amount = parseFloat(document.getElementById('topup-amount').value);
       if (!amount || amount < 100) return tg.showAlert("Минимум 100 ₽");
@@ -320,20 +277,96 @@
       tg.showAlert("Заявка создана!");
     }
 
+    function openTopup() { document.getElementById('topup-modal').classList.add('active'); }
+    function closeTopup() { 
+      document.getElementById('topup-modal').classList.remove('active'); 
+      document.getElementById('topup-details').style.display = 'none'; 
+    }
+
     function copyText(text) {
-      navigator.clipboard.writeText(text.replace(/[^\d+]/g, '') || text);
+      navigator.clipboard.writeText(typeof text === 'string' ? text : text.innerText);
       tg.showAlert("Скопировано!");
+    }
+
+    // АВТОПРОВЕРКА ТОЛЬКО ДЛЯ ТГ — НАДЁЖНО И БЫСТРО
+    async function doTelegramTask(taskId, link, reward, button) {
+      if (button.disabled) return;
+      button.disabled = true;
+      button.innerText = "ОТКРЫВАЮ...";
+      
+      tg.openLink(link);
+      
+      button.innerText = "ПРОВЕРЯЮ...";
+      
+      setTimeout(() => {
+        tg.sendData(JSON.stringify({ 
+          action: "check_telegram_subscription", 
+          task_id: taskId, 
+          link: link 
+        }));
+        
+        // Через 2 сек сервер ответит — обновим список
+        setTimeout(() => {
+          tg.sendData(JSON.stringify({action: "get_tasks"}));
+        }, 2000);
+      }, 4000);
+    }
+
+    function filterTasks(filter) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const list = document.getElementById('tasks-list');
+      list.innerHTML = '';
+      const filtered = filter === 'all' ? allTasks : allTasks.filter(t => t.type === filter);
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#88c0d0;margin:60px 0;">Нет заданий</p>';
+        return;
+      }
+
+      filtered.forEach(task => {
+        const isDone = completedTasks.has(task.id);
+        const btnText = isDone ? 'ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ';
+        const btnDisabled = isDone ? 'disabled' : '';
+
+        list.innerHTML += `
+          <div class="task">
+            <div class="task-title">${task.title}</div>
+            <div class="task-reward">+${task.reward} ₽</div>
+            ${task.type === 'telegram' ? 
+              `<button class="task-do" ${btnDisabled} onclick="doTelegramTask(${task.id}, '${task.link}', ${task.reward}, this)">
+                ${btnText}
+              </button>` :
+              `<button class="task-do" ${btnDisabled} onclick="tg.openLink('${task.link}'); this.disabled=true; this.innerText='ОТКРЫТО'">
+                ${btnText}
+              </button>`
+            }
+          </div>`;
+      });
     }
 
     tg.onEvent('webAppDataReceived', data => {
       try {
         const res = JSON.parse(data);
-        if (res.tasks) { allTasks = res.tasks; filterTasks('all'); }
+        if (res.tasks) {
+          allTasks = res.tasks;
+          filterTasks(document.querySelector('.filter-btn.active').innerText.trim().toLowerCase() === 'все' ? 'all' : 
+                     document.querySelector('.filter-btn.active').innerText.trim().toLowerCase());
+        }
+        if (res.completed) {
+          res.completed.forEach(id => completedTasks.add(id));
+          localStorage.setItem('completedTasks', JSON.stringify([...completedTasks]));
+        }
         if (res.user) document.getElementById('user-balance').innerText = (res.user.balance || 0) + ' ₽';
-      } catch(e) {}
+      } catch(e) { console.error(e); }
     });
 
+    // Обновление каждые 8 сек
     setInterval(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 8000);
+
+    // Первая загрузка
+    tg.sendData(JSON.stringify({action: "get_tasks"}));
   </script>
 </body>
 </html>
