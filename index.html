@@ -93,7 +93,7 @@
       margin-top: 40px; cursor: pointer; text-transform: uppercase;
     }
 
-    /* ФИЛЬТР — АКТИВНАЯ КНОПКА В ЦЕНТРЕ! */
+    /* ФИЛЬТР — КНОПКИ С ИКОНКАМИ, АКТИВНАЯ В ЦЕНТРЕ */
     .filter-bar {
       display: flex; gap: 12px; padding: 14px 16px;
       overflow-x: auto; scrollbar-width: none; white-space: nowrap;
@@ -102,8 +102,6 @@
       background: rgba(20,20,38,0.8);
       border-radius: 32px;
       border: 2px solid rgba(0,255,255,0.25);
-      justify-content: flex-start;
-      transition: all 0.4s ease;
     }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-btn {
@@ -114,13 +112,10 @@
       min-width: fit-content; flex-shrink: 0;
       transition: all 0.4s ease;
       box-shadow: 0 0 25px rgba(0,255,255,0.3);
-      position: relative;
-      z-index: 1;
     }
     .filter-btn.active {
       background: var(--neon); color: #000; transform: scale(1.12);
       box-shadow: 0 0 60px rgba(0,255,255,1);
-      z-index: 10;
     }
     .filter-btn i { font-size: 22px; }
 
@@ -167,12 +162,8 @@
       width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--neon);
       object-fit: cover; box-shadow: 0 0 60px rgba(0,255,255,0.7); margin-bottom: 16px;
     }
-    .profile-name {
-      font-size: 24px; font-weight: 900; color: white;
-    }
-    .profile-id {
-      font-size: 14px; color: var(--muted); margin-top: 6px;
-    }
+    .profile-name { font-size: 24px; font-weight: 900; color: white; }
+    .profile-id { font-size: 14px; color: var(--muted); margin-top: 6px; }
 
     .profile-card {
       background: var(--glass); backdrop-filter: blur(20px); border: 3px solid var(--neon);
@@ -181,8 +172,8 @@
     .balance { font-size: 48px; font-weight: 900; color: var(--success); margin: 10px 0; }
 
     .btn { width: 100%; padding: 18px; margin: 12px 0; border: none; border-radius: 28px; font-weight: 900; font-size: 18px; cursor: pointer; }
-    .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; }
     .btn-topup { background: linear-gradient(45deg, #ffd700, #ff8c00); color: #000; box-shadow: 0 0 40px rgba(255,215,0,0.6); }
+    .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; }
   </style>
 </head>
 <body>
@@ -230,17 +221,17 @@
 
       <div id="worker-mode" style="display:none;">
         <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="filterTasks('all')" data-filter="all">
-            Все
+          <div class="filter-btn active" onclick="filterTasks('all')">
+            <i class="fas fa-th-large"></i> ВСЕ
           </div>
-          <div class="filter-btn" onclick="filterTasks('yandex')" data-filter="yandex">
-            Яндекс
+          <div class="filter-btn" onclick="filterTasks('yandex')">
+            <i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс
           </div>
-          <div class="filter-btn" onclick="filterTasks('google')" data-filter="google">
-            Google
+          <div class="filter-btn" onclick="filterTasks('google')">
+            <i class="fab fa-google" style="color:#4285f4"></i> Google
           </div>
-          <div class="filter-btn" onclick="filterTasks('telegram')" data-filter="telegram">
-            TG
+          <div class="filter-btn" onclick="filterTasks('telegram')">
+            <i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG
           </div>
         </div>
         <div id="tasks-list"></div>
@@ -248,23 +239,22 @@
     </div>
   </div>
 
-  <!-- ПРОФИЛЬ — ЧИСТЫЙ, БЕЗ РЕФЕРАЛКИ -->
+  <!-- ПРОФИЛЬ -->
   <div id="profile-page" class="page hidden-right">
     <div class="container">
       <div class="header"><h1>ПРОФИЛЬ</h1></div>
 
       <div class="profile-header">
-        <img id="user-avatar" class="profile-avatar" src="https://telegram.org/img/t_logo.png" alt="Аватар">
+        <img id="user-avatar" class="profile-avatar" src="" alt="Аватар">
         <div class="profile-name" id="user-name">Загрузка...</div>
         <div class="profile-id" id="user-username">@username</div>
       </div>
 
       <div class="profile-card">
         <div class="balance" id="user-balance">0 ₽</div>
-        <!-- УБРАН ТЕКСТ "Доступно для вывода" -->
       </div>
 
-      <button class="btn btn-topup" onclick="tg.showAlert('Пополнение скоро будет доступно!')">ПОПОЛНИТЬ</button>
+      <button class="btn btn-topup" onclick="tg.showAlert('Пополнение скоро!')">ПОПОЛНИТЬ</button>
       <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД ОТ 250 ₽</button>
     </div>
   </div>
@@ -280,13 +270,11 @@
     <div style="background:var(--glass); border:3px solid var(--neon); border-radius:32px; padding:40px 28px; width:100%; max-width:460px; text-align:center; position:relative;">
       <button onclick="closeWithdraw()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--neon); font-size:32px; cursor:pointer;">×</button>
       <h2 style="color:var(--danger); font-size:32px; margin-bottom:20px;">ВЫВОД СРЕДСТВ</h2>
-      <input type="text" id="withdraw-method" placeholder="Номер карты / телефон" style="width:100%; padding:18px; margin:12px 0; background:#000; border:3px solid var(--neon); border-radius:20px; color:white; font-size:16px;">
-      <input type="text" id="withdraw-fio" placeholder="ФИО или ник" style="width:100%; padding:18px; margin:12px 0; background:#000; border:3px solid var(--neon); border-radius:20px; color:white; font-size:16px;">
-      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250" style="width:100%; padding:18px; margin:12px 0; background:#000; border:3px solid var(--neon); border-radius:20px; color:white; font-size:16px;">
+      <input type="text" id="withdraw-method" placeholder="Номер карты / телефон">
+      <input type="text" id="withdraw-fio" placeholder="ФИО или ник">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250">
       <p style="margin:20px 0; color:#88c0d0; font-size:15px;">Мы пополним баланс в течение дня</p>
-      <button onclick="sendWithdraw()" style="width:100%; padding:20px; background:linear-gradient(45deg,var(--danger),#ff1a50); color:white; border:none; border-radius:28px; font-weight:900; font-size:20px; cursor:pointer;">
-        ОТПРАВИТЬ ЗАЯВКУ
-      </button>
+      <button onclick="sendWithdraw()" style="width:100%; padding:20px; background:linear-gradient(45deg,var(--danger),#ff1a50); color:white; border:none; border-radius:28px; font-weight:900; font-size:20px;">ОТПРАВИТЬ ЗАЯВКУ</button>
     </div>
   </div>
 
@@ -298,7 +286,7 @@
     const settings = { yandex: { min: 100, step: 100 }, google: { min: 65, step: 65 }, telegram: { min: 10, step: 10 } };
     let allTasks = [];
 
-    // Аватарка и имя
+    // Аватарка и имя из ТГ
     const user = tg.initDataUnsafe.user;
     if (user) {
       document.getElementById('user-name').innerText = (user.first_name || '') + (user.last_name ? ' ' + user.last_name : '');
@@ -321,6 +309,41 @@
       }
     }
 
+    function toggleRewardSection() {
+      const type = document.getElementById('task-type').value;
+      const section = document.getElementById('reward-section');
+      if (type) {
+        section.style.display = 'block';
+        currentStep = settings[type].step;
+        currentMin = settings[type].min;
+        currentReward = currentMin;
+        updateReward();
+      } else section.style.display = 'none';
+    }
+
+    function updateReward() { document.getElementById('reward-value').innerText = currentReward; }
+    function snapValue(val) { return Math.max(currentMin, Math.min(10000, Math.floor(val / currentStep) * currentStep)); }
+    function setReward(amount) { currentReward = snapValue(amount); updateReward(); }
+    function editReward() {
+      const val = prompt(`От ${currentMin} до 10000 ₽`, currentReward);
+      if (val && !isNaN(val)) {
+        const num = parseInt(val);
+        if (num >= currentMin && num <= 10000) {
+          currentReward = snapValue(num); updateReward();
+        }
+      }
+    }
+
+    function createTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const link = document.getElementById('task-link').value.trim();
+      const type = document.getElementById('task-type').value;
+      if (!title || !link || !type) return tg.showAlert("Заполни все поля!");
+      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward: currentReward}));
+      tg.showAlert(`Задание создано! Списано ${currentReward} ₽`);
+      document.getElementById('create-form').classList.remove('active');
+    }
+
     function filterTasks(filter) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       const clicked = event.target.closest('.filter-btn');
@@ -341,11 +364,12 @@
         return;
       }
       filtered.forEach(task => {
-        const icon = task.type === 'yandex' ? 'Яндекс' :
-                     task.type === 'google' ? 'Google' :
-                     'TG';
+        const icon = task.type === 'yandex' ? '<i class="fab fa-yandex" style="color:#ffcc00;font-size:46px"></i>' :
+                     task.type === 'google' ? '<i class="fab fa-google" style="color:#4285f4;font-size:46px"></i>' :
+                     '<i class="fab fa-telegram-plane" style="color:#229ed9;font-size:46px"></i>';
         list.innerHTML += `
           <div class="task">
+            <div class="task-icon">${icon}</div>
             <div class="task-title">${task.title}</div>
             <div class="task-link">${task.link}</div>
             <div class="task-reward">+${task.reward} ₽</div>
@@ -357,16 +381,23 @@
       });
     }
 
-    // Остальные функции (createTask, switchRole, вывод и т.д.) — без изменений
-    function toggleRewardSection() { /* ... */ }
-    function updateReward() { document.getElementById('reward-value').innerText = currentReward; }
-    function setReward(amount) { currentReward = Math.max(currentMin, Math.min(10000, Math.round(amount / currentStep) * currentStep)); updateReward(); }
-    function editReward() { /* ... */ }
-    function createTask() { /* ... */ }
-    function switchRole(role) { /* ... */ }
+    function switchRole(role) {
+      document.getElementById('employer-btn').classList.toggle('active', role === 'employer');
+      document.getElementById('worker-btn').classList.toggle('active', role === 'worker');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      if (role === 'worker') tg.sendData(JSON.stringify({action: "get_tasks"}));
+    }
+
     function openWithdraw() { document.getElementById('withdraw-modal').style.display = 'flex'; }
     function closeWithdraw() { document.getElementById('withdraw-modal').style.display = 'none'; }
-    function sendWithdraw() { /* ... */ }
+    function sendWithdraw() {
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      if (amount < 250) return tg.showAlert("Минимум 250 ₽");
+      tg.sendData(JSON.stringify({ action: "request_withdraw", amount }));
+      tg.showAlert("Заявка отправлена!");
+      closeWithdraw();
+    }
 
     tg.onEvent('webAppDataReceived', data => {
       try {
