@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
     :root {
-      --bg: #0a0a14; --glass: rgba(20,20,38,0.85); --neon: #00ffff; --success: #00ff88;
+      --bg: #0a0a14; --glass: rgba(20,20,38,0.85); --neon: #00ffff; --success: #00ff88; --danger: #ff3366;
       --border: rgba(0,255,255,0.4); --text: #e0f7ff; --muted: #88c0d0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -47,7 +47,6 @@
       border-radius: 28px; padding: 24px; margin: 16px 0; display: none;
     }
     .create-form.active { display: block; animation: slideDown 0.5s ease-out; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
     input, select {
       width: 100%; padding: 18px; margin: 12px 0;
@@ -55,18 +54,15 @@
       color: white; font-size: 16px; font-weight: 600;
     }
 
-    /* КНОПКИ 500 / 1000 / 1500 — В ОДНУ СТРОКУ, ВЛЕЗАЮТ! */
     .quick-amounts {
       display: flex; gap: 8px; justify-content: center; margin: 20px 0;
       overflow-x: auto; padding: 4px 0; scrollbar-width: none;
-      -ms-overflow-style: none;
     }
     .quick-amounts::-webkit-scrollbar { display: none; }
     .quick-btn {
       padding: 10px 16px; background: rgba(0,255,255,0.2); border: 2px solid var(--neon);
       border-radius: 20px; color: var(--neon); font-weight: 900; font-size: 15px;
       cursor: pointer; white-space: nowrap; min-width: fit-content;
-      transition: 0.3s;
     }
     .quick-btn:active { background: var(--neon); color: #000; transform: scale(1.1); }
 
@@ -76,7 +72,6 @@
       margin: 28px 0; text-align: center; cursor: pointer;
       box-shadow: 0 0 60px rgba(0,255,255,0.7); animation: glow 3s infinite;
     }
-    @keyframes glow { 0%,100% { box-shadow: 0 0 60px rgba(0,255,255,0.7); } 50% { box-shadow: 0 0 90px rgba(0,255,255,1); } }
     .reward-value { font-size: 64px; font-weight: 900; color: white; }
     .rub { font-size: 44px; font-weight: 900; color: white; vertical-align: bottom; margin-left: 4px; }
     .hint { margin-top: 10px; font-size: 14px; color: var(--muted); }
@@ -87,30 +82,29 @@
       margin-top: 40px; cursor: pointer; text-transform: uppercase;
     }
 
-    /* ФИЛЬТР — В ОДНУ СТРОКУ, ВСЁ ВЛЕЗАЕТ, КРАСИВЫЕ ЦВЕТНЫЕ ИКОНКИ! */
+    /* ФИЛЬТР — ВСЁ ВЛЕЗАЕТ, "TG" ПОЛНОСТЬЮ ВИДНО! */
     .filter-bar {
-      display: flex; gap: 10px; justify-content: flex-start;
-      margin: 20px 0; padding: 8px 4px;
-      overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
-      white-space: nowrap;
+      display: flex; gap: 9px; justify-content: flex-start;
+      margin: 18px 0; padding: 8px 2px;
+      overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+      -ms-overflow-style: none;
     }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-btn {
-      padding: 12px 18px; background: rgba(0,255,255,0.15);
-      border: 3px solid var(--neon); border-radius: 28px;
-      color: white; font-weight: 900; font-size: 15px;
-      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 15px; background: rgba(0,255,255,0.15);
+      border: 2.5px solid var(--neon); border-radius: 26px;
+      color: white; font-weight: 900; font-size: 14px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
       min-width: fit-content; flex-shrink: 0;
       transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-      box-shadow: 0 0 25px rgba(0,255,255,0.3);
+      box-shadow: 0 0 20px rgba(0,255,255,0.3);
     }
     .filter-btn.active {
-      background: var(--neon); color: #000; transform: scale(1.05);
-      box-shadow: 0 0 50px rgba(0,255,255,0.9);
+      background: var(--neon); color: #000; transform: scale(1.06);
+      box-shadow: 0 0 45px rgba(0,255,255,0.9);
     }
-    .filter-btn i { font-size: 22px; }
+    .filter-btn i { font-size: 20px; }
 
-    /* КАРТОЧКИ */
     .task {
       background: var(--glass); backdrop-filter: blur(16px); border: 2px solid var(--border);
       border-radius: 28px; padding: 20px; margin: 16px 0; position: relative;
@@ -144,6 +138,14 @@
       background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
       transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8);
     }
+
+    /* МОДАЛКА ВЫВОДА */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
+             z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--glass); border: 3px solid var(--neon); border-radius: 32px;
+      padding: 40px 28px; width: 100%; max-width: 460px; text-align: center; position: relative; }
+    .close-modal { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -209,8 +211,25 @@
     </div>
   </div>
 
+  <!-- МОДАЛКА ВЫВОДА -->
+  <div id="withdraw-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeWithdraw()">x</button>
+      <h2 style="color:var(--danger); font-size:32px; margin-bottom:20px;">ВЫВОД СРЕДСТВ</h2>
+      <input type="text" id="withdraw-method" placeholder="Номер карты / телефон">
+      <input type="text" id="withdraw-fio" placeholder="ФИО или ник">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250">
+      <p style="margin:20px 0; color:#88c0d0; font-size:15px;">
+        Мы пополним баланс в течение дня
+      </p>
+      <button style="width:100%; padding:20px; background:linear-gradient(45deg,var(--danger),#ff1a50); color:white; border:none; border-radius:28px; font-weight:900; font-size:20px; cursor:pointer;" 
+              onclick="sendWithdraw()">ОТПРАВИТЬ ЗАЯВКУ</button>
+    </div>
+  </div>
+
   <div class="bottom-nav">
     <button class="nav-btn active">Задания</button>
+    <button class="nav-btn" onclick="openWithdraw()">Вывод</button>
     <button class="nav-btn" onclick="location.href='profile.html'">Профиль</button>
   </div>
 
@@ -256,7 +275,7 @@
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
       const type = document.getElementById('task-type').value;
-      if (!title || !link || !type) return tg.showAlert("Заполни все!");
+      if (!title || !link || !type) return tg.showAlert("Заполни все поля!");
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward: currentReward}));
       tg.showAlert(`Задание создано! Списано ${currentReward} ₽`);
       document.getElementById('create-form').classList.remove('active');
@@ -300,6 +319,20 @@
       document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
       document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
       if (role === 'worker') tg.sendData(JSON.stringify({action: "get_tasks"}));
+    }
+
+    function openWithdraw() {
+      document.getElementById('withdraw-modal').classList.add('active');
+    }
+    function closeWithdraw() {
+      document.getElementById('withdraw-modal').classList.remove('active');
+    }
+    function sendWithdraw() {
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      if (amount < 250) return tg.showAlert("Минимум 250 ₽");
+      tg.sendData(JSON.stringify({ action: "request_withdraw", amount }));
+      tg.showAlert("Заявка отправлена! Мы пополним баланс в течение дня");
+      closeWithdraw();
     }
 
     tg.onEvent('webAppDataReceived', data => {
