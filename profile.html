@@ -12,18 +12,16 @@
       --text: #e0f7ff; --text-muted: #88c0d0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
-    
-    /* УБРАЛ ВСЁ ТЯЖЁЛОЕ — ГРУЗИТСЯ МГНОВЕННО */
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; overflow: hidden; }
+   
     .container { max-width: 420px; margin: 16px auto; padding: 0 16px; }
     .profile-card { background: var(--glass); border: 1px solid var(--border); border-radius: 28px; padding: 24px; }
-
-    .header h1 { 
+    .header h1 {
       text-align: center; font-size: 28px; font-weight: 900; margin: 0 0 20px;
       background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--neon); margin: 0 auto 12px; display: block; }
-    
+   
     .balance-card {
       background: linear-gradient(135deg, #1e3c72, #2a5298); border-radius: 24px; padding: 20px; text-align: center;
       margin: 20px 0; border: 1px solid rgba(0,255,255,0.4);
@@ -37,7 +35,6 @@
       background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3);
       padding: 12px 28px; border-radius: 30px; font-size: 14px; font-weight: 600; cursor: pointer;
     }
-
     .btn-row { margin: 30px 0 100px; display: flex; gap: 12px; }
     .btn {
       flex: 1; padding: 18px 0; border: none; border-radius: 20px; font-weight: 700; font-size: 16px;
@@ -52,15 +49,23 @@
     .modal-content { background: var(--card); border: 2px solid var(--neon); border-radius: 32px;
       padding: 40px 32px; width: 100%; max-width: 460px; text-align: center; position: relative; }
     .close-modal { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; }
-
     input { width: 100%; padding: 18px; margin: 12px 0; background: rgba(255,255,255,0.08);
       border: 2px solid rgba(0,255,255,0.3); border-radius: 20px; color: white; font-size: 16px; }
-
     .code {
       font-family: monospace; font-size: 42px; font-weight: 900; color: var(--gold);
       letter-spacing: 8px; background: rgba(0,0,0,0.5); padding: 24px 16px; border-radius: 24px;
       margin: 24px 0; cursor: pointer; text-align: center; border: 2px solid rgba(255,215,0,0.4);
     }
+
+    /* ПЛАВНЫЕ ПЕРЕХОДЫ — КАК В ПРЕМИУМ-ПРИЛОЖЕНИЯХ */
+    .page {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+      z-index: 10;
+    }
+    .page.hidden-left { transform: translateX(-100%); }
+    .page.hidden-right { transform: translateX(100%); }
+    .page.visible { transform: translateX(0); }
 
     .bottom-nav {
       position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.9);
@@ -69,37 +74,41 @@
     .nav-btn {
       flex: 1; padding: 16px 24px; border: none; border-radius: 25px; font-weight: 800;
       font-size: 18px; cursor: pointer; background: transparent; color: #88c0d0;
+      transition: all 0.3s ease;
     }
     .nav-btn.active {
       background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
+      transform: translateY(-4px);
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="profile-card">
-      <div class="header">
-        <h1>ПРОФИЛЬ</h1>
-      </div>
-      <div style="text-align:center; margin:20px 0;">
-        <img id="avatar" src="" alt="Аватар" class="avatar">
-        <span id="username" style="display:block; margin-top:12px; font-size:20px; font-weight:700;">@User</span>
-      </div>
-      <div class="balance-card">
-        <div class="balance-label">БАЛАНС</div>
-        <div class="balance-amount">
-          <span id="balance">0.00</span> ₽
+
+  <!-- СТРАНИЦА ПРОФИЛЯ -->
+  <div id="profile-page" class="page visible">
+    <div class="container">
+      <div class="profile-card">
+        <div class="header"><h1>ПРОФИЛЬ</h1></div>
+        <div style="text-align:center; margin:20px 0;">
+          <img id="avatar" src="" alt="Аватар" class="avatar">
+          <span id="username" style="display:block; margin-top:12px; font-size:20px; font-weight:700;">@User</span>
         </div>
-        <button class="refresh-balance" onclick="fetchBalance()">Обновить</button>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
-        <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД</button>
+        <div class="balance-card">
+          <div class="balance-label">БАЛАНС</div>
+          <div class="balance-amount">
+            <span id="balance">0.00</span> ₽
+          </div>
+          <button class="refresh-balance" onclick="fetchBalance()">Обновить</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
+          <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ПОПОЛНЕНИЕ -->
+  <!-- МОДАЛКИ -->
   <div id="topup-modal" class="modal">
     <div class="modal-content">
       <button class="close-modal" onclick="closeTopup()">×</button>
@@ -122,7 +131,6 @@
     </div>
   </div>
 
-  <!-- ВЫВОД -->
   <div id="withdraw-modal" class="modal">
     <div class="modal-content">
       <button class="close-modal" onclick="closeWithdraw()">×</button>
@@ -135,8 +143,9 @@
     </div>
   </div>
 
+  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
   <div class="bottom-nav">
-    <button class="nav-btn nav-tasks" onclick="location.href='index.html'">Задания</button>
+    <button class="nav-btn nav-tasks" onclick="goToTasks()">Задания</button>
     <button class="nav-btn nav-profile active">Профиль</button>
   </div>
 
@@ -144,9 +153,11 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
+    // Аватар и юзернейм
     document.getElementById('avatar').src = tg.initDataUnsafe.user?.photo_url || 'https://via.placeholder.com/90/00ffff/000000?text=RC';
     document.getElementById('username').innerText = '@' + (tg.initDataUnsafe.user?.username || 'User');
 
+    // Баланс
     function fetchBalance() {
       document.getElementById('balance').innerText = '...';
       tg.sendData(JSON.stringify({ action: "get_balance" }));
@@ -169,12 +180,12 @@
       } catch (e) {}
     });
 
+    // Модалки
     function openTopup() { document.getElementById('topup-modal').classList.add('active'); }
     function closeTopup() {
       document.getElementById('topup-modal').classList.remove('active');
       document.getElementById('topup-details').style.display = 'none';
     }
-
     function sendTopup() {
       const amount = parseFloat(document.getElementById('topup-amount').value);
       if (!amount || amount < 100) return tg.showAlert("Минимум 100 ₽");
@@ -186,7 +197,6 @@
 
     function openWithdraw() { document.getElementById('withdraw-modal').classList.add('active'); }
     function closeWithdraw() { document.getElementById('withdraw-modal').classList.remove('active'); }
-
     function sendWithdraw() {
       const method = document.getElementById('withdraw-method').value.trim();
       const fio = document.getElementById('withdraw-fio').value.trim();
@@ -196,6 +206,16 @@
       tg.sendData(JSON.stringify({ action: "request_withdraw", method, fio, bank, amount }));
     }
 
+    // ПЛАВНЫЙ ПЕРЕХОД НА ЗАДАНИЯ
+    function goToTasks() {
+      document.getElementById('profile-page').classList.add('hidden-left');
+      document.getElementById('profile-page').classList.remove('visible');
+      setTimeout(() => {
+        location.href = 'index.html';
+      }, 500);
+    }
+
+    // Активная кнопка
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
