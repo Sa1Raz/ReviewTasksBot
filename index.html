@@ -64,7 +64,6 @@
       border-radius: 20px; color: var(--neon); font-weight: 900; font-size: 15px;
       cursor: pointer; white-space: nowrap; min-width: fit-content;
     }
-    .quick-btn:active { background: var(--neon); color: #000; transform: scale(1.1); }
 
     .reward-box {
       background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,255,136,0.2));
@@ -82,28 +81,31 @@
       margin-top: 40px; cursor: pointer; text-transform: uppercase;
     }
 
-    /* ФИЛЬТР — ВСЁ ВЛЕЗАЕТ, "TG" ПОЛНОСТЬЮ ВИДНО! */
+    /* ФИЛЬТР — ЛИСТАЕТСЯ ВПРАВО, TG 100% ВИДНО! */
     .filter-bar {
-      display: flex; gap: 9px; justify-content: flex-start;
-      margin: 18px 0; padding: 8px 2px;
+      display: flex; gap: 10px; padding: 12px 8px 12px 16px;
       overflow-x: auto; scrollbar-width: none; white-space: nowrap;
-      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+      margin: 16px 0;
+      background: rgba(20,20,38,0.6);
+      border-radius: 30px;
+      border: 2px solid rgba(0,255,255,0.2);
     }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-btn {
-      padding: 11px 15px; background: rgba(0,255,255,0.15);
-      border: 2.5px solid var(--neon); border-radius: 26px;
-      color: white; font-weight: 900; font-size: 14px;
-      cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+      padding: 12px 18px; background: rgba(0,255,255,0.15);
+      border: 2.5px solid var(--neon); border-radius: 28px;
+      color: white; font-weight: 900; font-size: 14.5px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
       min-width: fit-content; flex-shrink: 0;
-      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      transition: all 0.35s ease;
       box-shadow: 0 0 20px rgba(0,255,255,0.3);
     }
     .filter-btn.active {
-      background: var(--neon); color: #000; transform: scale(1.06);
-      box-shadow: 0 0 45px rgba(0,255,255,0.9);
+      background: var(--neon); color: #000; transform: scale(1.07);
+      box-shadow: 0 0 50px rgba(0,255,255,0.9);
     }
-    .filter-btn i { font-size: 20px; }
+    .filter-btn i { font-size: 21px; }
 
     .task {
       background: var(--glass); backdrop-filter: blur(16px); border: 2px solid var(--border);
@@ -124,6 +126,7 @@
       margin-top: 14px; cursor: pointer; text-transform: uppercase;
     }
 
+    /* НИЖНЯЯ ПАНЕЛЬ — БЕЗ КНОПКИ ВЫВОДА */
     .bottom-nav {
       position: fixed; bottom: 20px; left: 20px; right: 20px;
       background: rgba(20,20,38,0.95); backdrop-filter: blur(25px);
@@ -211,15 +214,15 @@
     </div>
   </div>
 
-  <!-- МОДАЛКА ВЫВОДА -->
+  <!-- МОДАЛКА ВЫВОДА (открывается из профиля или кнопки в профиле) -->
   <div id="withdraw-modal" class="modal">
     <div class="modal-content">
-      <button class="close-modal" onclick="closeWithdraw()">x</button>
+      <button class="close-modal" onclick="closeWithdraw()">×</button>
       <h2 style="color:var(--danger); font-size:32px; margin-bottom:20px;">ВЫВОД СРЕДСТВ</h2>
       <input type="text" id="withdraw-method" placeholder="Номер карты / телефон">
       <input type="text" id="withdraw-fio" placeholder="ФИО или ник">
       <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250">
-      <p style="margin:20px 0; color:#88c0d0; font-size:15px;">
+      <p style="margin:20px 0; color:#88c0d0; font-size:15px; line-height:1.4;">
         Мы пополним баланс в течение дня
       </p>
       <button style="width:100%; padding:20px; background:linear-gradient(45deg,var(--danger),#ff1a50); color:white; border:none; border-radius:28px; font-weight:900; font-size:20px; cursor:pointer;" 
@@ -227,9 +230,9 @@
     </div>
   </div>
 
+  <!-- НИЖНЯЯ ПАНЕЛЬ — ТОЛЬКО 2 КНОПКИ: Задания + Профиль -->
   <div class="bottom-nav">
     <button class="nav-btn active">Задания</button>
-    <button class="nav-btn" onclick="openWithdraw()">Вывод</button>
     <button class="nav-btn" onclick="location.href='profile.html'">Профиль</button>
   </div>
 
