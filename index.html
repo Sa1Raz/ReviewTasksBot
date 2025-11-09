@@ -15,6 +15,7 @@
     body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; overflow: hidden; }
     .container { max-width: 420px; margin: 0 auto; padding: 16px 16px 140px; }
 
+    /* Плавные переходы между страницами */
     .page {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -29,6 +30,129 @@
       text-align: center; font-size: 28px; font-weight: 900; margin: 20px 0;
       background: linear-gradient(90deg, #00ffff, #00ff88);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .role-switch {
+      display: flex; background: #141426; border: 2px solid var(--border);
+      border-radius: 30px; padding: 6px; margin: 16px 0;
+    }
+    .role-btn {
+      flex: 1; padding: 12px; border-radius: 24px; font-weight: 800;
+      font-size: 15px; cursor: pointer; text-align: center; color: var(--muted);
+      transition: 0.4s;
+    }
+    .role-btn.active {
+      background: linear-gradient(135deg, #00ffff, #00ff88);
+      color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.6);
+    }
+
+    .create-btn {
+      width: 100%; padding: 20px; background: #ffeb3b; color: #000;
+      border: none; border-radius: 26px; font-size: 18px; font-weight: 900;
+      margin: 20px 0; cursor: pointer; box-shadow: 0 10px 30px rgba(255,235,59,0.4);
+      text-transform: uppercase;
+    }
+
+    .create-form {
+      background: var(--glass); backdrop-filter: blur(20px); border: 2px solid var(--border);
+      border-radius: 28px; padding: 24px; margin: 16px 0; display: none;
+    }
+    .create-form.active { display: block; animation: slideDown 0.5s ease-out; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    input, select {
+      width: 100%; padding: 18px; margin: 12px 0;
+      background: #000; border: 3px solid var(--neon); border-radius: 20px;
+      color: white; font-size: 16px; font-weight: 600;
+    }
+
+    .quick-amounts {
+      display: flex; gap: 8px; justify-content: center; margin: 20px 0;
+      overflow-x: auto; padding: 4px 0; scrollbar-width: none;
+    }
+    .quick-amounts::-webkit-scrollbar { display: none; }
+    .quick-btn {
+      padding: 10px 16px; background: rgba(0,255,255,0.2); border: 2px solid var(--neon);
+      border-radius: 20px; color: var(--neon); font-weight: 900; font-size: 15px;
+      cursor: pointer; white-space: nowrap;
+    }
+
+    .reward-box {
+      background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,255,136,0.2));
+      border: 4px solid var(--neon); border-radius: 32px; padding: 18px 12px;
+      margin: 28px 0; text-align: center; cursor: pointer;
+      box-shadow: 0 0 60px rgba(0,255,255,0.7); animation: glow 3s infinite;
+    }
+    @keyframes glow { 0%,100% { box-shadow: 0 0 60px rgba(0,255,255,0.7); } 50% { box-shadow: 0 0 90px rgba(0,255,255,1); } }
+    .reward-value { font-size: 64px; font-weight: 900; color: white; }
+    .rub { font-size: 44px; font-weight: 900; color: white; vertical-align: bottom; margin-left: 4px; }
+    .hint { margin-top: 10px; font-size: 14px; color: var(--muted); }
+
+    .submit-btn {
+      width: 100%; padding: 28px; background: linear-gradient(45deg, var(--success), #00cc66);
+      color: white; border: none; border-radius: 32px; font-weight: 900; font-size: 24px;
+      margin-top: 40px; cursor: pointer; text-transform: uppercase;
+    }
+
+    /* ФИЛЬТР — ЛИСТАЕТСЯ, ВСЁ ВИДНО */
+    .filter-bar {
+      display: flex; gap: 12px; padding: 14px 16px;
+      overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      margin: 16px 0;
+      background: rgba(20,20,38,0.8);
+      border-radius: 32px;
+      border: 2px solid rgba(0,255,255,0.25);
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      padding: 13px 20px; background: rgba(0,255,255,0.15);
+      border: 3px solid var(--neon); border-radius: 30px;
+      color: white; font-weight: 900; font-size: 15px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 9px;
+      min-width: fit-content; flex-shrink: 0;
+      transition: all 0.35s ease;
+      box-shadow: 0 0 25px rgba(0,255,255,0.3);
+    }
+    .filter-btn.active {
+      background: var(--neon); color: #000; transform: scale(1.08);
+      box-shadow: 0 0 55px rgba(0,255,255,0.95);
+    }
+    .filter-btn i { font-size: 22px; }
+
+    .task {
+      background: var(--glass); backdrop-filter: blur(16px); border: 2px solid var(--border);
+      border-radius: 28px; padding: 20px; margin: 16px 0; position: relative;
+      overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    }
+    .task::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+      background: linear-gradient(90deg, #00ffff, #00ff88);
+    }
+    .task-icon { font-size: 46px; margin-bottom: 10px; text-shadow: 0 0 20px; }
+    .task-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .task-link { color: #88c0d0; font-size: 13px; word-break: break-all; margin: 6px 0; }
+    .task-reward { font-size: 26px; font-weight: 900; color: var(--success); text-align: right; }
+    .task-do {
+      width: 100%; padding: 16px; background: linear-gradient(45deg, var(--success), #00cc66);
+      color: black; border: none; border-radius: 22px; font-weight: 900; font-size: 17px;
+      margin-top: 14px; cursor: pointer; text-transform: uppercase;
+    }
+
+    .bottom-nav {
+      position: fixed; bottom: 20px; left: 20px; right: 20px;
+      background: rgba(20,20,38,0.95); backdrop-filter: blur(25px);
+      border: 3px solid var(--border); border-radius: 36px; padding: 10px;
+      display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999;
+    }
+    .nav-btn {
+      flex: 1; padding: 18px; border: none; border-radius: 28px;
+      font-weight: 800; font-size: 17px; background: transparent; color: var(--muted);
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .nav-btn.active {
+      background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
+      transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8);
     }
 
     /* ПРОФИЛЬ — АВАТАРКА ИЗ ТГ */
@@ -63,83 +187,80 @@
       background: #000; padding: 16px; border-radius: 20px; margin: 20px 0;
       word-break: break-all; font-size: 14px; text-align: center; color: var(--neon);
     }
-
-    /* ФИЛЬТР — ЛИСТАЕТСЯ */
-    .filter-bar {
-      display: flex; gap: 12px; padding: 14px 16px;
-      overflow-x: auto; scrollbar-width: none; white-space: nowrap;
-      -webkit-overflow-scrolling: touch;
-      margin: 16px 0;
-      background: rgba(20,20,38,0.8);
-      border-radius: 32px;
-      border: 2px solid rgba(0,255,255,0.25);
-    }
-    .filter-bar::-webkit-scrollbar { display: none; }
-    .filter-btn {
-      padding: 13px 20px; background: rgba(0,255,255,0.15);
-      border: 3px solid var(--neon); border-radius: 30px;
-      color: white; font-weight: 900; font-size: 15px;
-      cursor: pointer; display: inline-flex; align-items: center; gap: 9px;
-      min-width: fit-content; flex-shrink: 0;
-      transition: all 0.35s ease;
-      box-shadow: 0 0 25px rgba(0,255,255,0.3);
-    }
-    .filter-btn.active {
-      background: var(--neon); color: #000; transform: scale(1.08);
-      box-shadow: 0 0 55px rgba(0,255,255,0.95);
-    }
-    .filter-btn i { font-size: 22px; }
-
-    .bottom-nav {
-      position: fixed; bottom: 20px; left: 20px; right: 20px;
-      background: rgba(20,20,38,0.95); backdrop-filter: blur(25px);
-      border: 3px solid var(--border); border-radius: 36px; padding: 10px;
-      display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999;
-    }
-    .nav-btn {
-      flex: 1; padding: 18px; border: none; border-radius: 28px;
-      font-weight: 800; font-size: 17px; background: transparent; color: var(--muted);
-      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
-    .nav-btn.active {
-      background: linear-gradient(45deg, #00ffff, #00ff88); color: #000;
-      transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8);
-    }
   </style>
 </head>
 <body>
 
-  <!-- ЗАДАНИЯ -->
+  <!-- СТРАНИЦА ЗАДАНИЙ -->
   <div id="tasks-page" class="page visible">
     <div class="container">
       <div class="header"><h1>ЗАДАНИЯ</h1></div>
-      <!-- ... весь код заданий как раньше ... -->
+
       <div class="role-switch">
         <div class="role-btn active" id="employer-btn" onclick="switchRole('employer')">РАБОТОДАТЕЛЬ</div>
         <div class="role-btn" id="worker-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
       </div>
-      <div id="employer-mode">/* создание задания */</div>
+
+      <div id="employer-mode">
+        <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">
+          + СОЗДАТЬ ЗАДАНИЕ
+        </button>
+
+        <div class="create-form" id="create-form">
+          <input type="text" id="task-title" placeholder="Что нужно сделать?">
+          <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
+          <select id="task-type" onchange="toggleRewardSection()">
+            <option value="">Выберите тип</option>
+            <option value="yandex">Яндекс Отзыв</option>
+            <option value="google">Google Отзыв</option>
+            <option value="telegram">Telegram Подписка</option>
+          </select>
+
+          <div class="reward-section" id="reward-section" style="display:none;">
+            <div class="quick-amounts">
+              <div class="quick-btn" onclick="setReward(500)">500 ₽</div>
+              <div class="quick-btn" onclick="setReward(1000)">1000 ₽</div>
+              <div class="quick-btn" onclick="setReward(1500)">1500 ₽</div>
+            </div>
+            <div class="reward-box" onclick="editReward()">
+              <div class="reward-value" id="reward-value">100</div><span class="rub">₽</span>
+            </div>
+            <div class="hint">Нажми на цену — введи любую сумму</div>
+          </div>
+
+          <button class="submit-btn" onclick="createTask()">ОПУБЛИКОВАТЬ ЗАДАНИЕ</button>
+        </div>
+      </div>
+
       <div id="worker-mode" style="display:none;">
         <div class="filter-bar">
-          <div class="filter-btn active" onclick="filterTasks('all')"><i class="fas fa-th-large"></i> ВСЕ</div>
-          <div class="filter-btn" onclick="filterTasks('yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
-          <div class="filter-btn" onclick="filterTasks('google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
-          <div class="filter-btn" onclick="filterTasks('telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
+          <div class="filter-btn active" onclick="filterTasks('all')">
+            <i class="fas fa-th-large"></i> ВСЕ
+          </div>
+          <div class="filter-btn" onclick="filterTasks('yandex')">
+            <i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс
+          </div>
+          <div class="filter-btn" onclick="filterTasks('google')">
+            <i class="fab fa-google" style="color:#4285f4"></i> Google
+          </div>
+          <div class="filter-btn" onclick="filterTasks('telegram')">
+            <i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG
+          </div>
         </div>
         <div id="tasks-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- ПРОФИЛЬ — ЧИСТЫЙ, С АВАТАРКОЙ ИЗ ТГ -->
+  <!-- СТРАНИЦА ПРОФИЛЯ -->
   <div id="profile-page" class="page hidden-right">
     <div class="container">
       <div class="header"><h1>ПРОФИЛЬ</h1></div>
 
       <div class="profile-header">
-        <img id="user-avatar" class="profile-avatar" src="" alt="Аватар">
+        <img id="user-avatar" class="profile-avatar" src="https://telegram.org/img/t_logo.png" alt="Аватар">
         <div class="profile-name" id="user-name">Загрузка...</div>
-        <div class="profile-id">@username</div>
+        <div class="profile-id" id="user-username">@username</div>
       </div>
 
       <div class="profile-card">
@@ -148,18 +269,28 @@
       </div>
 
       <div class="stats">
-        <div class="stat"><div class="stat-value" id="tasks-done">0</div><div class="stat-label">Выполнено</div></div>
-        <div class="stat"><div class="stat-value" id="earned-total">0 ₽</div><div class="stat-label">Заработано</div></div>
-        <div class="stat"><div class="stat-value" id="ref-count">0</div><div class="stat-label">Рефералов</div></div>
+        <div class="stat">
+          <div class="stat-value" id="tasks-done">0</div>
+          <div class="stat-label">Выполнено</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="earned-total">0 ₽</div>
+          <div class="stat-label">Заработано</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="ref-count">0</div>
+          <div class="stat-label">Рефералов</div>
+        </div>
       </div>
 
       <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД ОТ 250 ₽</button>
 
       <div class="ref-link" id="ref-link">t.me/ReviewCashBot?start=123456789</div>
-      <p style="text-align:center; color:var(--muted); font-size:13px;">Твоя реферальная ссылка</p>
+      <p style="text-align:center; color:var(--muted); font-size:13px; margin-top:8px;">Твоя реферальная ссылка</p>
     </div>
   </div>
 
+  <!-- НИЖНЯЯ ПАНЕЛЬ -->
   <div class="bottom-nav">
     <button class="nav-btn active" onclick="showPage('tasks')">Задания</button>
     <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
@@ -170,11 +301,13 @@
     <div style="background:var(--glass); border:3px solid var(--neon); border-radius:32px; padding:40px 28px; width:100%; max-width:460px; text-align:center; position:relative;">
       <button onclick="closeWithdraw()" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--neon); font-size:32px; cursor:pointer;">×</button>
       <h2 style="color:var(--danger); font-size:32px; margin-bottom:20px;">ВЫВОД СРЕДСТВ</h2>
-      <input type="text" id="withdraw-method" placeholder="Номер карты / телефон">
-      <input type="text" id="withdraw-fio" placeholder="ФИО или ник">
-      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250">
+      <input type="text" id="withdraw-method" placeholder="Номер карты / телефон" style="width:100%; padding:18px; margin:12px 0; background:#000; border:3px solid var(--neon); border-radius:20px; color:white; font-size:16px;">
+      <input type="text" id="withdraw-fio" placeholder="ФИО или ник" style="width:100%; padding:18px; margin:12px 0; background:#000; border:3px solid var(--neon); border-radius:20px; color:white; font-size:16px;">
+      <input type="number" id="withdraw-amount" placeholder="Сумма (мин. 250 ₽)" min="250" style="width:100%; padding:18px; margin:12px 0; background:#000; border:3px solid var(--neon); border-radius:20px; color:white; font-size:16px;">
       <p style="margin:20px 0; color:#88c0d0; font-size:15px;">Мы пополним баланс в течение дня</p>
-      <button onclick="sendWithdraw()" style="width:100%; padding:20px; background:linear-gradient(45deg,var(--danger),#ff1a50); color:white; border:none; border-radius:28px; font-weight:900; font-size:20px;">ОТПРАВИТЬ ЗАЯВКУ</button>
+      <button onclick="sendWithdraw()" style="width:100%; padding:20px; background:linear-gradient(45deg,var(--danger),#ff1a50); color:white; border:none; border-radius:28px; font-weight:900; font-size:20px; cursor:pointer;">
+        ОТПРАВИТЬ ЗАЯВКУ
+      </button>
     </div>
   </div>
 
@@ -182,28 +315,129 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
 
-    // АВАТАРКА И ИМЯ ИЗ TELEGRAM
+    let currentReward = 100, currentStep = 100, currentMin = 100;
+    const settings = { yandex: { min: 100, step: 100 }, google: { min: 65, step: 65 }, telegram: { min: 10, step: 10 } };
+    let allTasks = [];
+
+    // === АВАТАРКА, ИМЯ, ССЫЛКА ИЗ ТГ ===
     const user = tg.initDataUnsafe.user;
     if (user) {
-      document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+      document.getElementById('user-name').innerText = (user.first_name || '') + (user.last_name ? ' ' + user.last_name : '');
+      document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
       document.getElementById('user-avatar').src = user.photo_url || 'https://telegram.org/img/t_logo.png';
       document.getElementById('ref-link').innerText = `t.me/ReviewCashBot?start=${user.id}`;
     }
 
-    // Остальной код (задания, фильтр, вывод и т.д.) — без изменений
-    // (вставь сюда весь предыдущий JS из последней рабочей версии)
+    function showPage(page) {
+      const tasks = document.getElementById('tasks-page');
+      const profile = document.getElementById('profile-page');
+      const btns = document.querySelectorAll('.nav-btn');
+      if (page === 'tasks') {
+        tasks.classList.remove('hidden-left'); tasks.classList.add('visible');
+        profile.classList.remove('visible'); profile.classList.add('hidden-right');
+        btns[0].classList.add('active'); btns[1].classList.remove('active');
+      } else {
+        tasks.classList.remove('visible'); tasks.classList.add('hidden-left');
+        profile.classList.remove('hidden-right'); profile.classList.add('visible');
+        btns[0].classList.remove('active'); btns[1].classList.add('active');
+      }
+    }
+
+    function toggleRewardSection() {
+      const type = document.getElementById('task-type').value;
+      const section = document.getElementById('reward-section');
+      if (type) {
+        section.style.display = 'block';
+        currentStep = settings[type].step;
+        currentMin = settings[type].min;
+        currentReward = currentMin;
+        updateReward();
+      } else section.style.display = 'none';
+    }
+
+    function updateReward() { document.getElementById('reward-value').innerText = currentReward; }
+    function snapValue(val) { return Math.max(currentMin, Math.min(10000, Math.floor(val / currentStep) * currentStep)); }
+    function setReward(amount) { currentReward = snapValue(amount); updateReward(); }
+    function editReward() {
+      const val = prompt(`От ${currentMin} до 10000 ₽`, currentReward);
+      if (val && !isNaN(val)) {
+        const num = parseInt(val);
+        if (num >= currentMin && num <= 10000) {
+          currentReward = snapValue(num); updateReward();
+        }
+      }
+    }
+
+    function createTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const link = document.getElementById('task-link').value.trim();
+      const type = document.getElementById('task-type').value;
+      if (!title || !link || !type) return tg.showAlert("Заполни все поля!");
+      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward: currentReward}));
+      tg.showAlert(`Задание создано! Списано ${currentReward} ₽`);
+      document.getElementById('create-form').classList.remove('active');
+    }
+
+    function filterTasks(filter) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.closest('.filter-btn').classList.add('active');
+      const list = document.getElementById('tasks-list');
+      list.innerHTML = '';
+      const filtered = filter === 'all' ? allTasks : allTasks.filter(t => t.type === filter);
+      if (filtered.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#88c0d0;margin:60px 0;font-size:16px;">Нет заданий</p>';
+        return;
+      }
+      filtered.forEach(task => {
+        const icon = task.type === 'yandex' ? '<i class="fab fa-yandex" style="color:#ffcc00;font-size:46px"></i>' :
+                     task.type === 'google' ? '<i class="fab fa-google" style="color:#4285f4;font-size:46px"></i>' :
+                     '<i class="fab fa-telegram-plane" style="color:#229ed9;font-size:46px"></i>';
+        list.innerHTML += `
+          <div class="task">
+            <div class="task-icon">${icon}</div>
+            <div class="task-title">${task.title}</div>
+            <div class="task-link">${task.link}</div>
+            <div class="task-reward">+${task.reward} ₽</div>
+            <button class="task-do" onclick="tg.openLink('${task.link}'); this.innerText='Открыто!'">
+              ВЫПОЛНИТЬ
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    function switchRole(role) {
+      document.getElementById('employer-btn').classList.toggle('active', role === 'employer');
+      document.getElementById('worker-btn').classList.toggle('active', role === 'worker');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      if (role === 'worker') tg.sendData(JSON.stringify({action: "get_tasks"}));
+    }
+
+    function openWithdraw() { document.getElementById('withdraw-modal').style.display = 'flex'; }
+    function closeWithdraw() { document.getElementById('withdraw-modal').style.display = 'none'; }
+    function sendWithdraw() {
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      if (amount < 250) return tg.showAlert("Минимум 250 ₽");
+      tg.sendData(JSON.stringify({ action: "request_withdraw", amount }));
+      tg.showAlert("Заявка отправлена! Мы пополним баланс в течение дня");
+      closeWithdraw();
+    }
 
     tg.onEvent('webAppDataReceived', data => {
       try {
         const res = JSON.parse(data);
+        if (res.tasks) { allTasks = res.tasks; filterTasks('all'); }
         if (res.user) {
-          document.getElementById('user-balance').innerText = res.user.balance + ' ₽';
+          document.getElementById('user-balance').innerText = (res.user.balance || 0) + ' ₽';
           document.getElementById('tasks-done').innerText = res.user.tasks_done || 0;
-          document.getElementById('earned-total').innerText = res.user.earned + ' ₽';
+          document.getElementById('earned-total').innerText = (res.user.earned || 0) + ' ₽';
           document.getElementById('ref-count').innerText = res.user.refs || 0;
         }
-      } catch(e) {}
+      } catch(e) { console.error(e); }
     });
+
+    setInterval(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 10000);
   </script>
 </body>
 </html>
