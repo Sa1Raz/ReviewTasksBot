@@ -120,7 +120,7 @@
             <option value="telegram">Telegram Подписка</option>
           </select>
           <div class="reward-section" id="reward-section" style="display:none;">
-            <input type="number" class="custom-amount" id="create-reward" placeholder="Цена за выполнение" min="10" value="100">
+            <input type="number" class="custom-amount" id="create-reward" placeholder="Цена за выполнение" min="10" max="10000" value="100">
             <div class="calc-info" id="calc-info">За 1000 ₽ → ~10 отзывов</div>
             <div class="quick-amounts">
               <div class="quick-btn" onclick="setReward(500)">500 ₽</div>
@@ -167,9 +167,45 @@
     <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
   </div>
 
-  <!-- МОДАЛКИ — БЕЗ ИЗМЕНЕНИЙ -->
-  <div id="topup-modal" class="modal">...</div>
-  <div id="withdraw-modal" class="modal">...</div>
+  <!-- ПОПОЛНЕНИЕ -->
+  <div id="topup-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeTopup()">×</button>
+      <h2 style="color:#ffd700; font-size:32px;">ПОПОЛНЕНИЕ</h2>
+      <input type="number" class="custom-amount" id="custom-amount" placeholder="Введите сумму" min="100" value="100">
+      <div class="topup-amounts">
+        <div class="amount-btn" onclick="setCustomAmount(100)">100 ₽</div>
+        <div class="amount-btn" onclick="setCustomAmount(300)">300 ₽</div>
+        <div class="amount-btn" onclick="setCustomAmount(500)">500 ₽</div>
+        <div class="amount-btn" onclick="setCustomAmount(1000)">1000 ₽</div>
+        <div class="amount-btn" onclick="setCustomAmount(3000)">3000 ₽</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,140,0,0.2)); padding:24px; border-radius:24px; border:3px solid #ffd700; margin:20px 0;">
+        <p><b>Получатель:</b> <span style="color:#ffd700;">Раяз Н.</span></p>
+        <div class="copy-block" onclick="copyText('+79600738559')">Номер: +7 (960) 073-85-59</div>
+        <p><b>Банк:</b> Т-Банк</p>
+      </div>
+      <p>В комментарии укажи код:</p>
+      <div class="copy-block" id="topup-code" onclick="copyText(this.innerText)">000000</div>
+      <p style="color:#00ff88; font-weight:900; margin:25px 0;">Зачислю в течение дня!</p>
+      <button style="background:linear-gradient(45deg,#ffd700,#ff8c00); color:#000; padding:20px; font-size:20px; font-weight:900; border-radius:28px;"
+              onclick="createTopupRequest()">ОТПРАВИТЬ ЗАЯВКУ</button>
+    </div>
+  </div>
+
+  <!-- ВЫВОД С ИМЕНЕМ И БАНКОМ -->
+  <div id="withdraw-modal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeWithdraw()">×</button>
+      <h2 style="color:#ff3366; font-size:32px;">ВЫВОД СРЕДСТВ</h2>
+      <input type="number" id="withdraw-amount" placeholder="Сумма (от 250 ₽)" min="250">
+      <input type="text" id="withdraw-card" placeholder="Номер карты / телефона">
+      <input type="text" id="withdraw-name" placeholder="Имя или ник в банке">
+      <input type="text" id="withdraw-bank" placeholder="Банк (Т-Банк, Сбер и т.д.)">
+      <button style="background:linear-gradient(45deg,#ff3366,#ff1a50); color:white; padding:20px; font-size:20px; font-weight:900; border-radius:28px; margin-top:20px;"
+              onclick="sendWithdraw()">ВЫВЕСТИ</button>
+    </div>
+  </div>
 
   <script>
     const tg = window.Telegram.WebApp;
@@ -191,7 +227,7 @@
     let allTasks = [];
     let completedTasks = localStorage.getItem('completedTasks') ? new Set(JSON.parse(localStorage.getItem('completedTasks'))) : new Set();
 
-    // УМНЫЙ ОКРУГЛИТЕЛЬ — РАБОТАЕТ МОМЕНТАЛЬНО
+    // ИДЕАЛЬНЫЙ ОКРУГЛИТЕЛЬ + ЛИМИТ 10000
     function smartRound() {
       const type = document.getElementById('task-type').value;
       if (!type) return;
@@ -200,10 +236,16 @@
       let value = parseInt(input.value) || 0;
       const { min, step } = rules[type];
 
+      // Лимит 10000
+      if (value > 10000) value = 10000;
       if (value < min) value = min;
+
+      // Округление вниз до шага
       value = Math.floor(value / step) * step;
+
       input.value = value;
 
+      // Показ сколько отзывов
       const count = Math.floor(1000 / value);
       document.getElementById('calc-info').innerText = `За 1000 ₽ → ~${count} отзывов по ${value} ₽`;
     }
@@ -217,20 +259,36 @@
       const input = document.getElementById('create-reward');
       input.min = min;
       input.value = min;
+      input.max = 10000;
       smartRound();
     }
 
     function setReward(amount) {
-      document.getElementById('create-reward').value = amount;
+      const input = document.getElementById('create-reward');
+      input.value = Math.min(amount, 10000);
       smartRound();
     }
 
-    // САМОЕ ГЛАВНОЕ — ПРИВЯЗКА К ПОЛЮ
+    // ПРИВЯЗЫВАЕМ К ПОЛЮ — РАБОТАЕТ МОЛНИЕНОСНО
     const rewardInput = document.getElementById('create-reward');
     rewardInput.addEventListener('input', smartRound);
     rewardInput.addEventListener('blur', smartRound);
 
-    // Остальной твой код — 100% без изменений
+    // ВСЁ ОСТАЛЬНОЕ — ТВОЙ КОД БЕЗ ИЗМЕНЕНИЙ
+    function showPage(page) {
+      document.getElementById('tasks-page').classList.toggle('visible', page === 'tasks');
+      document.getElementById('tasks-page').classList.toggle('hidden-left', page !== 'tasks');
+      document.getElementById('profile-page').classList.toggle('visible', page === 'profile');
+      document.getElementById('profile-page').classList.toggle('hidden-right', page !== 'profile');
+      document.querySelectorAll('.nav-btn').forEach((b, i) => b.classList.toggle('active', i === (page === 'profile' ? 1 : 0)));
+    }
+    function switchRole(role) {
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(role + '-btn').classList.add('active');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      if (role === 'worker') filterTasks('all');
+    }
     function createTask() {
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
@@ -239,31 +297,113 @@
       if (!title || !link || !type) return tg.showAlert("Заполни все поля!");
       if (!/^https?:\/\/.+/i.test(link)) return tg.showAlert("Неверная ссылка!");
       if (isNaN(reward) || reward < rules[type].min) return tg.showAlert(`Минимум ${rules[type].min} ₽`);
+      if (reward > 10000) return tg.showAlert("Максимум 10000 ₽ за задание!");
       if (reward > userBalance) return tg.showAlert("Недостаточно средств на балансе!");
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
       tg.showAlert("Задание создано!");
       document.getElementById('create-form').classList.remove('active');
     }
-
-    // ВСЁ ОСТАЛЬНОЕ — ТВОЙ КОД, Я НЕ ТРОГАЛ!
-    // (handleTask, filterTasks, модалки, вывод, пополнение — всё как было)
-    // Просто скопировал остальное без изменений...
-
-    function showPage(page) { /* твой код */ }
-    function switchRole(role) { /* твой код */ }
-    function handleTask(taskId, link, type, reward, button) { /* твой код */ }
-    function filterTasks(filter) { /* твой код */ }
-    function setCustomAmount(amount) { /* твой код */ }
-    function openTopupFull() { /* твой код */ }
-    function createTopupRequest() { /* твой код */ }
-    function openWithdraw() { /* твой код */ }
-    function closeWithdraw() { /* твой код */ }
-    function closeTopup() { /* твой код */ }
-    function sendWithdraw() { /* твой код */ }
-    function copyText(text) { /* твой код */ }
-    function centerFilter(btn, filter) { /* твой код */ }
-
-    tg.onEvent('webAppDataReceived', data => { /* твой код */ });
+    function handleTask(taskId, link, type, reward, button) {
+      if (button.disabled) return;
+      if (type === 'yandex') {
+        button.disabled = true; button.innerText = "ОТКРЫТО"; button.classList.add('yandex');
+        tg.openLink(link);
+        tg.showAlert("Сделай скрин отзыва → @RapiHappy → получи " + reward + " ₽!");
+      } else if (type === 'google') {
+        button.disabled = true; button.innerText = "ПРОВЕРЯЮ...";
+        tg.openLink(link);
+        setTimeout(() => {
+          tg.sendData(JSON.stringify({ action: "complete_task_auto", task_id: taskId, user_id: userId }));
+          button.innerText = "ВЫПОЛНЕНО"; button.style.background = "linear-gradient(45deg, #00ff88, #00cc66)";
+          tg.showAlert(`+${reward} ₽ зачислено!`);
+        }, 15000);
+      } else if (type === 'telegram') {
+        button.disabled = true; button.innerText = "ОТКРЫВАЮ...";
+        tg.openLink(link);
+        setTimeout(() => {
+          tg.sendData(JSON.stringify({ action: "check_telegram_subscription", task_id: taskId, link }));
+        }, 5000);
+      }
+    }
+    function filterTasks(filter) {
+      const list = document.getElementById('tasks-list');
+      list.innerHTML = '';
+      const filtered = filter === 'all' ? allTasks : allTasks.filter(t => t.type === filter);
+      if (filtered.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#88c0d0;margin:60px 0;">Нет заданий</p>';
+        return;
+      }
+      filtered.forEach(task => {
+        const isDone = completedTasks.has(task.id);
+        const btnText = isDone ? 'ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ';
+        const btnClass = task.type === 'yandex' ? 'yandex' : '';
+        list.innerHTML += `
+          <div class="task">
+            <div class="task-title">${task.title}</div>
+            <div class="task-reward">+${task.reward} ₽</div>
+            <button class="task-do ${btnClass}" ${isDone ? 'disabled' : ''}
+                    onclick="handleTask(${task.id}, '${task.link}', '${task.type}', ${task.reward}, this)">
+              ${btnText}
+            </button>
+          </div>`;
+      });
+    }
+    function setCustomAmount(amount) {
+      selectedAmount = amount;
+      document.getElementById('custom-amount').value = amount;
+    }
+    function openTopupFull() {
+      const modal = document.getElementById('topup-modal');
+      modal.classList.add('active');
+      const code = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('topup-code').innerText = code;
+    }
+    function createTopupRequest() {
+      selectedAmount = parseInt(document.getElementById('custom-amount').value) || 100;
+      if (selectedAmount < 100) return tg.showAlert("Минимум 100 ₽");
+      const code = document.getElementById('topup-code').innerText;
+      tg.sendData(JSON.stringify({ action: "request_topup", amount: selectedAmount, code, to_main_admin: true, user_id: userId }));
+      tg.showAlert(`Заявка на ${selectedAmount} ₽ создана! Код: ${code}`);
+    }
+    function openWithdraw() { document.getElementById('withdraw-modal').classList.add('active'); }
+    function closeWithdraw() { document.getElementById('withdraw-modal').classList.remove('active'); }
+    function closeTopup() { document.getElementById('topup-modal').classList.remove('active'); }
+    function sendWithdraw() {
+      const amount = parseInt(document.getElementById('withdraw-amount').value);
+      const card = document.getElementById('withdraw-card').value.trim();
+      const name = document.getElementById('withdraw-name').value.trim();
+      const bank = document.getElementById('withdraw-bank').value.trim();
+      if (amount < 250) return tg.showAlert("Минимум 250 ₽");
+      if (!card || !name || !bank) return tg.showAlert("Заполни все поля!");
+      if (amount > userBalance) return tg.showAlert("Недостаточно средств");
+      tg.sendData(JSON.stringify({
+        action: "request_withdraw", amount, card, name, bank, user_id: userId
+      }));
+      tg.showAlert("Заявка на вывод отправлена!");
+      closeWithdraw();
+    }
+    function copyText(text) {
+      navigator.clipboard.writeText(typeof text === 'string' ? text : text.innerText);
+      tg.showAlert("Скопировано!");
+    }
+    function centerFilter(btn, filter) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const container = document.getElementById('filter-bar');
+      const btnRect = btn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft + btnRect.left - containerRect.left - (containerRect.width / 2) + (btnRect.width / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      filterTasks(filter);
+    }
+    tg.onEvent('webAppDataReceived', data => {
+      try {
+        const res = JSON.parse(data);
+        if (res.tasks) { allTasks = res.tasks; if (document.getElementById('worker-mode').style.display !== 'none') filterTasks('all'); }
+        if (res.user) { userBalance = res.user.balance || 0; document.getElementById('user-balance').innerText = userBalance + ' ₽'; }
+        if (res.completed) { res.completed.forEach(id => completedTasks.add(id)); localStorage.setItem('completedTasks', JSON.stringify([...completedTasks])); }
+      } catch(e) {}
+    });
     setInterval(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 8000);
     tg.sendData(JSON.stringify({action: "get_tasks"}));
   </script>
