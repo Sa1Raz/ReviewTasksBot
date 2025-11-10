@@ -83,7 +83,7 @@
     .task-do.yandex { background: linear-gradient(45deg, #ffcc00, #ffb700); }
     .task-do:disabled { background: #333; color: #888; cursor: not-allowed; opacity: 0.7; }
 
-    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
+    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box体现在-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
     .nav-btn { flex: 1; padding: 18px; border: none; border-radius: 28px; font-weight: 800; font-size: 17px; background: transparent; color: var(--muted); transition: all 0.4s ease; }
     .nav-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8); }
 
@@ -192,10 +192,10 @@
       </div>
       <div id="worker-mode" style="display:none;">
         <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="centerFilter(this, 'all')"><i class="fas fa-list"></i> ВСЕ</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
+          <div class="filter-btn active" onclick="centerFilter(this, 'all')">ВСЕ</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'yandex')">Яндекс</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'google')">Google</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'telegram')">TG</div>
         </div>
         <div id="tasks-list"></div>
       </div>
@@ -207,7 +207,7 @@
       <div class="header">
         <h1>ПРОФИЛЬ</h1>
         <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
-          <i class="fas fa-headset"></i>
+          ПОМОЩЬ
         </div>
       </div>
       <div class="profile-header">
@@ -310,11 +310,13 @@
       roundAndCalc();
     }
 
-    // ИСПРАВЛЕНО: ОКРУГЛЕНИЕ ТОЛЬКО КРАТНО 100!
     function roundAndCalc() {
       let val = parseInt(document.getElementById('create-reward').value) || 100;
       if (val < 100) val = 100;
-      val = Math.round(val / 100) * 100;  // ТОЛЬКО 100, 200, 300, 400...
+      
+      // ОКРУГЛЕНИЕ ВНИЗ ДО 100 — КАК ТЫ СКАЗАЛ!
+      val = Math.floor(val / 100) * 100;
+      
       document.getElementById('create-reward').value = val;
 
       const count = val / 100;
@@ -347,7 +349,6 @@
       if (!title || !link || !type || !reward) return tg.showAlert("Заполни все поля!");
       if (!/^https?:\/\/.+/i.test(link)) return tg.showAlert("Неверная ссылка!");
       if (reward < 100) return tg.showAlert("Минимум 100 ₽");
-      if (reward % 100 !== 0) return tg.showAlert("Сумма должна быть кратна 100 ₽");
       if (reward > userBalance) return tg.showAlert("Недостаточно средств!");
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
       tg.showAlert("Задание создано!");
@@ -446,8 +447,8 @@
     }
 
     function copyText(text) {
-      navigator.clipboard.writeText(typeof text === 'string' ? text : text.innerText);
-      tg.showAlert("Скопировано!");
+      const str = typeof text === 'string' ? text : text.innerText;
+      navigator.clipboard.writeText(str).then(() => tg.showAlert("Скопировано!"));
     }
 
     tg.onEvent('webAppDataReceived', data => {
