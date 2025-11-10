@@ -57,6 +57,8 @@
     }
 
     .submit-btn { width: 100%; padding: 28px; background: linear-gradient(45deg, var(--success), #00cc66); color: white; border: none; border-radius: 32px; font-weight: 900; font-size: 24px; margin-top: 40px; cursor: pointer; text-transform: uppercase; }
+    
+    /* ФИЛЬТРЫ С ИКОНКАМИ */
     .filter-bar {
       display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none;
       white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px;
@@ -74,20 +76,19 @@
       box-shadow: 0 0 60px rgba(0,255,255,1);
     }
     .filter-btn i { font-size: 18px; }
+
     .task { background: var(--glass); backdrop-filter: blur(16px); border: 2px solid var(--border); border-radius: 28px; padding: 20px; margin: 16px 0; position: relative; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
     .task::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #00ffff, #00ff88); }
     .task-title { font-size: 18px; font-weight: 900; margin: 8px 0; }
     .task-reward { font-size: 24px; font-weight: 900; color: var(--success); margin: 12px 0; text-align: center; }
-    .task-do {
-      width: 100%; padding: 18px; background: linear-gradient(45deg, var(fl--success), #00cc66);
-      color: black; border: none; border-radius: 24px; font-weight: 900; font-size: 18px;
-      margin-top: 16px; cursor: pointer; text-transform: uppercase;
-    }
+    .task-do { width: 100%; padding: 18px; background: linear-gradient(45deg, var(--success), #00cc66); color: black; border: none; border-radius: 24px; font-weight: 900; font-size: 18px; margin-top: 16px; cursor: pointer; text-transform: uppercase; }
     .task-do.yandex { background: linear-gradient(45deg, #ffcc00, #ffb700); }
     .task-do:disabled { background: #333; color: #888; cursor: not-allowed; opacity: 0.7; }
+
     .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
     .nav-btn { flex: 1; padding: 18px; border: none; border-radius: 28px; font-weight: 800; font-size: 17px; background: transparent; color: var(--muted); transition: all 0.4s ease; }
     .nav-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8); }
+
     .profile-header { text-align: center; padding: 30px 20px 10px; position: relative; }
     .profile-avatar { width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--neon); object-fit: cover; box-shadow: 0 0 60px rgba(0,255,255,0.7); margin-bottom: 16px; }
     .profile-card { background: var(--glass); backdrop-filter: blur(20px); border: 3px solid var(--neon); border-radius: 32px; padding: 24px; margin: 20px 0; text-align: center; }
@@ -95,53 +96,46 @@
     .btn { width: 100%; padding: 18px; margin: 12px 0; border: none; border-radius: 28px; font-weight: 900; font-size: 18px; cursor: pointer; }
     .btn-topup { background: linear-gradient(45deg, var(--gold), #ff8c00); color: #000; box-shadow: 0 0 40px rgba(255,215,0,0.6); }
     .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; }
+
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
     .modal.active { display: flex; }
     .modal-content { background: var(--glass); border: 3px solid var(--neon); border-radius: 32px; padding: 40px 28px; width: 100%; max-width: 460px; text-align: center; position: relative; overflow-y: auto; max-height: 90vh; }
     .close-btn { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; }
 
-    /* КАЛЬКУЛЯТОР — ИДЕАЛЬНЫЙ */
+    /* КАЛЬКУЛЯТОР — ТОЛЬКО ЧИСЛО ОТЗЫВОВ */
     .calc-box {
       background: linear-gradient(135deg, #1a0033, #000428);
       border: 4px solid #ffd700;
       border-radius: 32px;
-      padding: 28px;
-      margin: 20px 0;
+      padding: 32px;
+      margin: 24px 0;
       text-align: center;
-      box-shadow: 0 0 80px rgba(255,215,0,0.8);
+      box-shadow: 0 0 80px rgba(255,215,0,0.9);
       position: relative;
       overflow: hidden;
     }
     .calc-box::before {
       content: ''; position: absolute; top: -50%; left: -50%;
       width: 200%; height: 200%;
-      background: radial-gradient(circle, rgba(255,215,0,0.2) 0%, transparent 70%);
-      animation: pulse 5s infinite;
+      background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
+      animation: pulse 6s infinite;
     }
-    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
     .calc-count {
-      font-size: 64px;
+      font-size: 80px;
       font-weight: 900;
       background: linear-gradient(90deg, #ffd700, #ff8c00);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px rgba(255,215,0,0.8);
+      text-shadow: 0 0 40px rgba(255,215,0,0.9);
       line-height: 1;
     }
-    .calc-text {
-      font-size: 32px;
+    .calc-label {
+      font-size: 28px;
       font-weight: 900;
       color: #ffffff;
       text-shadow: 0 0 20px #ffd700;
-      margin: 8px 0;
-    }
-    .calc-price {
-      font-size: 48px;
-      font-weight: 900;
-      background: linear-gradient(90deg, #00ffff, #00ff88);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px #00ffff;
+      margin-top: 8px;
     }
     .reward-input {
       width: 100%; padding: 24px; margin: 16px 0; background: #000;
@@ -178,8 +172,7 @@
             
             <div class="calc-box">
               <div class="calc-count" id="calc-count">1</div>
-              <div class="calc-text" id="calc-text">ОТЗЫВ</div>
-              <div class="calc-price" id="calc-price">по 100 ₽</div>
+              <div class="calc-label" id="calc-label">ОТЗЫВ</div>
             </div>
             
             <div class="quick-amounts">
@@ -197,10 +190,10 @@
       </div>
       <div id="worker-mode" style="display:none;">
         <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="centerFilter(this, 'all')">ВСЕ</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'yandex')">Яндекс</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'google')">Google</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'telegram')">TG</div>
+          <div class="filter-btn active" onclick="centerFilter(this, 'all')"><i class="fas fa-list"></i> ВСЕ</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
         </div>
         <div id="tasks-list"></div>
       </div>
@@ -212,7 +205,7 @@
       <div class="header">
         <h1>ПРОФИЛЬ</h1>
         <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
-          Поддержка
+          <i class="fas fa-headset"></i>
         </div>
       </div>
       <div class="profile-header">
@@ -314,8 +307,7 @@
       if (!type) {
         section.style.display = 'none';
         document.getElementById('calc-count').innerText = '1';
-        document.getElementById('calc-text').innerText = 'ОТЗЫВ';
-        document.getElementById('calc-price').innerText = 'по 100 ₽';
+        document.getElementById('calc-label').innerText = 'ОТЗЫВ';
         document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.quick-btn').classList.add('active');
         return;
@@ -338,8 +330,7 @@
 
       const count = Math.floor(1000 / val);
       document.getElementById('calc-count').innerText = count;
-      document.getElementById('calc-text').innerText = count === 1 ? 'ОТЗЫВ' : 'ОТЗЫВОВ';
-      document.getElementById('calc-price').innerText = `по ${val} ₽`;
+      document.getElementById('calc-label').innerText = count === 1 ? 'ОТЗЫВ' : 'ОТЗЫВОВ';
 
       document.querySelectorAll('.quick-btn').forEach(b => {
         b.classList.toggle('active', parseInt(b.innerText) === val);
