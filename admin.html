@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReviewCash — АДМИНКА</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { background: #0a0a14; color: #e0f7ff; font-family: Arial; padding: 20px; }
+    h1 { text-align: center; color: #00ffff; }
+    .tab { padding: 15px; background: #141426; border: 2px solid #00ffff; border-radius: 15px; margin: 10px 0; cursor: pointer; text-align: center; font-weight: 900; }
+    .tab.active { background: #00ffff; color: #000; }
+    .content { display: none; background: #141426; padding: 20px; border-radius: 15px; border: 2px solid #00ffff; margin-top: 20px; }
+    .item { background: #1a1a2e; padding: 15px; margin: 10px 0; border-radius: 12px; border-left: 5px solid #00ff88; }
+    button { background: #00ff88; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; margin: 5px; }
+    .red { background: #ff3366; color: white; }
+  </style>
+</head>
+<body>
+  <h1>REVIEWCASH — АДМИНКА</h1>
+  <div id="tabs">
+    <div class="tab active" onclick="openTab('tasks')">Задания</div>
+    <div class="tab" onclick="openTab('topups')">Пополнения</div>
+    <div class="tab" onclick="openTab('withdraws')">Выводы</div>
+    <div class="tab" onclick="openTab('yandex')">Яндекс Скрины</div>
+    <div class="tab" onclick="openTab('stats')">Статистика</div>
+  </div>
+
+  <div id="tasks" class="content" style="display:block;"></div>
+  <div id="topups" class="content"></div>
+  <div id="withdraws" class="content"></div>
+  <div id="yandex" class="content"></div>
+  <div id="stats" class="content"></div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
+
+    function openTab(name) {
+      document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
+      document.getElementById(name).style.display = 'block';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      tg.sendData(JSON.stringify({ action: "admin_get_" + name }));
+    }
+
+    tg.onEvent('webAppDataReceived', data => {
+      const res = JSON.parse(data);
+      if (res.tasks) document.getElementById('tasks').innerHTML = res.tasks.map(t => `<div class="item"><b>${t.title}</b> — ${t.reward} ₽<br><small>${t.type} | @${t.username}</small><br><button class="red" onclick="tg.sendData(JSON.stringify({action:'admin_delete_task',id:${t.id}}))">Удалить</button></div>`).join('');
+      if (res.withdraws) document.getElementById('withdraws').innerHTML = res.withdraws.map(w => `<div class="item"><b>${w.amount} ₽</b> → ${w.card}<br><small>${w.name} | ${w.bank} | @${w.username}</small><br><button onclick="tg.sendData(JSON.stringify({action:'admin_approve_withdraw',id:${w.id}}))">ВЫПЛАТИТЬ</button> <button class="red">ОТКЛОНИТЬ</button></div>`).join('');
+    });
+
+    openTab('tasks');
+  </script>
+</body>
+</html>
