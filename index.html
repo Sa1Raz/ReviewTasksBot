@@ -310,10 +310,11 @@
       roundAndCalc();
     }
 
+    // ИСПРАВЛЕНО: ОКРУГЛЕНИЕ ТОЛЬКО КРАТНО 100!
     function roundAndCalc() {
       let val = parseInt(document.getElementById('create-reward').value) || 100;
       if (val < 100) val = 100;
-      val = Math.round(val / 50) * 50;
+      val = Math.round(val / 100) * 100;  // ТОЛЬКО 100, 200, 300, 400...
       document.getElementById('create-reward').value = val;
 
       const count = val / 100;
@@ -346,6 +347,7 @@
       if (!title || !link || !type || !reward) return tg.showAlert("Заполни все поля!");
       if (!/^https?:\/\/.+/i.test(link)) return tg.showAlert("Неверная ссылка!");
       if (reward < 100) return tg.showAlert("Минимум 100 ₽");
+      if (reward % 100 !== 0) return tg.showAlert("Сумма должна быть кратна 100 ₽");
       if (reward > userBalance) return tg.showAlert("Недостаточно средств!");
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
       tg.showAlert("Задание создано!");
