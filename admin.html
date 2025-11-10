@@ -3,55 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReviewCash — АДМИНКА</title>
+  <title>АДМИНКА ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
-    body { background: #0a0a14; color: #e0f7ff; font-family: Arial; padding: 20px; }
-    h1 { text-align: center; color: #00ffff; }
-    .tab { padding: 15px; background: #141426; border: 2px solid #00ffff; border-radius: 15px; margin: 10px 0; cursor: pointer; text-align: center; font-weight: 900; }
-    .tab.active { background: #00ffff; color: #000; }
-    .content { display: none; background: #141426; padding: 20px; border-radius: 15px; border: 2px solid #00ffff; margin-top: 20px; }
-    .item { background: #1a1a2e; padding: 15px; margin: 10px 0; border-radius: 12px; border-left: 5px solid #00ff88; }
-    button { background: #00ff88; color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; margin: 5px; }
-    .red { background: #ff3366; color: white; }
+    :root{--bg:#0a0a14;--glass:rgba(20,20,38,0.95);--neon:#00ffff;--gold:#ffd700;--success:#00ff88;--danger:#ff3366;}
+    body{background:var(--bg);color:white;font-family:sans-serif;min-height:100vh;}
+    .container{max-width:460px;margin:0 auto;padding:20px;}
+    .header{text-align:center;padding:30px 0;}
+    .header h1{font-size:32px;font-weight:900;background:linear-gradient(90deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .crown{font-size:50px;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+    .tabs{display:flex;background:#141426;border-radius:30px;padding:8px;margin:20px 0;border:3px solid var(--neon);}
+    .tab{flex:1;padding:16px;text-align:center;border-radius:24px;font-weight:900;cursor:pointer;transition:.4s;}
+    .tab.active{background:linear-gradient(135deg,var(--neon),var(--success));color:#000;}
+    .section{display:none;}
+    .section.active{display:block;animation:fadeIn .5s;}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    .card{background:var(--glass);border:3px solid var(--neon);border-radius:28px;padding:20px;margin:16px 0;position:relative;}
+    .card::before{content:'';position:absolute;top:0;left:0;width:100%;height:6px;background:linear-gradient(90deg,#ffd700,#ff8c00);}
+    .btn{padding:14px 20px;border:none;border-radius:20px;font-weight:900;font-size:14px;cursor:pointer;margin:5px;}
+    .btn-success{background:var(--success);color:#000;}
+    .btn-danger{background:var(--danger);color:white;}
+    .proof-img{width:100%;border-radius:16px;margin:12px 0;border:3px solid var(--gold);cursor:pointer;}
   </style>
 </head>
 <body>
-  <h1>REVIEWCASH — АДМИНКА</h1>
-  <div id="tabs">
-    <div class="tab active" onclick="openTab('tasks')">Задания</div>
-    <div class="tab" onclick="openTab('topups')">Пополнения</div>
-    <div class="tab" onclick="openTab('withdraws')">Выводы</div>
-    <div class="tab" onclick="openTab('yandex')">Яндекс Скрины</div>
-    <div class="tab" onclick="openTab('stats')">Статистика</div>
+  <div class="container">
+    <div class="header"><div class="crown">Crown</div><h1>ГЛАВНАЯ АДМИНКА</h1><p style="color:#ffd700;">@RapiHappy — ЦАРЬ</p></div>
+    <div class="tabs">
+      <div class="tab active" onclick="openTab('payments')">ПЛАТЕЖИ</div>
+      <div class="tab" onclick="openTab('withdraws')">ВЫВОДЫ</div>
+      <div class="tab" onclick="openTab('tasks')">ЗАДАНИЯ</div>
+      <div class="tab" onclick="openTab('proofs')">ОТЗЫВЫ</div>
+    </div>
+    <div id="payments" class="section active"><div id="payments-list">Загрузка...</div></div>
+    <div id="withdraws" class="section"><div id="withdraws-list">Загрузка...</div></div>
+    <div id="tasks" class="section"><div id="tasks-admin-list">Загрузка...</div></div>
+    <div id="proofs" class="section"><div id="proofs-list">Загрузка...</div></div>
   </div>
-
-  <div id="tasks" class="content" style="display:block;"></div>
-  <div id="topups" class="content"></div>
-  <div id="withdraws" class="content"></div>
-  <div id="yandex" class="content"></div>
-  <div id="stats" class="content"></div>
-
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready(); tg.expand();
-
-    function openTab(name) {
-      document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
-      document.getElementById(name).style.display = 'block';
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      tg.sendData(JSON.stringify({ action: "admin_get_" + name }));
-    }
-
-    tg.onEvent('webAppDataReceived', data => {
-      const res = JSON.parse(data);
-      if (res.tasks) document.getElementById('tasks').innerHTML = res.tasks.map(t => `<div class="item"><b>${t.title}</b> — ${t.reward} ₽<br><small>${t.type} | @${t.username}</small><br><button class="red" onclick="tg.sendData(JSON.stringify({action:'admin_delete_task',id:${t.id}}))">Удалить</button></div>`).join('');
-      if (res.withdraws) document.getElementById('withdraws').innerHTML = res.withdraws.map(w => `<div class="item"><b>${w.amount} ₽</b> → ${w.card}<br><small>${w.name} | ${w.bank} | @${w.username}</small><br><button onclick="tg.sendData(JSON.stringify({action:'admin_approve_withdraw',id:${w.id}}))">ВЫПЛАТИТЬ</button> <button class="red">ОТКЛОНИТЬ</button></div>`).join('');
-    });
-
-    openTab('tasks');
+    const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+    const user = tg.initDataUnsafe?.user || {};
+    if(user.username !== "RapiHappy") { document.body.innerHTML="<h1 style='text-align:center;color:#ff3366;padding:100px;'>Доступ запрещён</h1>"; throw ""; }
+    function openTab(t){document.querySelectorAll('.section,.tab').forEach(e=>e.classList.remove('active'));document.getElementById(t).classList.add('active');document.querySelector(`.tab[onclick="openTab('${t}')"]`).classList.add('active');tg.sendData(JSON.stringify({action:"admin_get_all"}));}
+    function approvePayment(id,a,u){tg.sendData(JSON.stringify({action:"admin_approve_payment",id,amount:a,user_id:u}));setTimeout(()=>tg.sendData(JSON.stringify({action:"admin_get_all"})),1000);}
+    function rejectPayment(id){tg.sendData(JSON.stringify({action:"admin_reject_payment",id}));setTimeout(()=>tg.sendData(JSON.stringify({action:"admin_get_all"})),1000);}
+    tg.onEvent('webAppDataReceived', d=>{try{const r=JSON.parse(d);if(r.payments){const l=document.getElementById('payments-list');l.innerHTML='';r.payments.forEach(p=>l.innerHTML+=`<div class="card"><div><b>+${p.amount} ₽</b> от @${p.username||p.user_id}</div><div>Код: ${p.code}</div><div class="card-actions"><button class="btn btn-success" onclick="approvePayment(${p.id},${p.amount},${p.user_id})">ЗАЧИСЛИТЬ</button><button class="btn btn-danger" onclick="rejectPayment(${p.id})">ОТКЛОНИТЬ</button></div></div>`);}}catch(e){}});
+    setInterval(()=>tg.sendData(JSON.stringify({action:"admin_get_all"})),10000); tg.sendData(JSON.stringify({action:"admin_get_all"}));
   </script>
 </body>
 </html>
