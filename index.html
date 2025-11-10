@@ -83,7 +83,7 @@
     .task-do.yandex { background: linear-gradient(45deg, #ffcc00, #ffb700); }
     .task-do:disabled { background: #333; color: #888; cursor: not-allowed; opacity: 0.7; }
 
-    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box体现在-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
+    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
     .nav-btn { flex: 1; padding: 18px; border: none; border-radius: 28px; font-weight: 800; font-size: 17px; background: transparent; color: var(--muted); transition: all 0.4s ease; }
     .nav-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8); }
 
@@ -101,45 +101,46 @@
     .close-btn { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; }
     .copy-block { background: rgba(0,255,255,0.15); padding: 16px; border-radius: 20px; margin: 12px 0; cursor: pointer; font-weight: 900; }
 
+    /* УМЕНЬШИЛИ КОЛИЧЕСТВО ОТЗЫВОВ — БОЛЬШЕ НЕ ОГРОМНОЕ */
     .calc-box {
       background: linear-gradient(135deg, #1a0033, #000428);
       border: 4px solid #ffd700;
-      border-radius: 32px;
-      padding: 32px;
-      margin: 24px 0;
+      border-radius: 28px;
+      padding: 20px;
+      margin: 20px 0;
       text-align: center;
-      box-shadow: 0 0 80px rgba(255,215,0,0.9);
+      box-shadow: 0 0 60px rgba(255,215,0,0.8);
       position: relative;
       overflow: hidden;
     }
     .calc-box::before {
       content: ''; position: absolute; top: -50%; left: -50%;
       width: 200%; height: 200%;
-      background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,215,0,0.2) 0%, transparent 70%);
       animation: pulse 6s infinite;
     }
-    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
     .calc-count {
-      font-size: 80px;
+      font-size: 56px; /* Было 80px — теперь красиво и компактно */
       font-weight: 900;
       background: linear-gradient(90deg, #ffd700, #ff8c00);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 40px rgba(255,215,0,0.9);
+      text-shadow: 0 0 30px rgba(255,215,0,0.8);
       line-height: 1;
     }
     .calc-label {
-      font-size: 28px;
+      font-size: 22px; /* Было 28px */
       font-weight: 900;
       color: #ffffff;
-      text-shadow: 0 0 20px #ffd700;
-      margin-top: 8px;
+      text-shadow: 0 0 15px #ffd700;
+      margin-top: 6px;
     }
     .reward-input {
-      width: 100%; padding: 24px; margin: 16px 0; background: #000;
-      border: 4px solid #ffd700; border-radius: 28px; color: white;
-      font-size: 36px; font-weight: 900; text-align: center; outline: none;
-      box-shadow: 0 0 50px rgba(255,215,0,0.6);
+      width: 100%; padding: 20px; margin: 14px 0; background: #000;
+      border: 4px solid #ffd700; border-radius: 24px; color: white;
+      font-size: 32px; font-weight: 900; text-align: center; outline: none;
+      box-shadow: 0 0 40px rgba(255,215,0,0.5);
     }
   </style>
 </head>
@@ -192,10 +193,10 @@
       </div>
       <div id="worker-mode" style="display:none;">
         <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="centerFilter(this, 'all')">ВСЕ</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'yandex')">Яндекс</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'google')">Google</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'telegram')">TG</div>
+          <div class="filter-btn active" onclick="centerFilter(this, 'all')"><i class="fas fa-list"></i> ВСЕ</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
         </div>
         <div id="tasks-list"></div>
       </div>
@@ -207,7 +208,7 @@
       <div class="header">
         <h1>ПРОФИЛЬ</h1>
         <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
-          ПОМОЩЬ
+          <i class="fas fa-headset"></i>
         </div>
       </div>
       <div class="profile-header">
@@ -313,10 +314,7 @@
     function roundAndCalc() {
       let val = parseInt(document.getElementById('create-reward').value) || 100;
       if (val < 100) val = 100;
-      
-      // ОКРУГЛЕНИЕ ВНИЗ ДО 100 — КАК ТЫ СКАЗАЛ!
       val = Math.floor(val / 100) * 100;
-      
       document.getElementById('create-reward').value = val;
 
       const count = val / 100;
