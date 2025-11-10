@@ -114,7 +114,6 @@
     .copy-block { background: rgba(255,255,255,0.08); padding: 18px; border-radius: 20px; border: 2px dashed var(--neon); margin: 16px 0; cursor: pointer; user-select: none; transition: 0.3s; text-align: center; font-size: 18px; font-weight: 900; }
     .copy-block:hover { background: rgba(0,255,255,0.15); transform: scale(1.02); }
 
-    /* СКРОЛЛБАР — СЕРЫЙ, МАЛЕНЬКИЙ */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
     ::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
@@ -147,13 +146,11 @@
           </select>
 
           <div class="reward-section" id="reward-section" style="display:none;">
+            <input type="number" class="custom-amount" id="create-reward" placeholder="Цена за выполнение" min="10" value="100">
             <div class="quick-amounts">
-              <div class="quick-btn" onclick="setReward(500)">500 ₽</div>
-              <div class="quick-btn" onclick="setReward(1000)">1000 ₽</div>
-              <div class="quick-btn" onclick="setReward(1500)">1500 ₽</div>
-            </div>
-            <div class="reward-box" onclick="editReward()">
-              <div class="reward-value" id="reward-value">100</div><span class="rub">₽</span>
+              <div class="quick-btn" onclick="document.getElementById('create-reward').value=500">500 ₽</div>
+              <div class="quick-btn" onclick="document.getElementById('create-reward').value=1000">1000 ₽</div>
+              <div class="quick-btn" onclick="document.getElementById('create-reward').value=1500">1500 ₽</div>
             </div>
           </div>
 
@@ -163,10 +160,10 @@
 
       <div id="worker-mode" style="display:none;">
         <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="centerFilter(this, 'all')">ВСЕ</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'yandex')">Яндекс</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'google')">Google</div>
-          <div class="filter-btn" onclick="centerFilter(this, 'telegram')">TG</div>
+          <div class="filter-btn active" onclick="centerFilter(this, 'all')"><i class="fas fa-list"></i> ВСЕ</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
+          <div class="filter-btn" onclick="centerFilter(this, 'telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
         </div>
         <div id="tasks-list"></div>
       </div>
@@ -199,7 +196,7 @@
     <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
   </div>
 
-  <!-- ПОПОЛНЕНИЕ — С ПОЛЗУНКОМ + РУЧНЫМ ВВОДОМ -->
+  <!-- ПОПОЛНЕНИЕ -->
   <div id="topup-modal" class="modal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeTopup()">×</button>
@@ -231,13 +228,15 @@
     </div>
   </div>
 
-  <!-- ВЫВОД — ВЕРНУЛСЯ! -->
+  <!-- ВЫВОД С ИМЕНЕМ И БАНКОМ -->
   <div id="withdraw-modal" class="modal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeWithdraw()">×</button>
       <h2 style="color:#ff3366; font-size:32px;">ВЫВОД СРЕДСТВ</h2>
       <input type="number" id="withdraw-amount" placeholder="Сумма (от 250 ₽)" min="250">
       <input type="text" id="withdraw-card" placeholder="Номер карты / телефона">
+      <input type="text" id="withdraw-name" placeholder="Имя или ник в банке">
+      <input type="text" id="withdraw-bank" placeholder="Банк (Т-Банк, Сбер и т.д.)">
       <button style="background:linear-gradient(45deg,#ff3366,#ff1a50); color:white; padding:20px; font-size:20px; font-weight:900; border-radius:28px; margin-top:20px;" 
               onclick="sendWithdraw()">ВЫВЕСТИ</button>
     </div>
@@ -256,8 +255,7 @@
     document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
     document.getElementById('user-avatar').src = user.photo_url || 'https://telegram.org/img/t_logo.png';
 
-    let currentReward = 100, currentMin = 100, currentStep = 100;
-    const settings = { yandex: { min: 100, step: 100 }, google: { min: 65, step: 65 }, telegram: { min: 10, step: 10 } };
+    const settings = { yandex: { min: 100 }, google: { min: 65 }, telegram: { min: 10 } };
     let allTasks = [];
     let completedTasks = localStorage.getItem('completedTasks') ? new Set(JSON.parse(localStorage.getItem('completedTasks'))) : new Set();
 
@@ -277,15 +275,31 @@
       if (role === 'worker') filterTasks('all');
     }
 
-    function centerFilter(btn, filter) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const container = document.getElementById('filter-bar');
-      const btnRect = btn.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      const scrollLeft = container.scrollLeft + btnRect.left - containerRect.left - (containerRect.width / 2) + (btnRect.width / 2);
-      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-      filterTasks(filter);
+    function toggleRewardSection() {
+      const type = document.getElementById('task-type').value;
+      const section = document.getElementById('reward-section');
+      if (type) {
+        section.style.display = 'block';
+        const min = settings[type].min;
+        document.getElementById('create-reward').min = min;
+        document.getElementById('create-reward').placeholder = `От ${min} ₽`;
+      } else section.style.display = 'none';
+    }
+
+    function createTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const link = document.getElementById('task-link').value.trim();
+      const type = document.getElementById('task-type').value;
+      const reward = parseInt(document.getElementById('create-reward').value);
+
+      if (!title || !link || !type) return tg.showAlert("Заполни все поля!");
+      if (!/^https?:\/\/.+/i.test(link)) return tg.showAlert("Неверная ссылка!");
+      if (isNaN(reward) || reward < settings[type].min) return tg.showAlert(`Минимум ${settings[type].min} ₽`);
+      if (reward > userBalance) return tg.showAlert("Недостаточно средств на балансе!");
+
+      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
+      tg.showAlert("Задание создано!");
+      document.getElementById('create-form').classList.remove('active');
     }
 
     function setCustomAmount(amount) {
@@ -298,40 +312,32 @@
       modal.classList.add('active');
       const code = Math.floor(100000 + Math.random() * 900000);
       document.getElementById('topup-code').innerText = code;
-      document.getElementById('custom-amount').focus();
-    }
-
-    function closeTopup() { 
-      document.getElementById('topup-modal').classList.remove('active'); 
     }
 
     function createTopupRequest() {
       selectedAmount = parseInt(document.getElementById('custom-amount').value) || 100;
       if (selectedAmount < 100) return tg.showAlert("Минимум 100 ₽");
       const code = document.getElementById('topup-code').innerText;
-      tg.sendData(JSON.stringify({ 
-        action: "request_topup", amount: selectedAmount, code, to_main_admin: true, user_id: userId 
-      }));
+      tg.sendData(JSON.stringify({ action: "request_topup", amount: selectedAmount, code, to_main_admin: true, user_id: userId }));
       tg.showAlert(`Заявка на ${selectedAmount} ₽ создана! Код: ${code}`);
     }
 
-    function openWithdraw() {
-      document.getElementById('withdraw-modal').classList.add('active');
-    }
-
-    function closeWithdraw() {
-      document.getElementById('withdraw-modal').classList.remove('active');
-    }
+    function openWithdraw() { document.getElementById('withdraw-modal').classList.add('active'); }
+    function closeWithdraw() { document.getElementById('withdraw-modal').classList.remove('active'); }
+    function closeTopup() { document.getElementById('topup-modal').classList.remove('active'); }
 
     function sendWithdraw() {
       const amount = parseInt(document.getElementById('withdraw-amount').value);
       const card = document.getElementById('withdraw-card').value.trim();
+      const name = document.getElementById('withdraw-name').value.trim();
+      const bank = document.getElementById('withdraw-bank').value.trim();
+
       if (amount < 250) return tg.showAlert("Минимум 250 ₽");
-      if (!card) return tg.showAlert("Укажи карту/телефон");
+      if (!card || !name || !bank) return tg.showAlert("Заполни все поля!");
       if (amount > userBalance) return tg.showAlert("Недостаточно средств");
 
       tg.sendData(JSON.stringify({ 
-        action: "request_withdraw", amount, card, user_id: userId 
+        action: "request_withdraw", amount, card, name, bank, user_id: userId 
       }));
       tg.showAlert("Заявка на вывод отправлена!");
       closeWithdraw();
@@ -342,19 +348,15 @@
       tg.showAlert("Скопировано!");
     }
 
-    // Остальное без изменений...
-    // (filterTasks, doTelegramTask, createTask и т.д. — как раньше)
-
-    async function doTelegramTask(taskId, link, reward, button) {
-      if (button.disabled) return;
-      button.disabled = true;
-      button.innerText = "ОТКРЫВАЮ...";
-      tg.openLink(link);
-      button.innerText = "ПРОВЕРЯЮ...";
-      setTimeout(() => {
-        tg.sendData(JSON.stringify({ action: "check_telegram_subscription", task_id: taskId, link }));
-        setTimeout(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 3000);
-      }, 4000);
+    function centerFilter(btn, filter) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const container = document.getElementById('filter-bar');
+      const btnRect = btn.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft + btnRect.left - containerRect.left - (containerRect.width / 2) + (btnRect.width / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      filterTasks(filter);
     }
 
     function filterTasks(filter) {
@@ -385,21 +387,24 @@
       });
     }
 
+    async function doTelegramTask(taskId, link, reward, button) {
+      if (button.disabled) return;
+      button.disabled = true;
+      button.innerText = "ОТКРЫВАЮ...";
+      tg.openLink(link);
+      button.innerText = "ПРОВЕРЯЮ...";
+      setTimeout(() => {
+        tg.sendData(JSON.stringify({ action: "check_telegram_subscription", task_id: taskId, link }));
+        setTimeout(() => tg.sendData(JSON.stringify({action: "get_tasks"})), 3000);
+      }, 4000);
+    }
+
     tg.onEvent('webAppDataReceived', data => {
       try {
         const res = JSON.parse(data);
-        if (res.tasks) {
-          allTasks = res.tasks;
-          if (document.getElementById('worker-mode').style.display !== 'none') filterTasks('all');
-        }
-        if (res.user) {
-          userBalance = res.user.balance || 0;
-          document.getElementById('user-balance').innerText = userBalance + ' ₽';
-        }
-        if (res.completed) {
-          res.completed.forEach(id => completedTasks.add(id));
-          localStorage.setItem('completedTasks', JSON.stringify([...completedTasks]));
-        }
+        if (res.tasks) { allTasks = res.tasks; if (document.getElementById('worker-mode').style.display !== 'none') filterTasks('all'); }
+        if (res.user) { userBalance = res.user.balance || 0; document.getElementById('user-balance').innerText = userBalance + ' ₽'; }
+        if (res.completed) { res.completed.forEach(id => completedTasks.add(id)); localStorage.setItem('completedTasks', JSON.stringify([...completedTasks])); }
       } catch(e) {}
     });
 
