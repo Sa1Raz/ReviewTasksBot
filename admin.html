@@ -1,56 +1,251 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>АДМИНКА ReviewCash</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReviewCash PRO — Админка</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
-    :root{--bg:#0a0a14;--glass:rgba(20,20,38,0.95);--neon:#00ffff;--gold:#ffd700;--success:#00ff88;--danger:#ff3366;}
-    body{background:var(--bg);color:white;font-family:sans-serif;min-height:100vh;}
-    .container{max-width:460px;margin:0 auto;padding:20px;}
-    .header{text-align:center;padding:30px 0;}
-    .header h1{font-size:32px;font-weight:900;background:linear-gradient(90deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-    .crown{font-size:50px;animation:pulse 2s infinite;}
-    @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
-    .tabs{display:flex;background:#141426;border-radius:30px;padding:8px;margin:20px 0;border:3px solid var(--neon);}
-    .tab{flex:1;padding:16px;text-align:center;border-radius:24px;font-weight:900;cursor:pointer;transition:.4s;}
-    .tab.active{background:linear-gradient(135deg,var(--neon),var(--success));color:#000;}
-    .section{display:none;}
-    .section.active{display:block;animation:fadeIn .5s;}
-    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-    .card{background:var(--glass);border:3px solid var(--neon);border-radius:28px;padding:20px;margin:16px 0;position:relative;}
-    .card::before{content:'';position:absolute;top:0;left:0;width:100%;height:6px;background:linear-gradient(90deg,#ffd700,#ff8c00);}
-    .btn{padding:14px 20px;border:none;border-radius:20px;font-weight:900;font-size:14px;cursor:pointer;margin:5px;}
-    .btn-success{background:var(--success);color:#000;}
-    .btn-danger{background:var(--danger);color:white;}
-    .proof-img{width:100%;border-radius:16px;margin:12px 0;border:3px solid var(--gold);cursor:pointer;}
+    body { background: linear-gradient(135deg, #1e3c72, #2a5298); font-family: 'Segoe UI', sans-serif; }
+    .card { transition: all 0.3s; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    .btn { transition: all 0.2s; }
+    .btn:hover { transform: scale(1.05); }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header"><div class="crown">Crown</div><h1>ГЛАВНАЯ АДМИНКА</h1><p style="color:#ffd700;">@RapiHappy — ЦАРЬ</p></div>
-    <div class="tabs">
-      <div class="tab active" onclick="openTab('payments')">ПЛАТЕЖИ</div>
-      <div class="tab" onclick="openTab('withdraws')">ВЫВОДЫ</div>
-      <div class="tab" onclick="openTab('tasks')">ЗАДАНИЯ</div>
-      <div class="tab" onclick="openTab('proofs')">ОТЗЫВЫ</div>
+<body class="text-white min-h-screen">
+  <div class="container mx-auto p-4 max-w-4xl">
+
+    <!-- Заголовок -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold mb-2">ReviewCash <span class="text-yellow-400">PRO</span></h1>
+      <p class="text-lg opacity-90">@RapiHappy — Главный Админ</p>
     </div>
-    <div id="payments" class="section active"><div id="payments-list">Загрузка...</div></div>
-    <div id="withdraws" class="section"><div id="withdraws-list">Загрузка...</div></div>
-    <div id="tasks" class="section"><div id="tasks-admin-list">Загрузка...</div></div>
-    <div id="proofs" class="section"><div id="proofs-list">Загрузка...</div></div>
+
+    <!-- Статистика -->
+    <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center card">
+        <i class="fas fa-users text-3xl mb-2 text-green-400"></i>
+        <p class="text-sm opacity-80">Пользователи</p>
+        <p class="text-2xl font-bold" id="stat-users">0</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center card">
+        <i class="fas fa-tasks text-3xl mb-2 text-blue-400"></i>
+        <p class="text-sm opacity-80">Задания</p>
+        <p class="text-2xl font-bold" id="stat-tasks">0</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center card">
+        <i class="fas fa-clock text-3xl mb-2 text-yellow-400"></i>
+        <p class="text-sm opacity-80">Ожидают</p>
+        <p class="text-2xl font-bold" id="stat-pending">0</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 text-center card">
+        <i class="fas fa-pound-sign text-3xl mb-2 text-red-400"></i>
+        <p class="text-sm opacity-80">Выводы</p>
+        <p class="text-2xl font-bold" id="stat-withdraw">0</p>
+      </div>
+    </div>
+
+    <!-- Поиск + Фильтр -->
+    <div class="flex flex-col md:flex-row gap-4 mb-6">
+      <input type="text" id="search" placeholder="Поиск по ID, имени, сумме..." class="flex-1 p-3 rounded-lg bg-white/20 backdrop-blur text-white placeholder-white/60 border border-white/30 focus:outline-none focus:border-yellow-400">
+      <select id="filter" class="p-3 rounded-lg bg-white/20 backdrop-blur text-white border border-white/30 focus:outline-none">
+        <option value="all">Все</option>
+        <option value="pending">В ожидании</option>
+        <option value="approved">Одобрено</option>
+        <option value="rejected">Отклонено</option>
+      </select>
+    </div>
+
+    <!-- Вкладки -->
+    <div class="flex gap-2 mb-6 overflow-x-auto">
+      <button onclick="showTab('payments')" class="tab-btn active px-6 py-3 rounded-lg font-medium">Пополнения</button>
+      <button onclick="showTab('withdraws')" class="tab-btn px-6 py-3 rounded-lg font-medium">Выводы</button>
+      <button onclick="showTab('tasks')" class="tab-btn px-6 py-3 rounded-lg font-medium">Задания</button>
+    </div>
+
+    <!-- Контент -->
+    <div id="content" class="space-y-4"></div>
+
+    <!-- Шаблоны -->
+    <template id="payment-template">
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 card payment-item">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <p class="font-bold text-lg">№<span class="id"></span></p>
+            <p class="text-sm opacity-80"><span class="username"></span></p>
+          </div>
+          <span class="badge px-3 py-1 rounded-full text-sm font-medium"></span>
+        </div>
+        <p class="mb-3"><i class="fas fa-pound-sign"></i> <span class="amount"></span> ₽</p>
+        <p class="text-sm opacity-70 mb-3"><i class="fas fa-barcode"></i> <span class="code"></span></p>
+        <div class="flex gap-2">
+          <button class="btn approve bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex-1"><i class="fas fa-check"></i> Зачислить</button>
+          <button class="btn reject bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex-1"><i class="fas fa-times"></i> Отклонить</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="withdraw-template">
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 card withdraw-item">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <p class="font-bold text-lg">№<span class="id"></span></p>
+            <p class="text-sm opacity-80"><span class="username"></span></p>
+          </div>
+          <span class="badge px-3 py-1 rounded-full text-sm font-medium"></span>
+        </div>
+        <p class="mb-2"><i class="fas fa-pound-sign"></i> <span class="amount"></span> ₽</p>
+        <p class="text-sm opacity-70 mb-1"><i class="fas fa-credit-card"></i> <span class="card"></span></p>
+        <p class="text-sm opacity-70 mb-3"><i class="fas fa-user"></i> <span class="name"></span> | <span class="bank"></span></p>
+        <div class="flex gap-2">
+          <button class="btn approve bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex-1"><i class="fas fa-check"></i> Выплатить</button>
+          <button class="btn reject bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex-1"><i class="fas fa-times"></i> Отклонить</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="task-template">
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 card task-item">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <p class="font-bold text-lg"><span class="title"></span></p>
+            <p class="text-sm opacity-80">от <span class="username"></span></p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-600"><span class="reward"></span> ₽</span>
+        </div>
+        <p class="text-sm mb-3 break-all"><i class="fas fa-link"></i> <a href="#" class="link text-yellow-400 underline" target="_blank"></a></p>
+        <button class="btn delete bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full"><i class="fas fa-trash"></i> Удалить задание</button>
+      </div>
+    </template>
+
   </div>
+
   <script>
-    const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
-    const user = tg.initDataUnsafe?.user || {};
-    if(user.username !== "RapiHappy") { document.body.innerHTML="<h1 style='text-align:center;color:#ff3366;padding:100px;'>Доступ запрещён</h1>"; throw ""; }
-    function openTab(t){document.querySelectorAll('.section,.tab').forEach(e=>e.classList.remove('active'));document.getElementById(t).classList.add('active');document.querySelector(`.tab[onclick="openTab('${t}')"]`).classList.add('active');tg.sendData(JSON.stringify({action:"admin_get_all"}));}
-    function approvePayment(id,a,u){tg.sendData(JSON.stringify({action:"admin_approve_payment",id,amount:a,user_id:u}));setTimeout(()=>tg.sendData(JSON.stringify({action:"admin_get_all"})),1000);}
-    function rejectPayment(id){tg.sendData(JSON.stringify({action:"admin_reject_payment",id}));setTimeout(()=>tg.sendData(JSON.stringify({action:"admin_get_all"})),1000);}
-    tg.onEvent('webAppDataReceived', d=>{try{const r=JSON.parse(d);if(r.payments){const l=document.getElementById('payments-list');l.innerHTML='';r.payments.forEach(p=>l.innerHTML+=`<div class="card"><div><b>+${p.amount} ₽</b> от @${p.username||p.user_id}</div><div>Код: ${p.code}</div><div class="card-actions"><button class="btn btn-success" onclick="approvePayment(${p.id},${p.amount},${p.user_id})">ЗАЧИСЛИТЬ</button><button class="btn btn-danger" onclick="rejectPayment(${p.id})">ОТКЛОНИТЬ</button></div></div>`);}}catch(e){}});
-    setInterval(()=>tg.sendData(JSON.stringify({action:"admin_get_all"})),10000); tg.sendData(JSON.stringify({action:"admin_get_all"}));
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
+
+    let currentTab = 'payments';
+    let data = { payments: [], withdraws: [], tasks_admin: [] };
+
+    // Переключение вкладок
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-white/20'));
+      document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active', 'bg-white/20');
+      render();
+    }
+
+    // Получение данных
+    async function fetchData() {
+      const res = await fetch('/webapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'admin_get_all', user: { id: 6482440657 } })
+      });
+      data = await res.json();
+      updateStats();
+      render();
+    }
+
+    // Статистика
+    function updateStats() {
+      document.getElementById('stat-users').textContent = data.stats?.users || 0;
+      document.getElementById('stat-tasks').textContent = data.stats?.tasks || 0;
+      document.getElementById('stat-pending').textContent = data.stats?.pending || 0;
+      document.getElementById('stat-withdraw').textContent = data.withdraws?.filter(w => w.status === 'pending').length || 0;
+    }
+
+    // Рендер
+    function render() {
+      const container = document.getElementById('content');
+      container.innerHTML = '';
+      let items = [];
+      if (currentTab === 'payments') items = data.payments || [];
+      if (currentTab === 'withdraws') items = data.withdraws || [];
+      if (currentTab === 'tasks') items = data.tasks_admin || [];
+
+      const search = document.getElementById('search').value.toLowerCase();
+      const filter = document.getElementById('filter').value;
+
+      items.filter(item => {
+        if (filter !== 'all' && item.status !== filter) return false;
+        const text = `${item.id} ${item.username} ${item.amount} ${item.code}`.toLowerCase();
+        return text.includes(search);
+      }).forEach(item => {
+        let template;
+        if (currentTab === 'payments') template = document.getElementById('payment-template').content.cloneNode(true);
+        if (currentTab === 'withdraws') template = document.getElementById('withdraw-template').content.cloneNode(true);
+        if (currentTab === 'tasks') template = document.getElementById('task-template').content.cloneNode(true);
+
+        const el = template.querySelector('.card') || template.querySelector('.task-item');
+        el.dataset.id = item.id;
+
+        // Заполнение
+        el.querySelector('.id').textContent = item.id;
+        el.querySelector('.username').textContent = item.username || 'Аноним';
+        if (currentTab !== 'tasks') el.querySelector('.amount').textContent = item.amount;
+        if (currentTab === 'payments') el.querySelector('.code').textContent = item.code;
+        if (currentTab === 'withdraws') {
+          el.querySelector('.card').textContent = item.card;
+          el.querySelector('.name').textContent = item.name;
+          el.querySelector('.bank').textContent = item.bank;
+        }
+        if (currentTab === 'tasks') {
+          el.querySelector('.title').textContent = item.title;
+          el.querySelector('.reward').textContent = item.reward;
+          const link = el.querySelector('.link');
+          link.href = item.link; link.textContent = item.link;
+        }
+
+        // Статус
+        const badge = el.querySelector('.badge');
+        if (badge) {
+          badge.textContent = item.status === 'pending' ? 'Ожидает' : item.status === 'approved' ? 'Одобрено' : 'Отклонено';
+          badge.className = 'badge px-3 py-1 rounded-full text-sm font-medium';
+          if (item.status === 'pending') badge.classList.add('bg-yellow-600');
+          if (item.status === 'approved') badge.classList.add('bg-green-600');
+          if (item.status === 'rejected') badge.classList.add('bg-red-600');
+        }
+
+        // Кнопки
+        if (item.status === 'pending') {
+          el.querySelector('.approve').onclick = () => action(currentTab === 'payments' ? 'admin_approve_payment' : 'admin_approve_withdraw', item.id, item.user_id || item.amount);
+          el.querySelector('.reject').onclick = () => action(currentTab === 'payments' ? 'admin_reject_payment' : 'admin_reject_withdraw', item.id, item.user_id || item.amount);
+        } else {
+          el.querySelectorAll('.btn').forEach(b => b.disabled = true);
+        }
+
+        if (currentTab === 'tasks') {
+          el.querySelector('.delete').onclick = () => action('admin_delete_task', item.id);
+        }
+
+        container.appendChild(template);
+      });
+    }
+
+    // Действия
+    async function action(act, id, extra) {
+      await fetch('/webapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: act, id, user_id: extra, amount: extra })
+      });
+      fetchData();
+    }
+
+    // Поиск и фильтр
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filter').addEventListener('change', render);
+
+    // Автообновление
+    fetchData();
+    setInterval(fetchData, 10000);
+
+    // Активная вкладка
+    document.querySelector('.tab-btn').classList.add('active', 'bg-white/20');
   </script>
 </body>
 </html>
