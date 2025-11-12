@@ -3,120 +3,159 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ReviewCash ULTRA 2.0</title>
+  <title>ReviewCash ULTRA 3.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     body { 
-      background: linear-gradient(135deg, #0a0a1a, #1a1a2e, #16213e); 
+      background: #0f0f1a; 
       font-family: 'Inter', sans-serif; 
-      color: #e0e7ff;
+      color: #ffffff;
       margin: 0; padding: 0;
     }
     .glass { 
-      background: rgba(255, 255, 255, 0.08); 
+      background: rgba(30, 30, 50, 0.7); 
       backdrop-filter: blur(16px); 
-      border: 1px solid rgba(255, 255, 255, 0.12); 
-      border-radius: 18px;
+      border: 1px solid rgba(100, 100, 255, 0.2); 
+      border-radius: 20px;
       overflow: hidden;
     }
     .card { 
       animation: fadeIn 0.6s ease-out; 
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.3s ease;
     }
     .card:hover { 
-      transform: translateY(-6px); 
-      box-shadow: 0 16px 32px rgba(0,0,0,0.3);
+      transform: translateY(-4px); 
+      box-shadow: 0 12px 24px rgba(0,0,0,0.4);
     }
     .btn { 
       transition: all 0.2s ease; 
-      border-radius: 14px;
+      border-radius: 16px;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+      padding: 12px;
     }
     .btn:hover { 
       transform: translateY(-2px); 
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
     }
     .badge { 
-      font-size: 0.8rem; 
-      font-weight: 600; 
-      padding: 6px 12px; 
+      font-size: 0.75rem; 
+      font-weight: 700; 
+      padding: 6px 14px; 
       border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .truncate-text { 
+    .truncate { 
       overflow: hidden; 
       text-overflow: ellipsis; 
       white-space: nowrap; 
       max-width: 100%;
     }
-    .break-all { 
-      word-break: break-all;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .break { word-break: break-all; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     .notification { 
       position: fixed; top: 16px; right: 16px; z-index: 1000; 
-      padding: 14px 24px; border-radius: 14px; 
-      color: white; font-weight: 600; font-size: 0.95rem;
+      padding: 14px 24px; border-radius: 16px; 
+      font-weight: 600; font-size: 0.95rem;
       animation: slideIn 0.4s ease-out, fadeOut 0.4s ease-out 2.6s forwards;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     }
     @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
     @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+    .tab-btn {
+      background: rgba(50, 50, 80, 0.6);
+      color: #ccc;
+      border: 1px solid rgba(100, 100, 255, 0.3);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #6a5acd, #483d8b);
+      color: white;
+      border: none;
+      font-weight: 700;
+    }
+    .filter-btn {
+      background: rgba(40, 40, 60, 0.8);
+      color: #ddd;
+      border: 1px solid rgba(100, 100, 255, 0.3);
+      font-size: 0.9rem;
+      padding: 10px 16px;
+      border-radius: 12px;
+    }
+    .filter-btn.active {
+      background: #6a5acd;
+      color: white;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body class="min-h-screen">
-  <div class="container mx-auto p-4 max-w-4xl">
+  <div class="container mx-auto p-5 max-w-4xl">
 
     <!-- Заголовок -->
     <div class="text-center mb-8">
-      <h1 class="text-5xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-        ReviewCash ULTRA 2.0
+      <h1 class="text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+        ReviewCash ULTRA 3.0
       </h1>
-      <p class="text-lg opacity-90 mt-2">@RapiHappy — <span class="text-green-400 font-semibold">Главный Админ</span></p>
+      <p class="text-lg mt-2 text-gray-300">@RapiHappy — <span class="text-cyan-400 font-bold">Главный Админ</span></p>
     </div>
 
-    <!-- Статистика -->
+    <!-- Статистика с иконками -->
     <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       <div class="glass p-5 text-center card rounded-2xl">
-        <div class="text-4xl mb-2">Пользователи</div>
+        <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H9v-1c0-1.657-1.343-3-3-3s-3 1.343-3 3v1m6-6a3 3 0 100-6 3 3 0 000 6z"/></svg>
+        </div>
         <p class="text-3xl font-bold text-cyan-400" id="stat-users">0</p>
+        <p class="text-xs text-gray-400 mt-1">Пользователи</p>
       </div>
       <div class="glass p-5 text-center card rounded-2xl">
-        <div class="text-4xl mb-2">Задания</div>
+        <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
         <p class="text-3xl font-bold text-purple-400" id="stat-tasks">0</p>
+        <p class="text-xs text-gray-400 mt-1">Задания</p>
       </div>
       <div class="glass p-5 text-center card rounded-2xl">
-        <div class="text-4xl mb-2">Ожидают</div>
+        <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
         <p class="text-3xl font-bold text-orange-400" id="stat-pending">0</p>
+        <p class="text-xs text-gray-400 mt-1">Ожидают</p>
       </div>
       <div class="glass p-5 text-center card rounded-2xl">
-        <div class="text-4xl mb-2">Выводы</div>
+        <div class="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+        </div>
         <p class="text-3xl font-bold text-red-400" id="stat-withdraw">0</p>
+        <p class="text-xs text-gray-400 mt-1">Выводы</p>
       </div>
     </div>
 
-    <!-- Поиск + Фильтр + Обновить -->
-    <div class="flex flex-col md:flex-row gap-3 mb-6">
-      <input type="text" id="search" placeholder="Поиск по ID, имени, сумме..." class="flex-1 p-4 rounded-xl glass text-white placeholder-white/50 border-0 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-      <select id="filter" class="p-4 rounded-xl glass text-white border-0 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-        <option value="all">Все</option>
-        <option value="pending">Ожидает</option>
-        <option value="approved">Одобрено</option>
-        <option value="rejected">Отклонено</option>
-      </select>
-      <button onclick="fetchData()" class="btn bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl font-bold flex items-center gap-2">
+    <!-- Фильтры -->
+    <div class="flex flex-wrap gap-2 mb-6 justify-center">
+      <button class="filter-btn active" data-filter="all">Все</button>
+      <button class="filter-btn" data-filter="pending">Ожидает</button>
+      <button class="filter-btn" data-filter="approved">Одобрено</button>
+      <button class="filter-btn" data-filter="rejected">Отклонено</button>
+    </div>
+
+    <!-- Поиск + Обновить -->
+    <div class="flex gap-3 mb-6">
+      <input type="text" id="search" placeholder="Поиск..." class="flex-1 p-4 rounded-xl glass text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+      <button onclick="fetchData()" class="btn bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 rounded-xl font-bold flex items-center gap-2">
         Обновить
       </button>
     </div>
 
     <!-- Вкладки -->
     <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-      <button onclick="showTab('payments')" class="tab-btn active px-6 py-3 rounded-xl font-bold glass">Пополнения</button>
-      <button onclick="showTab('withdraws')" class="tab-btn px-6 py-3 rounded-xl font-bold glass">Выводы</button>
-      <button onclick="showTab('tasks')" class="tab-btn px-6 py-3 rounded-xl font-bold glass">Задания</button>
+      <button onclick="showTab('payments')" class="tab-btn active px-6 py-3 rounded-xl font-bold">Пополнения</button>
+      <button onclick="showTab('withdraws')" class="tab-btn px-6 py-3 rounded-xl font-bold">Выводы</button>
+      <button onclick="showTab('tasks')" class="tab-btn px-6 py-3 rounded-xl font-bold">Задания</button>
     </div>
 
     <!-- Контент -->
@@ -126,21 +165,21 @@
     <template id="payment-template">
       <div class="glass p-5 rounded-2xl card payment-item">
         <div class="flex justify-between items-start mb-3">
-          <div classatants class="flex-1">
-            <p class="text-xl font-bold truncate-text">№<span class="id"></span></p>
-            <p class="text-sm opacity-80 truncate-text"><span class="username"></span></p>
+          <div class="flex-1">
+            <p class="text-lg font-bold truncate">№<span class="id"></span></p>
+            <p class="text-sm text-gray-300 truncate"><span class="username"></span></p>
           </div>
           <span class="badge"></span>
         </div>
-        <div class="flex items-center gap-3 text-lg mb-3">
-          <p class="font-bold text-green-400 truncate-text"><span class="amount"></span> ₽</p>
-          <p class="text-sm opacity-70 break-all"><span class="code"></span></p>
+        <div class="flex items-center gap-2 text-base mb-3">
+          <span class="font-bold text-green-400 truncate"><span class="amount"></span> ₽</span>
+          <span class="text-xs text-gray-400 break">• <span class="code"></span></span>
         </div>
-        <div class="flex gap-3">
-          <button class="btn approve flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-bold text-sm">
+        <div class="flex gap-2">
+          <button class="btn approve flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2.5 rounded-xl font-bold text-sm">
             Зачислить
           </button>
-          <button class="btn reject flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-3 rounded-xl font-bold text-sm">
+          <button class="btn reject flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-2.5 rounded-xl font-bold text-sm">
             Отклонить
           </button>
         </div>
@@ -151,19 +190,19 @@
       <div class="glass p-5 rounded-2xl card withdraw-item">
         <div class="flex justify-between items-start mb-3">
           <div class="flex-1">
-            <p class="text-xl font-bold truncate-text">№<span class="id"></span></p>
-            <p class="text-sm opacity-80 truncate-text"><span class="username"></span></p>
+            <p class="text-lg font-bold truncate">№<span class="id"></span></p>
+            <p class="text-sm text-gray-300 truncate"><span class="username"></span></p>
           </div>
           <span class="badge"></span>
         </div>
-        <p class="text-lg font-bold text-red-400 mb-2 truncate-text"><span class="amount"></span> ₽</p>
-        <p class="text-sm opacity-70 mb-1 truncate-text">Карта: <span class="card"></span></p>
-        <p class="text-sm opacity-70 mb-3 truncate-text">Имя: <span class="name"></span> • <span class="bank"></span></p>
-        <div class="flex gap-3">
-          <button class="btn approve flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-bold text-sm">
+        <p class="text-base font-bold text-red-400 mb-2 truncate"><span class="amount"></span> ₽</p>
+        <p class="text-xs text-gray-400 mb-1 truncate">Карта: <span class="card"></span></p>
+        <p class="text-xs text-gray-400 mb-3 truncate">Имя: <span class="name"></span> • <span class="bank"></span></p>
+        <div class="flex gap-2">
+          <button class="btn approve flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2.5 rounded-xl font-bold text-sm">
             Выплатить
           </button>
-          <button class="btn reject flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-3 rounded-xl font-bold text-sm">
+          <button class="btn reject flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-2.5 rounded-xl font-bold text-sm">
             Отклонить
           </button>
         </div>
@@ -172,10 +211,10 @@
 
     <template id="task-template">
       <div class="glass p-5 rounded-2xl card task-item">
-        <p class="text-xl font-bold mb-1 truncate-text"><span class="title"></span></p>
-        <p class="text-sm opacity-80 mb-2 truncate-text">от <span class="username"></span> • <span class="reward"></span> ₽</p>
-        <a href="#" class="link text-yellow-400 underline text-sm mb-3 block break-all"></a>
-        <button class="btn delete w-full bg-gradient-to-r from-red-500 to-rose-600 text-white py-3 rounded-xl font-bold text-sm">
+        <p class="text-lg font-bold mb-1 truncate"><span class="title"></span></p>
+        <p class="text-sm text-gray-300 mb-2 truncate">от <span class="username"></span> • <span class="reward"></span> ₽</p>
+        <a href="#" class="link text-cyan-400 underline text-xs mb-3 block break"></a>
+        <button class="btn delete w-full bg-gradient-to-r from-red-500 to-rose-600 text-white py-2.5 rounded-xl font-bold text-sm">
           Удалить
         </button>
       </div>
@@ -188,14 +227,26 @@
     tg.ready(); tg.expand();
 
     let currentTab = 'payments';
+    let currentFilter = 'all';
     let data = { payments: [], withdraws: [], tasks_admin: [], stats: {} };
 
+    // Вкладки
     function showTab(tab) {
       currentTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-white/20', 'shadow-lg'));
-      document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active', 'bg-white/20', 'shadow-lg');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active');
       render();
     }
+
+    // Фильтры
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        render();
+      });
+    });
 
     async function fetchData() {
       try {
@@ -208,16 +259,14 @@
         data = await res.json();
         updateStats();
         render();
-        showNotification('Данные обновлены', 'success');
+        showNotification('Обновлено', 'success');
       } catch (e) {
-        console.error(e);
         showNotification('Сервер не запущен!', 'error');
         document.getElementById('content').innerHTML = `
           <div class="glass p-8 text-center rounded-2xl card">
-            <p class="text-2xl font-bold text-red-400 mb-4">Сервер недоступен</p>
-            <p class="opacity-80 mb-4">Запусти в CMD:</p>
+            <p class="text-xl font-bold text-red-400 mb-4">Сервер не работает</p>
+            <p class="text-gray-300 mb-4">Запусти в CMD:</p>
             <code class="bg-black/50 px-4 py-2 rounded-lg text-sm">python server.py</code>
-            <p class="mt-4 text-sm opacity-70">Или залей на Railway</p>
           </div>
         `;
       }
@@ -236,11 +285,10 @@
       let items = currentTab === 'payments' ? data.payments : currentTab === 'withdraws' ? data.withdraws : data.tasks_admin || [];
 
       const search = document.getElementById('search').value.toLowerCase();
-      const filter = document.getElementById('filter').value;
 
       items
         .filter(item => {
-          if (filter !== 'all' && item.status !== filter) return false;
+          if (currentFilter !== 'all' && item.status !== currentFilter) return false;
           const text = `${item.id} ${item.username} ${item.amount} ${item.title || ''}`.toLowerCase();
           return text.includes(search);
         })
@@ -249,9 +297,7 @@
           const templateId = currentTab === 'payments' ? 'payment-template' : currentTab === 'withdraws' ? 'withdraw-template' : 'task-template';
           const template = document.getElementById(templateId).content.cloneNode(true);
           const el = template.querySelector('.card') || template.querySelector('.task-item');
-          el.dataset.id = item.id;
 
-          // Заполнение
           el.querySelector('.id').textContent = item.id;
           el.querySelector('.username').textContent = item.username || 'Аноним';
           if (currentTab !== 'tasks') el.querySelector('.amount').textContent = item.amount;
@@ -269,7 +315,6 @@
             link.textContent = item.link || 'Ссылка отсутствует';
           }
 
-          // Статус
           const badge = el.querySelector('.badge');
           if (badge) {
             const statusText = { pending: 'Ожидает', approved: 'Одобрено', paid: 'Выплачено', rejected: 'Отклонено' }[item.status] || item.status;
@@ -279,10 +324,9 @@
             badge.classList.add(colors[item.status] || 'bg-gray-500');
           }
 
-          // Кнопки
           if (item.status === 'pending') {
-            el.querySelector('.approve').onclick = () => action(currentTab === 'payments' ? 'admin_approve_payment' : 'admin_approve_withdraw', item.id, item.user_id || item.amount);
-            el.querySelector('.reject').onclick = () => action(currentTab === 'payments' ? 'admin_reject_payment' : 'admin_reject_withdraw', item.id, item.user_id || item.amount);
+            el.querySelector('.approve').onclick = () => action(currentTab === 'payments' ? 'admin_approve_payment' : 'admin_approve_withdraw', item.id);
+            el.querySelector('.reject').onclick = () => action(currentTab === 'payments' ? 'admin_reject_payment' : 'admin_reject_withdraw', item.id);
           } else {
             el.querySelectorAll('.btn').forEach(b => b.disabled = true);
           }
@@ -294,8 +338,8 @@
         });
     }
 
-    async function action(act, id, extra) {
-      await fetch('/webapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: act, id, user_id: extra, amount: extra }) });
+    async function action(act, id) {
+      await fetch('/webapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: act, id }) });
       fetchData();
     }
 
@@ -308,11 +352,8 @@
     }
 
     document.getElementById('search').addEventListener('input', render);
-    document.getElementById('filter').addEventListener('change', render);
-
     fetchData();
     setInterval(fetchData, 10000);
-    document.querySelector('.tab-btn').classList.add('active', 'bg-white/20', 'shadow-lg');
   </script>
 </body>
 </html>
