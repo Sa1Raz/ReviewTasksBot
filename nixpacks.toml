@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ['python3', 'gcc']
+
+[phases.build]
+cmds = ['pip install -r requirements.txt']
+
+[phases.runtime]
+nixPkgs = ['python3', 'gunicorn']
+
+[staticAssets]
+mountPath = '/public'
