@@ -7,7 +7,7 @@ BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA"
 ADMIN_ID = 6482440657
 
 # HTTPS ССЫЛКА — ИЗМЕНИ НА СВОЮ С Railway!
-WEBAPP_URL = "https://reviewcash-gb.up.railway.app"  # ← ТВОЯ ССЫЛКА!
+WEBAPP_URL = "https://sa1raz.github.io/ReviewTasksBot/"  # ← ТВОЯ ССЫЛКА!
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,3 +33,4 @@ app.add_handler(CommandHandler("admin", admin))
 
 print("БОТ ЗАПУЩЕН! /start — ПРИЛОЖЕНИЕ | /admin — АДМИНКА")
 app.run_polling()
+
