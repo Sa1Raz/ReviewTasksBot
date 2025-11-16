@@ -3,3 +3,4 @@ aiogram==3.4.1
 python-telegram-bot==20.8
 gunicorn==21.2.0
 requests
+pyTelegramBotAPI==4.14.0
