@@ -1,3 +1,9 @@
+import requests
+
+# СБРАСЫВАЕМ ВЕБХУК
+requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook")
+print("Вебхук сброшен!")
+
 from flask import Flask, request, jsonify, send_from_directory
 import sqlite3
 from datetime import datetime
@@ -93,3 +99,4 @@ if __name__ == '__main__':
     
     # Запускаем Flask
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
+
