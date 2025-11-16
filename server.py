@@ -2,7 +2,42 @@ from flask import Flask, request, jsonify, send_from_directory
 import sqlite3
 from datetime import datetime
 import os
+from threading import Thread
 
+# === TELEGRAM БОТ (встроен в server.py) ===
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes
+
+BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA"
+ADMIN_ID = 6482440657
+WEBAPP_URL = "http://127.0.0.1:5000"  # ← ЗАМЕНИ НА RAILWAY ССЫЛКУ ПОЗЖЕ
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton("Открыть ReviewCash", web_app={"url": WEBAPP_URL})]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Привет! Добро пожаловать в ReviewCash!\nНажми кнопку ниже:", reply_markup=reply_markup)
+
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("Доступ запрещён!")
+        return
+    keyboard = [[InlineKeyboardButton("Админка", web_app={"url": f"{WEBAPP_URL}/admin.html"})]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Админ-панель @RapiHappy", reply_markup=reply_markup)
+
+# Создаём бота
+bot_app = Application.builder().token(BOT_TOKEN).build()
+bot_app.add_handler(CommandHandler("start", start))
+bot_app.add_handler(CommandHandler("admin", admin))
+
+# Запуск бота в отдельном потоке
+def run_bot():
+    print("БОТ ЗАПУЩЕН ВНУТРИ server.py!")
+    bot_app.run_polling()
+
+Thread(target=run_bot, daemon=True).start()
+
+# === FLASK БЭКЕНД ===
 app = Flask(__name__, static_folder='public')
 os.makedirs('public', exist_ok=True)
 
@@ -35,26 +70,24 @@ def webapp():
     user = data.get('user', {})
     user_id = user.get('id')
     username = user.get('username', f'user_{user_id}')
-
     conn = sqlite3.connect('reviewcash.db')
     c = conn.cursor()
     c.execute("INSERT OR IGNORE INTO users (user_id, username, created_at) VALUES (?, ?, ?)", (user_id, username, datetime.now().isoformat()))
     conn.commit()
-
     action = data.get('action')
-
     if action == 'get_tasks':
         c.execute("SELECT id, title, link, type, reward FROM tasks ORDER BY id DESC")
         tasks = [dict(zip(['id','title','link','type','reward'], row)) for row in c.fetchall()]
         c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-        balance = c.fetchone()[0] if c.fetchone() else 0
+        row = c.fetchone()
+        balance = row[0] if row else 0
         conn.close()
         return jsonify({'tasks': tasks, 'user': {'balance': balance}})
-
     elif action == 'create_task':
         title, link, type_, reward = data['title'], data['link'], data['type'], data['reward']
         c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-        balance = c.fetchone()[0]
+        row = c.fetchone()
+        balance = row[0] if row else 0
         if balance < reward:
             conn.close()
             return jsonify({'error': 'Недостаточно средств'})
@@ -63,18 +96,17 @@ def webapp():
         conn.commit()
         conn.close()
         return jsonify({'success': True})
-
     elif action == 'request_topup':
         amount, code = data['amount'], data['code']
         c.execute("INSERT INTO topups (user_id, username, amount, code, created_at) VALUES (?, ?, ?, ?, ?)", (user_id, username, amount, code, datetime.now().isoformat()))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
-
     elif action == 'request_withdraw':
         amount = data['amount']
         c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-        balance = c.fetchone()[0]
+        row = c.fetchone()
+        balance = row[0] if row else 0
         if balance < amount:
             return jsonify({'error': 'Недостаточно'})
         c.execute("UPDATE users SET balance = balance - ? WHERE user_id = ?", (amount, user_id))
@@ -82,7 +114,6 @@ def webapp():
         conn.commit()
         conn.close()
         return jsonify({'success': True})
-
     elif action == 'admin_get_all':
         c.execute("SELECT * FROM admins WHERE user_id = ?", (user_id,))
         if not c.fetchone():
@@ -97,7 +128,6 @@ def webapp():
         result['tasks_admin'] = [dict(zip(['id','title','link','type','reward','username'], r)) for r in c.fetchall()]
         conn.close()
         return jsonify(result)
-
     elif action in ['admin_approve_payment', 'admin_reject_payment', 'admin_approve_withdraw', 'admin_reject_withdraw', 'admin_delete_task']:
         c.execute("SELECT * FROM admins WHERE user_id = ?", (user_id,))
         if not c.fetchone():
@@ -117,11 +147,10 @@ def webapp():
         conn.commit()
         conn.close()
         return jsonify({'success': True})
-
     conn.close()
     return jsonify({'error': 'Unknown action'})
 
 if __name__ == '__main__':
-    print("ReviewCash БЭКЕНД ЗАПУЩЕН!")
+    print("ReviewCash БЭКЕНД + БОТ ЗАПУЩЕН!")
     print("ОТКРЫВАЙ: http://127.0.0.1:5000")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
