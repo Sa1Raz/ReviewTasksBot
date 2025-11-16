@@ -10,7 +10,7 @@ import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-BOT_TOKEN = "8033069276:AAF-3WIgsW9iL2dnG3cs7_Gh16z5SuajvkA"
+BOT_TOKEN = "8033069276:AAEvtPost3oicpvswzAPWesH_FMM0vIpiUo"
 ADMIN_ID = 6482440657
 WEBAPP_URL = "https://твой-проект.up.railway.app"  # ← ЗАМЕНИ НА СВОЮ ССЫЛКУ ПОСЛЕ ДЕПЛОЯ!
 
@@ -226,3 +226,4 @@ if __name__ == '__main__':
 
     # Запускаем Flask
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
+
