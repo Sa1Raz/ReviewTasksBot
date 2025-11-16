@@ -12,7 +12,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 BOT_TOKEN = "8033069276:AAEvtPost3oicpvswzAPWesH_FMM0vIpiUo"
 ADMIN_ID = 6482440657
-WEBAPP_URL = "https://твой-проект.up.railway.app"  # ← ЗАМЕНИ НА СВОЮ ССЫЛКУ ПОСЛЕ ДЕПЛОЯ!
+WEBAPP_URL = "web-production-398fb.up.railway.app"  # ← ЗАМЕНИ НА СВОЮ ССЫЛКУ ПОСЛЕ ДЕПЛОЯ!
 
 # Создаём приложение бота
 bot_app = Application.builder().token(BOT_TOKEN).build()
@@ -226,4 +226,5 @@ if __name__ == '__main__':
 
     # Запускаем Flask
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
+
 
