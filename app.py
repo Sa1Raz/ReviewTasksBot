@@ -4,7 +4,7 @@ import telebot
 import os
 
 # ← ВСТАВЬ СВОЙ ТОКЕН ЗДЕСЬ
-BOT_TOKEN = "7706954432:AAH7J8rQ1Y8s2z0d9kL5vX3cP9mN2bF6hR1"
+BOT_TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"
 WEBAPP_URL = "https://web-production-398fb.up.railway.app"
 
 bot = telebot.TeleBot(BOT_TOKEN)
