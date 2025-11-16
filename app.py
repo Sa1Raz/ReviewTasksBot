@@ -1,16 +1,15 @@
-# app.py — БОТ + WEBAPP + СТАТИКА
+# app.py — 100% РАБОЧИЙ: БОТ + WEBAPP + СТАТИКА
 from flask import Flask, request, send_from_directory
 import telebot
 import threading
 import time
 import os
 
-# ← ТВОЙ ТОКЕН
 BOT_TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"
 WEBAPP_URL = "https://web-production-398fb.up.railway.app"
 
 bot = telebot.TeleBot(BOT_TOKEN)
-app = Flask(__name__, static_folder='public', static_url_path='')
+app = Flask(__name__, static_folder='public')
 
 # === СТАТИКА ===
 @app.route('/')
@@ -43,9 +42,10 @@ def get_keyboard():
 def start(message):
     bot.send_message(
         message.chat.id,
-        "ReviewCash ULTRA 4.0\n\n"
-        "Зарабатывай на отзывах!\n"
-        "Нажми кнопку ниже",
+        "🚀 *ReviewCash ULTRA 4.0*\n\n"
+        "💰 Зарабатывай на отзывах!\n"
+        "👇 Нажми кнопку ниже",
+        parse_mode='Markdown',
         reply_markup=get_keyboard()
     )
 
@@ -56,14 +56,14 @@ def echo(message):
 
 # === УСТАНОВКА WEBHOOK ===
 def setup_webhook():
-    time.sleep(2)
+    time.sleep(3)
     bot.remove_webhook()
     time.sleep(1)
     success = bot.set_webhook(url=f"{WEBAPP_URL}/webhook")
     if success:
-        print(f"WEBHOOK УСПЕШНО УСТАНОВЛЕН: {WEBAPP_URL}/webhook")
+        print(f"WEBHOOK УСПЕШНО: {WEBAPP_URL}/webhook")
     else:
-        print("ОШИБКА: Webhook НЕ установлен!")
+        print("ОШИБКА WEBHOOK!")
 
 # === ЗАПУСК ===
 if __name__ == '__main__':
