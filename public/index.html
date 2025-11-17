@@ -73,8 +73,20 @@
     .balance { font-size: 48px; font-weight: 900; color: var(--success); margin: 10px 0; }
     .stat-line { font-size: 18px; margin: 10px 0; color: var(--text); }
     .stat-line b { color: var(--gold); font-size: 20px; }
-    .stats-block { background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,136,0.15)); border: 2px solid var(--neon); border-radius: 28px; padding: 20px; margin: 20px 0; text-align: center; font-weight: 900; font-size: 18px; backdrop-filter: blur(15px); box-shadow: 0 10px 40px rgba(0,255,255,0.2); }
-    .stats-block span { color: var(--gold); font-size: 22px; }
+    .stats-block {
+      background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,136,0.15));
+      border: 2px solid var(--neon);
+      border-radius: 28px;
+      padding: 28px;
+      margin: 20px 0;
+      text-align: center;
+      font-weight: 900;
+      font-size: 20px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 10px 40px rgba(0,255,255,0.2);
+      line-height: 2.4;
+    }
+    .stats-block span { color: var(--gold); font-size: 28px; }
     .btn { width: 100%; padding: 18px; margin: 12px 0; border: none; border-radius: 28px; font-weight: 900; font-size: 18px; cursor: pointer; transition: all 0.3s; }
     .btn-topup { background: linear-gradient(45deg, var(--gold), #ff8c00); color: #000; box-shadow: 0 0 40px rgba(255,215,0,0.6); }
     .btn-topup:hover { transform: translateY(-4px); }
@@ -158,7 +170,8 @@
       </div>
 
       <div class="stats-block">
-        Всего заданий: <span id="total-tasks">0</span> | Выполнено: <span id="done-tasks">0</span>
+        Всего заданий: <span id="total-tasks">0</span><br><br>
+        Выполнено: <span id="done-tasks">0</span>
       </div>
 
       <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
@@ -205,6 +218,7 @@
     const user = tg.initDataUnsafe.user || {};
     let tasks = [], completed = new Set(JSON.parse(localStorage.getItem('completedTasks') || '[]'));
     const prices = { yandex: 100, google: 65, telegram: 10 };
+    let rewardTimeout;
 
     document.getElementById('user-name').innerText = (user.first_name || 'Пользователь') + (user.last_name ? ' ' + user.last_name : '');
     document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
@@ -235,29 +249,40 @@
     function selectAmount(amount) {
       document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-      document.getElementById('create-reward').value = amount;
-      updateRewardInfo(document.getElementById('create-reward'));
+      const input = document.getElementById('create-reward');
+      input.value = amount;
+      clearTimeout(rewardTimeout);
+      updateRewardInfo(input);
       const container = document.getElementById('quick-amounts');
       container.scrollTo({left: event.target.offsetLeft - container.clientWidth/2 + event.target.clientWidth/2, behavior: 'smooth'});
     }
 
     function updateRewardInfo(input) {
-      let val = parseInt(input.value) || 0;
+      clearTimeout(rewardTimeout);
+      const val = parseInt(input.value) || 0;
       const type = document.getElementById('task-type').value;
-      if (!type || val < 10) return;
+      if (!type) return;
 
-      const price = prices[type];
-      const count = Math.floor(val / price);
-      const total = count * price;
-      input.value = total;
+      document.getElementById('reward-info').style.opacity = '0.7';
+      document.getElementById('reward-info').innerHTML = `Введено: ${val} ₽`;
 
-      let text = '';
-      if (type === 'yandex') text = count === 1 ? '1 отзыв' : `${count} отзыва`;
-      else if (type === 'google') text = count === 1 ? '1 отзыв в Google' : `${count} отзыва в Google`;
-      else if (type === 'telegram') text = count === 1 ? '1 подписка' : `${count} подписок`;
+      rewardTimeout = setTimeout(() => {
+        if (val < 10) return;
 
-      document.getElementById('reward-info').innerHTML = `Будет выполнено: ${text} за ${total} ₽`;
-      document.getElementById('reward-info').style.opacity = '1';
+        const price = prices[type];
+        const count = Math.floor(val / price);
+        const total = count * price;
+        input.value = total;
+
+        let text = '';
+        if (type === 'yandex') text = count === 1 ? '1 отзыв' : `${count} отзыва`;
+        else if (type === 'google') text = count === 1 ? '1 отзыв в Google' : `${count} отзыва в Google`;
+        else if (type === 'telegram') text = count === 1 ? '1 подписка' : `${count} подписок`;
+
+        document.getElementById('reward-info').innerHTML = 
+          `<i class="fas fa-star" style="color:#ffd700"></i> ${text} за ${total} ₽ <i class="fas fa-star" style="color:#ffd700"></i>`;
+        document.getElementById('reward-info').style.opacity = '1';
+      }, 800);
     }
 
     function createTask() {
@@ -302,23 +327,9 @@
           <div class="task">
             <div class="task-title">${t.title}</div>
             <div class="task-reward">+${t.reward} ₽</div>
-            <button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="${done?'':`doTask(${t.id}, '${t.link}')`}">${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}</button>
+            <button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="${done?'':`tg.openLink('${t.link}')`}">${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}</button>
           </div>`;
       });
-    }
-
-    function doTask(id, link) {
-      tg.openLink(link);
-      setTimeout(() => {
-        tg.showPopup({title: "Готово?", message: "Ты выполнил задание?", buttons: [{type: "ok", text: "Да"}, {type: "cancel", text: "Нет"}]}, (btn) => {
-          if (btn === "ok") {
-            tg.sendData(JSON.stringify({action: "complete_task", task_id: id}));
-            completed.add(id);
-            localStorage.setItem('completedTasks', JSON.stringify([...completed]));
-            filterTasks(document.querySelector('.filter-btn.active').textContent.trim() === 'ВСЕ' ? 'all' : document.querySelector('.filter-btn.active').textContent.trim().toLowerCase());
-          }
-        });
-      }, 1500);
     }
 
     function openTopup() {
