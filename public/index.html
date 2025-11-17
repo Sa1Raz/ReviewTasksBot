@@ -15,8 +15,10 @@
     .page.hidden-left { transform: translateX(-100%); }
     .page.hidden-right { transform: translateX(100%); }
     .page.visible { transform: translateX(0); }
+    .header { position: relative; }
     .header h1 { text-align: center; font-size: 28px; font-weight: 900; margin: 20px 0; background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .support-btn { position: absolute; top: 16px; right: 16px; background: rgba(0,255,255,0.2); border: 2px solid var(--neon); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 30px rgba(0,255,255,0.5); z-index: 100; }
+    .support-btn { position: absolute; top: 16px; right: 16px; background: rgba(0,255,255,0.2); border: 2px solid var(--neon); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 30px rgba(0,255,255,0.5); transition: 0.3s; z-index: 100; }
+    .support-btn:hover { background: var(--neon); transform: scale(1.1); }
     .support-btn i { font-size: 22px; color: white; }
     .role-switch { display: flex; background: #141426; border: 2px solid var(--border); border-radius: 30px; padding: 6px; margin: 16px 0; }
     .role-btn { flex: 1; padding: 12px; border-radius: 24px; font-weight: 800; font-size: 15px; cursor: pointer; text-align: center; color: var(--muted); transition: 0.4s; }
@@ -62,46 +64,55 @@
   </style>
 </head>
 <body>
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready(); tg.expand();
-  </script>
 
+  <!-- ЗАДАНИЯ -->
   <div id="tasks-page" class="page visible">
     <div class="container">
       <div class="header"><h1>ЗАДАНИЯ</h1></div>
       <div class="role-switch">
-        <div class="role-btn active" id="employer-btn" onclick="switchRole('employer')">РАБОТОДАТЕЛЬ</div>
-        <div class="role-btn" id="worker-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
+        <div class="role-btn active" onclick="switchRole('employer')">РАБОТОДАТЕЛЬ</div>
+        <div class="role-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
       </div>
 
       <div id="employer-mode">
         <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">+ СОЗДАТЬ ЗАДАНИЕ</button>
         <div class="create-form" id="create-form">
           <input type="text" id="task-title" placeholder="Что нужно сделать?">
-          <input type="url" id="task-link" placeholder="Ссылка (обязательно)">
-          <select id="task-type">
+          <input type="url" id="task-link" placeholder="Ссылка (обязательно)" oninput="validateLink(this)">
+          <select id="task-type" onchange="updateRewardRules()">
             <option value="">Выберите тип</option>
             <option value="yandex">Яндекс Отзыв</option>
             <option value="google">Google Отзыв</option>
             <option value="telegram">Telegram Подписка</option>
           </select>
-          <button class="submit-btn" onclick="createTask()">ОПУБЛИКОВАТЬ</button>
+          <div class="reward-section" id="reward-section" style="display:none;">
+            <input type="number" id="create-reward" placeholder="Сумма вознаграждения" min="100">
+            <div class="quick-amounts" id="quick-amounts">
+              <div class="quick-btn active" onclick="selectAmount(100)">100 ₽</div>
+              <div class="quick-btn" onclick="selectAmount(200)">200 ₽</div>
+              <div class="quick-btn" onclick="selectAmount(500)">500 ₽</div>
+              <div class="quick-btn" onclick="selectAmount(1000)">1000 ₽</div>
+              <div class="quick-btn" onclick="selectAmount(2000)">2000 ₽</div>
+              <div class="quick-btn" onclick="selectAmount(5000)">5000 ₽</div>
+            </div>
+          </div>
+          <button class="submit-btn" onclick="createTask()">ОПУБЛИКОВАТЬ ЗАДАНИЕ</button>
         </div>
       </div>
 
       <div id="worker-mode" style="display:none;">
-        <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="centerFilter(this,'all')"><i class="fas fa-list"></i> ВСЕ</div>
-          <div class="filter-btn" onclick="centerFilter(this,'yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
-          <div class="filter-btn" onclick="centerFilter(this,'google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
-          <div class="filter-btn" onclick="centerFilter(this,'telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
+        <div class="filter-bar">
+          <div class="filter-btn active" onclick="filterTasks('all')"><i class="fas fa-list"></i> ВСЕ</div>
+          <div class="filter-btn" onclick="filterTasks('yandex')"><i class="fab fa-yandex" style="color:#ffcc00"></i> Яндекс</div>
+          <div class="filter-btn" onclick="filterTasks('google')"><i class="fab fa-google" style="color:#4285f4"></i> Google</div>
+          <div class="filter-btn" onclick="filterTasks('telegram')"><i class="fab fa-telegram-plane" style="color:#229ed9"></i> TG</div>
         </div>
         <div id="tasks-list"></div>
       </div>
     </div>
   </div>
 
+  <!-- ПРОФИЛЬ -->
   <div id="profile-page" class="page hidden-right">
     <div class="container">
       <div class="header">
@@ -110,15 +121,15 @@
       </div>
       <div class="profile-header">
         <img id="user-avatar" class="profile-avatar" src="" alt="Аватар">
-        <div class="profile-name" id="user-name">Загрузка...</div>
-        <div class="profile-id" id="user-username">@username</div>
+        <div style="font-size:24px;font-weight:900;color:#fff;" id="user-name">Загрузка...</div>
+        <div style="color:#88c0d0;" id="user-username">@username</div>
       </div>
       <div class="profile-card">
         <div class="balance" id="user-balance">0 ₽</div>
         <div class="stat-line">Заданий выполнено: <b id="tasks-done">0</b></div>
         <div class="stat-line">Всего заработано: <b id="total-earned">0</b> ₽</div>
       </div>
-      <button class="btn btn-topup" onclick="openTopupFull()">ПОПОЛНИТЬ</button>
+      <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
       <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД ОТ 250 ₽</button>
     </div>
   </div>
@@ -128,123 +139,179 @@
     <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
   </div>
 
-  <!-- ПОПОЛНЕНИЕ ОТ 100 РУБЛЕЙ -->
+  <!-- МОДАЛКИ -->
   <div id="topup-modal" class="modal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeTopup()">×</button>
+      <button class="close-btn" onclick="closeModal('topup-modal')">×</button>
       <h2 style="color:#ffd700;font-size:32px;">ПОПОЛНЕНИЕ</h2>
-      <input type="number" id="custom-amount" placeholder="Сумма (мин. 100)" min="100" value="100">
+      <input type="number" id="topup-amount" placeholder="Сумма (от 100 ₽)" min="100" value="100">
       <div style="background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,140,0,0.2));padding:24px;border-radius:24px;border:3px solid #ffd700;margin:20px 0;">
-        <p><b>Получатель:</b> <span style="color:#ffd700;">Раяз Н.</span></p>
+        <p><b>Получатель:</b> Раяз Н.</p>
         <div class="copy-block" onclick="copyText('+79600738559')">Номер: +7 (960) 073-85-59</div>
         <p><b>Банк:</b> Т-Банк</p>
       </div>
       <p>В комментарии укажи код:</p>
-      <div class="copy-block" id="topup-code" onclick="copyText(this.innerText)">000000</div>
-      <p style="color:#00ff88;font-weight:900;margin:25px 0;">Зачислю в течение дня!</p>
-      <button style="background:linear-gradient(45deg,#ffd700,#ff8c00);color:#000;padding:20px;font-size:20px;font-weight:900;border-radius:28px;" onclick="createTopupRequest()">ОТПРАВИТЬ ЗАЯВКУ</button>
+      <div class="copy-block" id="topup-code">000000</div>
+      <button style="background:#ffd700;color:#000;padding:20px;font-size:20px;font-weight:900;border-radius:28px;" onclick="sendTopup()">ОТПРАВИТЬ ЗАЯВКУ</button>
     </div>
   </div>
 
-  <!-- ВЫВОД ОТ 250 РУБЛЕЙ -->
   <div id="withdraw-modal" class="modal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeWithdraw()">×</button>
+      <button class="close-btn" onclick="closeModal('withdraw-modal')">×</button>
       <h2 style="color:#ff3366;font-size:32px;">ВЫВОД СРЕДСТВ</h2>
       <input type="number" id="withdraw-amount" placeholder="Сумма (от 250 ₽)" min="250">
       <input type="text" id="withdraw-card" placeholder="Номер карты / телефона">
-      <input type="text" id="withdraw-name" placeholder="Имя или ник в банке">
       <input type="text" id="withdraw-bank" placeholder="Банк (Т-Банк, Сбер и т.д.)">
-      <button style="background:linear-gradient(45deg,#ff3366,#ff1a50);color:white;padding:20px;font-size:20px;font-weight:900;border-radius:28px;margin-top:20px;" onclick="sendWithdraw()">ВЫВЕСТИ</button>
+      <button style="background:#ff3366;color:white;padding:20px;font-size:20px;font-weight:900;border-radius:28px;margin-top:20px;" onclick="sendWithdraw()">ВЫВЕСТИ</button>
     </div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
+    const user = tg.initDataUnsafe.user || {};
+    let balance = 0, tasksDone = 0, totalEarned = 0;
+    let tasks = [];
+    let completed = localStorage.getItem('completedTasks') ? new Set(JSON.parse(localStorage.getItem('completedTasks'))) : new Set();
 
-    const user = tg.initDataUnsafe?.user || {};
-    let userBalance = 0;
-    let allTasks = [];
-    let completedTasks = localStorage.getItem('completedTasks') ? new Set(JSON.parse(localStorage.getItem('completedTasks'))) : new Set();
-
-    document.getElementById('user-name').innerText = (user.first_name || '') + (user.last_name ? ' ' + user.last_name : '');
+    document.getElementById('user-name').innerText = (user.first_name || 'Пользователь') + (user.last_name ? ' ' + user.last_name : '');
     document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
     document.getElementById('user-avatar').src = user.photo_url || 'https://telegram.org/img/t_logo.png';
 
-    function showPage(p) {
-      document.getElementById('tasks-page').classList.toggle('visible', p==='tasks');
-      document.getElementById('profile-page').classList.toggle('visible', p==='profile');
-      document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active', i===(p==='profile'?1:0)));
+    function showPage(page) {
+      document.getElementById('tasks-page').classList.toggle('visible', page === 'tasks');
+      document.getElementById('tasks-page').classList.toggle('hidden-left', page !== 'tasks');
+      document.getElementById('profile-page').classList.toggle('visible', page === 'profile');
+      document.getElementById('profile-page').classList.toggle('hidden-right', page !== 'profile');
+      document.querySelectorAll('.nav-btn').forEach((b, i) => b.classList.toggle('active', i === (page === 'profile' ? 1 : 0)));
     }
 
-    function switchRole(r) {
-      document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
-      document.getElementById(r+'-btn').classList.add('active');
-      document.getElementById('employer-mode').style.display = r==='employer'?'block':'none';
-      document.getElementById('worker-mode').style.display = r==='worker'?'block':'none';
-      if(r==='worker') filterTasks('all');
+    function switchRole(role) {
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      if (role === 'worker') filterTasks('all');
     }
 
-    function centerFilter(btn, f) {
-      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('filter-bar').scrollTo({left:btn.offsetLeft-180+btn.clientWidth/2,behavior:'smooth'});
-      filterTasks(f);
+    function validateLink(input) {
+      const valid = input.value.includes('yandex.') || input.value.includes('google.') || input.value.includes('t.me');
+      input.classList.toggle('invalid', input.value && !valid);
     }
 
-    function filterTasks(f) {
+    function updateRewardRules() {
+      const type = document.getElementById('task-type').value;
+      document.getElementById('reward-section').style.display = type ? 'block' : 'none';
+    }
+
+    function selectAmount(amount) {
+      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('create-reward').value = amount;
+    }
+
+    function createTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const link = document.getElementById('task-link').value.trim();
+      const type = document.getElementById('task-type').value;
+      const reward = parseInt(document.getElementById('create-reward').value);
+
+      if (!title || !link || !type || reward < 100) {
+        tg.showAlert("Заполни все поля правильно!");
+        return;
+      }
+
+      tg.sendData(JSON.stringify({
+        action: "create_task",
+        title, link, type, reward
+      }));
+
+      tg.showAlert("Задание отправлено на модерацию!");
+      document.getElementById('create-form').classList.remove('active');
+    }
+
+    function filterTasks(filter) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
       const list = document.getElementById('tasks-list');
       list.innerHTML = '';
-      const filtered = f==='all'?allTasks:allTasks.filter(t=>t.type===f);
-      if(filtered.length===0){list.innerHTML='<p style="text-align:center;color:#88c0d0;margin:60px 0;">Нет заданий</p>';return;}
-      filtered.forEach(t=>{
-        const done = completedTasks.has(t.id);
-        list.innerHTML+=`<div class="task"><div class="task-title">${t.title}</div><div class="task-reward">+${t.reward} ₽</div><button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="handleTask(${t.id},'${t.link}','${t.type}',${t.reward},this)">${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}</button></div>`;
+      const filtered = filter === 'all' ? tasks : tasks.filter(t => t.type === filter);
+      if (filtered.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#88c0d0;margin:60px 0;">Нет заданий</p>';
+        return;
+      }
+      filtered.forEach(t => {
+        const done = completed.has(t.id);
+        list.innerHTML += `
+          <div class="task">
+            <div class="task-title">${t.title}</div>
+            <div class="task-reward">+${t.reward} ₽</div>
+            <button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="${done?'':`completeTask(${t.id}, '${t.link}')`}">${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}</button>
+          </div>`;
       });
     }
 
-    function openTopupFull(){
+    function completeTask(id, link) {
+      tg.openLink(link);
+      setTimeout(() => {
+        tg.showPopup({title: "Подтверди выполнение", message: "Ты выполнил задание?", buttons: [{type: "ok", text: "Да"}, {type: "cancel"}]}, (btn) => {
+          if (btn === "ok") {
+            tg.sendData(JSON.stringify({action: "complete_task", task_id: id}));
+            completed.add(id);
+            localStorage.setItem('completedTasks', JSON.stringify([...completed]));
+          }
+        });
+      }, 1000);
+    }
+
+    function openTopup() {
       document.getElementById('topup-modal').classList.add('active');
-      document.getElementById('topup-code').innerText = Math.floor(100000 + Math.random()*900000);
+      document.getElementById('topup-code').innerText = Math.floor(100000 + Math.random() * 900000);
     }
 
-    function createTopupRequest(){
-      const amount = parseInt(document.getElementById('custom-amount').value)||100;
-      if(amount<100){tg.showAlert("Минимум 100 ₽");return;}
+    function sendTopup() {
+      const amount = parseInt(document.getElementById('topup-amount').value);
+      if (amount < 100) return tg.showAlert("Минимум 100 ₽");
       const code = document.getElementById('topup-code').innerText;
-      tg.sendData(JSON.stringify({action:"request_topup",amount,code}));
+      tg.sendData(JSON.stringify({action: "request_topup", amount, code}));
       tg.showAlert(`Заявка на ${amount} ₽ отправлена! Код: ${code}`);
-      closeTopup();
+      closeModal('topup-modal');
     }
 
-    function sendWithdraw(){
+    function openWithdraw() { document.getElementById('withdraw-modal').classList.add('active'); }
+    function sendWithdraw() {
       const amount = parseInt(document.getElementById('withdraw-amount').value);
-      if(amount<250){tg.showAlert("Минимум 250 ₽");return;}
-      const bank = document.getElementById('withdraw-bank').value.trim().toLowerCase();
-      const valid = ["т-банк","тинькофф","сбер","сбербанк","втб","альфа","альфа-банк","райффайзен","райф"];
-      if(!valid.some(b=>bank.includes(b))){tg.showAlert("Укажи настоящий банк!");return;}
-      if(amount>userBalance){tg.showAlert("Недостаточно средств");return;}
-      tg.sendData(JSON.stringify({action:"request_withdraw",amount,card:document.getElementById('withdraw-card').value,name:document.getElementById('withdraw-name').value,bank}));
+      if (amount < 250 || amount > balance) return tg.showAlert("Проверь сумму!");
+      tg.sendData(JSON.stringify({
+        action: "request_withdraw",
+        amount,
+        card: document.getElementById('withdraw-card').value,
+        bank: document.getElementById('withdraw-bank').value
+      }));
       tg.showAlert("Заявка на вывод отправлена!");
-      closeWithdraw();
+      closeModal('withdraw-modal');
     }
 
-    function closeTopup(){document.getElementById('topup-modal').classList.remove('active');}
-    function closeWithdraw(){document.getElementById('withdraw-modal').classList.remove('active');}
-    function copyText(t){navigator.clipboard.writeText(typeof t==='string'?t:t.innerText).then(()=>tg.showAlert("Скопировано!"));}
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function copyText(text) { navigator.clipboard.writeText(text); tg.showAlert("Скопировано!"); }
 
-    tg.onEvent('webAppDataReceived', d=>{
-      try{
-        const res = JSON.parse(d);
-        if(res.tasks){allTasks=res.tasks;if(document.getElementById('worker-mode').style.display!=='none')filterTasks('all');}
-        if(res.user){userBalance=res.user.balance||0;document.getElementById('user-balance').innerText=userBalance+' ₽';document.getElementById('tasks-done').innerText=res.user.tasks_done||0;document.getElementById('total-earned').innerText=res.user.total_earned||0;}
-        if(res.completed){res.completed.forEach(id=>completedTasks.add(id));localStorage.setItem('completedTasks',JSON.stringify([...completedTasks]));}
-      }catch(e){}
+    tg.onEvent('webAppDataReceived', data => {
+      try {
+        const res = JSON.parse(data);
+        if (res.tasks) { tasks = res.tasks; if (document.getElementById('worker-mode').style.display !== 'none') filterTasks('all'); }
+        if (res.user) {
+          balance = res.user.balance || 0;
+          document.getElementById('user-balance').innerText = balance + ' ₽';
+          document.getElementById('tasks-done').innerText = res.user.tasks_done || 0;
+          document.getElementById('total-earned').innerText = res.user.total_earned || 0;
+        }
+        if (res.completed) res.completed.forEach(id => completed.add(id));
+      } catch(e) { console.error(e); }
     });
 
-    setInterval(()=>tg.sendData(JSON.stringify({action:"get_tasks"})),8000);
-    tg.sendData(JSON.stringify({action:"get_tasks"}));
+    setInterval(() => tg.sendData('{"action":"get_tasks"}'), 8000);
+    tg.sendData('{"action":"get_tasks"}');
   </script>
 </body>
 </html>
