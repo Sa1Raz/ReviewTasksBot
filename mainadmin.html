@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ГЛАВНЫЙ АДМИН | ReviewCash</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #0f0020, #000);
+      --card: rgba(30, 10, 80, 0.95);
+      --neon: #00ffff;
+      --gold: #ffd700;
+      --green: #00ff88;
+      --red: #ff3366;
+      --purple: #cc00ff;
+    }
+    body {
+      background: var(--bg);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .header {
+      text-align: center;
+      padding: 30px 20px;
+      background: linear-gradient(90deg, #ffd700, #ff4500);
+      color: #000;
+      font-size: 32px;
+      font-weight: 900;
+      border-bottom: 5px solid #ffd700;
+      box-shadow: 0 10px 40px rgba(255,215,0,0.6);
+    }
+    .crown { font-size: 50px; margin-bottom: 10px; animation: pulse 3s infinite; }
+    .container { max-width: 500px; margin: 20px auto; padding: 20px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 3px solid var(--neon);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 40px rgba(0,255,255,0.3);
+    }
+    .stat-card i { font-size: 36px; color: var(--gold); margin-bottom: 10px; }
+    .stat-card h3 { font-size: 14px; color: #88c0d0; margin: 8px 0; }
+    .stat-card p { font-size: 28px; font-weight: 900; color: var(--neon); margin: 0; }
+
+    .section {
+      background: var(--card);
+      border: 3px solid var(--neon);
+      border-radius: 24px;
+      padding: 24px;
+      margin: 25px 0;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+    }
+    .section h2 {
+      text-align: center;
+      color: var(--gold);
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #ffd700;
+    }
+    .request {
+      background: rgba(0,255,255,0.1);
+      border-left: 6px solid var(--gold);
+      border-radius: 16px;
+      padding: 18px;
+      margin: 14px 0;
+      position: relative;
+      animation: fadeIn 0.6s;
+    }
+    .request.new { border-left-color: var(--green); box-shadow: 0 0 30px rgba(0,255,136,0.4); }
+    .request .user { font-weight: 900; color: var(--neon); }
+    .request .info { font-size: 15px; margin: 8px 0; color: #e0f7ff; }
+    .btn-group { margin-top: 12px; display: flex; gap: 10px; }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-confirm { background: var(--green); color: #000; }
+    .btn-reject { background: var(--red); color: white; }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+      font-size: 14px;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="crown"><i class="fas fa-crown"></i></div>
+    ГЛАВНЫЙ АДМИН<br>
+    <small style="font-size:18px;color:#000;">Только для Раяза Н. • ID: 6482440657</small>
+  </div>
+
+  <div class="container">
+
+    <!-- Статистика -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <i class="fas fa-users"></i>
+        <h3>Пользователей</h3>
+        <p id="total-users">0</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-tasks"></i>
+        <h3>Заданий всего</h3>
+        <p id="total-tasks">0</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-check-circle"></i>
+        <h3>Выполнено</h3>
+        <p id="tasks-done">0</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-ruble-sign"></i>
+        <h3>Баланс системы</h3>
+        <p id="system-balance">0 ₽</p>
+      </div>
+    </div>
+
+    <!-- Пополнения -->
+    <div class="section">
+      <h2><i class="fas fa-arrow-down"></i> Пополнения</h2>
+      <div id="topups-list">Загрузка...</div>
+    </div>
+
+    <!-- Выводы -->
+    <div class="section">
+      <h2><i class="fas fa-arrow-up"></i> Выводы</h2>
+      <div id="withdraws-list">Загрузка...</div>
+    </div>
+
+    <button onclick="location.reload()" style="width:100%;padding:20px;background:#ffd700;color:#000;border:none;border-radius:24px;font-size:20px;font-weight:900;margin:20px 0;">
+      ОБНОВИТЬ ВСЁ
+    </button>
+
+  </div>
+
+  <div class="footer">
+    © 2025 ReviewCash | Империя Раяза Н. | Только Царь здесь правит
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    const userId = tg.initDataUnsafe?.user?.id;
+
+    // ЗАЩИТА — ТОЛЬКО ТЫ!
+    if (userId !== 6482440657) {
+      document.body.innerHTML = `
+        <div style="text-align:center;padding:100px;font-size:32px;color:#ff3366;">
+          <i class="fas fa-ban" style="font-size:80px;"></i><br><br>
+          ДОСТУП ЗАПРЕЩЁН<br>
+          <small>Только для Раяза Н.</small>
+        </div>`;
+      throw new Error("Доступ запрещён");
+    }
+
+    function loadData() {
+      fetch('https://твой-сервер.ру/api/admin.php') // ← замени на свой API
+        .then(r => r.json())
+        .then(data => {
+          // Статистика
+          document.getElementById('total-users').innerText = data.stats?.users || 0;
+          document.getElementById('total-tasks').innerText = data.stats?.tasks || 0;
+          document.getElementById('tasks-done').innerText = data.stats?.completed || 0;
+          document.getElementById('system-balance').innerText = (data.stats?.balance || 0) + ' ₽';
+
+          // Пополнения
+          let topups = '';
+          (data.topups || []).forEach(t => {
+            topups += `
+              <div class="request ${t.status === 'new' ? 'new' : ''}">
+                <div class="user">@${t.username || t.user_id}</div>
+                <div class="info">
+                  <i class="fas fa-money-bill-wave"></i> ${t.amount} ₽<br>
+                  <i class="fas fa-barcode"></i> Код: <b>${t.code}</b><br>
+                  <i class="fas fa-clock"></i> ${new Date(t.time).toLocaleString()}
+                </div>
+                ${t.status === 'new' ? `
+                  <div class="btn-group">
+                    <button class="btn btn-confirm" onclick="confirmTopup(${t.id})">
+                      <i class="fas fa-check"></i> ЗАЧИСЛИТЬ
+                    </button>
+                  </div>
+                ` : '<div style="color:var(--green);font-weight:900;"><i class="fas fa-check-circle"></i> Зачислено</div>'}
+              </div>`;
+          });
+          document.getElementById('topups-list').innerHTML = topups || '<p style="text-align:center;color:#666;">Нет заявок</p>';
+
+          // Выводы
+          let withdraws = '';
+          (data.withdraws || []).forEach(w => {
+            withdraws += `
+              <div class="request ${w.status === 'new' ? 'new' : ''}">
+                <div class="user">@${w.username || w.user_id}</div>
+                <div class="info">
+                  <i class="fas fa-credit-card"></i> ${w.amount} ₽ → ${w.card}<br>
+                  <i class="fas fa-university"></i> ${w.bank}<br>
+                  <i class="fas fa-clock"></i> ${new Date(w.time).toLocaleString()}
+                </div>
+                ${w.status === 'new' ? `
+                  <div class="btn-group">
+                    <button class="btn btn-confirm" onclick="confirmWithdraw(${w.id})">
+                      <i class="fas fa-paper-plane"></i> ВЫПЛАТИТЬ
+                    </button>
+                    <button class="btn btn-reject" onclick="rejectWithdraw(${w.id})">
+                      <i class="fas fa-ban"></i> ОТКЛОНИТЬ
+                    </button>
+                  </div>
+                ` : w.status === 'paid' ? 
+                  '<div style="color:var(--green);font-weight:900;"><i class="fas fa-check-circle"></i> Выплачено</div>' : 
+                  '<div style="color:var(--red);font-weight:900;"><i class="fas fa-times-circle"></i> Отклонено</div>'}
+              </div>`;
+          });
+          document.getElementById('withdraws-list').innerHTML = withdraws || '<p style="text-align:center;color:#666;">Нет заявок</p>';
+        })
+        .catch(() => {});
+    }
+
+    function confirmTopup(id) {
+      if(confirm("Зачислить пополнение?")) {
+        fetch(`https://твой-сервер.ру/api/action.php?act=topup&id=${id}`);
+        setTimeout(loadData, 1000);
+      }
+    }
+    function confirmWithdraw(id) {
+      if(confirm("ВЫПЛАТИТЬ деньги этому пользователю?")) {
+        fetch(`https://твой-сервер.ру/api/action.php?act=withdraw&id=${id}`);
+        setTimeout(loadData, 1000);
+      }
+    }
+    function rejectWithdraw(id) {
+      if(confirm("ОТКЛОНИТЬ вывод?")) {
+        fetch(`https://твой-сервер.ру/api/action.php?act=reject&id=${id}`);
+        setTimeout(loadData, 1000);
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 4000); // каждые 4 секунды
+  </script>
+</body>
+</html>
