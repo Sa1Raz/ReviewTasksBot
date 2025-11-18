@@ -3,48 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ReviewCash — Лучший сервис отзывов и заданий</title>
+  <title>ReviewCash — Империя заданий</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
     :root {
       --bg: #0a0014;
-      --glass: rgba(15, 10, 45, 0.95);
-      --neon-cyan: #00ffff;
-      --neon-green: #00ff88;
+      --glass: rgba(15, 10, 45, 0.98);
+      --neon: #00ffff;
+      --green: #00ff88;
       --gold: #ffd700;
       --danger: #ff3366;
-      --border: rgba(0, 255, 255, 0.6);
+      --border: rgba(0,255,255,0.6);
       --text: #e0f7ff;
       --muted: #88c0d0;
-      --purple: #8a2be2;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: linear-gradient(135deg, #0a0014, #001122); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body { background: linear-gradient(135deg, #0a0014, #001133); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
     .container { max-width: 420px; margin: 0 auto; padding: 16px 16px 140px; }
 
-    /* Заголовок */
     .header {
-      text-align: center;
-      padding: 30px 0 10px;
-      position: relative;
+      text-align: center; padding: 30px 0 10px; position: relative;
     }
     .header h1 {
-      font-size: 36px;
-      font-weight: 900;
+      font-size: 38px; font-weight: 900;
       background: linear-gradient(90deg, #00ffff, #00ff88, #ffd700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px rgba(0,255,255,0.5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 40px rgba(0,255,255,0.6);
     }
     .support-btn {
-      position: absolute; top: 16px; right: 16px; background: rgba(0,255,255,0.2); border: 3px solid var(--neon-cyan);
+      position: absolute; top: 16px; right: 16px; background: rgba(0,255,255,0.2); border: 3px solid var(--neon);
       border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; box-shadow: 0 0 40px rgba(0,255,255,0.6); transition: all 0.4s; z-index: 100;
+      cursor: pointer; box-shadow: 0 0 50px rgba(0,255,255,0.7); z-index: 100; transition: 0.4s;
     }
-    .support-btn:hover { transform: scale(1.2) rotate(15deg); }
+    .support-btn:hover { transform: scale(1.2); }
 
-    /* Переключатель ролей */
     .role-switch {
       display: flex; background: rgba(20,20,50,0.9); border: 3px solid var(--border); border-radius: 32px;
       padding: 8px; margin: 20px 0; backdrop-filter: blur(20px);
@@ -54,38 +47,76 @@
       color: var(--muted); cursor: pointer; transition: all 0.5s;
     }
     .role-btn.active {
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
-      color: #000; box-shadow: 0 0 50px rgba(0,255,255,0.8); transform: translateY(-4px);
+      background: linear-gradient(135deg, var(--neon), var(--green));
+      color: #000; box-shadow: 0 0 60px rgba(0,255,255,0.8); transform: translateY(-4px);
     }
 
-    /* Фильтры с иконками */
+    .create-btn {
+      width: 100%; padding: 22px; background: linear-gradient(45deg, #ffd700, #ff8c00);
+      color: #000; border: none; border-radius: 32px; font-size: 20px; font-weight: 900;
+      margin: 20px 0; cursor: pointer; box-shadow: 0 15px 50px rgba(255,215,0,0.6);
+      text-transform: uppercase; transition: all 0.4s;
+    }
+    .create-btn:hover { transform: translateY(-6px); }
+
+    .create-form {
+      background: var(--glass); border: 3px solid var(--neon); border-radius: 32px;
+      padding: 28px; margin: 20px 0; display: none; backdrop-filter: blur(25px);
+      box-shadow: 0 20px 60px rgba(0,255,255,0.3);
+    }
+    .create-form.active { display: block; animation: slideDown 0.6s; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+    input, select {
+      width: 100%; padding: 18px; margin: 14px 0; background: rgba(0,0,0,0.7);
+      border: 3px solid var(--neon); border-radius: 20px; color: white; font-size: 16px;
+      font-weight: 600; transition: all 0.4s;
+    }
+    input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 30px rgba(0,255,136,0.5); }
+
+    .quick-amounts {
+      display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0;
+    }
+    .quick-btn {
+      padding: 16px 24px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon);
+      border-radius: 30px; color: white; font-weight: 900; cursor: pointer; transition: all 0.4s;
+    }
+    .quick-btn.active {
+      background: var(--neon); color: #000; transform: scale(1.1); box-shadow: 0 0 50px #00ffff;
+    }
+
+    .submit-create {
+      width: 100%; padding: 24px; background: linear-gradient(45deg, var(--green), #00cc66);
+      color: black; border: none; border-radius: 32px; font-size: 22px; font-weight: 900;
+      margin-top: 30px; cursor: pointer; text-transform: uppercase;
+    }
+
     .filter-bar {
       display: flex; gap: 14px; padding: 16px; overflow-x: auto; scrollbar-width: none; margin: 20px 0;
       background: rgba(20,20,50,0.9); border-radius: 32px; border: 3px solid var(--border); backdrop-filter: blur(20px);
     }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-btn {
-      padding: 14px 28px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon-cyan);
+      padding: 14px 28px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon);
       border-radius: 30px; color: white; font-weight: 900; font-size: 15px; cursor: pointer;
       display: flex; align-items: center; gap: 10px; min-width: fit-content; transition: all 0.4s;
       box-shadow: 0 0 30px rgba(0,255,255,0.3);
     }
     .filter-btn.active {
-      background: var(--neon-cyan); color: #000; transform: scale(1.15);
-      box-shadow: 0 0 80px #00ffff; border-color: #fff;
+      background: var(--neon); color: #000; transform: scale(1.15);
+      box-shadow: 0 0 80px #00ffff;
     }
 
-    /* УЛЬТРА-КРАСИВЫЕ КАРТОЧКИ ЗАДАНИЙ */
     .task {
       background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,136,0.1));
-      border: 3px solid var(--neon-cyan); border-radius: 32px; padding: 24px; margin: 20px 0;
+      border: 3px solid var(--neon); border-radius: 32px; padding: 24px; margin: 20px 0;
       position: relative; overflow: hidden; box-shadow: 0 20px 60px rgba(0,255,255,0.25);
       transition: all 0.5s; backdrop-filter: blur(20px);
     }
     .task:hover { transform: translateY(-10px); box-shadow: 0 30px 90px rgba(0,255,255,0.5); }
     .task::before {
       content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 8px;
-      background: linear-gradient(90deg, #00ffff, #00ff88, #ffd700, #ff3366);
+      background: linear-gradient(90deg, #00ffff, #00ff88, #ffd700);
     }
     .task-type {
       position: absolute; top: 14px; right: 14px; padding: 8px 16px; border-radius: 20px;
@@ -95,37 +126,20 @@
     .task-type.google { background: #4285f4; color: white; }
     .task-type.telegram { background: #0088cc; color: white; }
 
-    .task-title { font-size: 20px; font-weight: 900; margin-bottom: 12px; color: #fff; }
-    .task-reward {
-      font-size: 32px; font-weight: 900; color: var(--neon-green); text-align: center;
-      margin: 16px 0; text-shadow: 0 0 20px rgba(0,255,136,0.7);
-    }
-    .progress-bar {
-      height: 14px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;
-      margin: 18px 0; border: 2px solid rgba(0,255,255,0.3);
-    }
-    .progress-fill {
-      height: 100%; background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
-      width: 0%; transition: width 1s ease;
-    }
-    .progress-text {
-      text-align: center; font-weight: 900; color: var(--gold); font-size: 17px; margin: 10px 0;
-    }
+    .task-title { font-size: 20px; font-weight: 900; margin-bottom: 12px; }
+    .task-reward { font-size: 32px; font-weight: 900; color: var(--green); text-align: center; margin: 16px 0; }
+    .progress-bar { height: 14px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin: 18px 0; border: 2px solid rgba(0,255,255,0.3); }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--neon)); width: 0%; transition: width 1s ease; }
+    .progress-text { text-align: center; font-weight: 900; color: var(--gold); font-size: 17px; margin: 10px 0; }
+
     .task-do {
       width: 100%; padding: 20px; border: none; border-radius: 28px; font-weight: 900;
       font-size: 19px; cursor: pointer; transition: all 0.4s; text-transform: uppercase;
     }
-    .task-do.active {
-      background: linear-gradient(45deg, var(--neon-green), #00cc66); color: black;
-      box-shadow: 0 10px 40px rgba(0,255,136,0.6);
-    }
-    .task-do.active:hover { transform: translateY(-4px); }
+    .task-do.active { background: linear-gradient(45deg, var(--green), #00cc66); color: black; }
     .task-do.yandex { background: linear-gradient(45deg, #ffcc00, #ffb700); color: black; }
-    .task-do:disabled {
-      background: #333; color: #888; opacity: 0.7; cursor: not-allowed;
-    }
+    .task-do:disabled { background: #333; color: #888; opacity: 0.7; }
 
-    /* Нижняя навигация */
     .bottom-nav {
       position: fixed; bottom: 20px; left: 20px; right: 20px;
       background: rgba(15,15,45,0.98); backdrop-filter: blur(30px);
@@ -137,19 +151,9 @@
       font-size: 18px; background: transparent; color: var(--muted); transition: all 0.5s;
     }
     .nav-btn.active {
-      background: linear-gradient(45deg, var(--neon-cyan), var(--neon-green));
+      background: linear-gradient(45deg, var(--neon), var(--green));
       color: #000; transform: translateY(-8px);
       box-shadow: 0 0 70px rgba(0,255,255,0.9);
-    }
-
-    /* Профиль */
-    .profile-avatar {
-      width: 120px; height: 120px; border-radius: 50%; border: 6px solid var(--neon-cyan);
-      box-shadow: 0 0 80px rgba(0,255,255,0.8); object-fit: cover;
-    }
-    .balance {
-      font-size: 56px; font-weight: 900; color: var(--neon-green);
-      text-shadow: 0 0 30px rgba(0,255,136,0.7);
     }
   </style>
 </head>
@@ -159,41 +163,68 @@
     <div class="header">
       <h1>REVIEWCASH</h1>
       <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
-        <i class="fas fa-crown" style="font-size:28px;color:#ffd700;"></i>
+        <i class="fas fa-crown" style="font-size:30px;color:#ffd700;"></i>
       </div>
     </div>
 
-    <!-- Переключатель ролей -->
     <div class="role-switch">
       <div class="role-btn active" onclick="switchRole('employer')">РАБОТОДАТЕЛЬ</div>
       <div class="role-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
     </div>
 
-    <!-- Режим РАБОТОДАТЕЛЯ -->
+    <!-- РАБОТОДАТЕЛЬ -->
     <div id="employer-mode">
-      <div style="text-align:center;padding:40px 20px;color:#88c0d0;font-size:18px;">
-        <i class="fas fa-chart-line" style="font-size:50px;margin-bottom:20px;color:#00ffff;"></i><br>
-        Ваши активные задания
+      <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">
+        + СОЗДАТЬ ЗАДАНИЕ
+      </button>
+
+      <div class="create-form" id="create-form">
+        <input type="text" id="task-title" placeholder="Например: 5★ отзыв в Яндекс.Картах">
+        <input type="url" id="task-link" placeholder="Ссылка на товар / профиль / канал">
+        <select id="task-type" onchange="updatePriceInfo()">
+          <option value="">Выберите тип</option>
+          <option value="yandex">Яндекс Отзыв</option>
+          <option value="google">Google Отзыв</option>
+          <option value="telegram">Telegram Подписка</option>
+        </select>
+
+        <div id="price-info" style="text-align:center;color:#ffd700;font-size:18px;font-weight:900;margin:20px 0;"></div>
+
+        <input type="number" id="task-budget" placeholder="Общий бюджет (минимум 100 ₽)" min="100" oninput="calculateTasks()">
+
+        <div class="quick-amounts">
+          <div class="quick-btn active" onclick="setBudget(500)">500 ₽</div>
+          <div class="quick-btn" onclick="setBudget(1000)">1000 ₽</div>
+          <div class="quick-btn" onclick="setBudget(2000)">2000 ₽</div>
+          <div class="quick-btn" onclick="setBudget(5000)">5000 ₽</div>
+        </div>
+
+        <div style="background:rgba(0,255,136,0.2);padding:20px;border-radius:20px;margin:20px 0;text-align:center;">
+          <p>Будет создано: <b id="task-count">0</b> заданий</p>
+          <p>По <b id="price-per">0</b> ₽ за выполнение</p>
+        </div>
+
+        <button class="submit-create" onclick="createNewTask()">ОПУБЛИКОВАТЬ И ОПЛАТИТЬ</button>
       </div>
+
       <div id="employer-tasks"></div>
     </div>
 
-    <!-- Режим ИСПОЛНИТЕЛЯ -->
+    <!-- ИСПОЛНИТЕЛЬ -->
     <div id="worker-mode" style="display:none;">
       <div class="filter-bar">
         <div class="filter-btn active" onclick="filterTasks('all')"><i class="fas fa-th-large"></i> ВСЕ</div>
         <div class="filter-btn" onclick="filterTasks('yandex')"><i class="fab fa-yandex"></i> ЯНДЕКС</div>
         <div class="filter-btn" onclick="filterTasks('google')"><i class="fab fa-google"></i> GOOGLE</div>
-        <div class="filter-btn" onclick="filterTasks('telegram')"><i class="fab fa-telegram"></i> TELEGRAM</div>
+        <div class="filter-btn" onclick="filterTasks('telegram')"><i class="fab fa-telegram"></i> TG</div>
       </div>
       <div id="tasks-list"></div>
     </div>
   </div>
 
-  <!-- Нижняя навигация -->
   <div class="bottom-nav">
-    <button class="nav-btn active" onclick="showPage('tasks')"><i class="fas fa-tasks"></i><br>Задания</button>
-    <button class="nav-btn" onclick="showPage('profile')"><i class="fas fa-user"></i><br>Профиль</button>
+    <button class="nav-btn active" onclick="showPage('tasks')">Задания</button>
+    <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
   </div>
 
   <script>
@@ -202,13 +233,13 @@
     const user = tg.initDataUnsafe.user || {};
     const MY_ID = 6482440657;
 
-    // Секретная админка только по команде
+    // Секретная админка
     if (new URLSearchParams(window.location.search).get('startapp') === 'mainadmin' && user.id === MY_ID) {
-      setTimeout(() => window.location.href = 'mainadmin.html', 700);
+      setTimeout(() => location.href = 'mainadmin.html', 700);
     }
 
+    const prices = { yandex: 80, google: 60, telegram: 12 };
     let tasks = [];
-    let myTasks = [];
 
     function switchRole(role) {
       document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -219,33 +250,73 @@
       if (role === 'worker') filterTasks('all');
     }
 
+    function updatePriceInfo() {
+      const type = document.getElementById('task-type').value;
+      document.getElementById('price-info').innerHTML = type ? `Цена за 1 выполнение: <b>${prices[type]} ₽</b>` : '';
+      calculateTasks();
+    }
+
+    function setBudget(amount) {
+      document.getElementById('task-budget').value = amount;
+      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      calculateTasks();
+    }
+
+    function calculateTasks() {
+      const type = document.getElementById('task-type').value;
+      const budget = parseInt(document.getElementById('task-budget').value) || 0;
+      if (!type || budget < 100) {
+        document.getElementById('task-count').innerText = '0';
+        document.getElementById('price-per').innerText = '0';
+        return;
+      }
+      const count = Math.floor(budget / prices[type]);
+      document.getElementById('task-count').innerText = count;
+      document.getElementById('price-per').innerText = prices[type];
+    }
+
+    function createNewTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const link = document.getElementById('task-link').value.trim();
+      const type = document.getElementById('task-type').value;
+      const budget = parseInt(document.getElementById('task-budget').value);
+
+      if (!title || !link || !type || budget < 100) return tg.showAlert("Заполните все поля!");
+
+      const count = Math.floor(budget / prices[type]);
+      if (count < 1) return tg.showAlert("Недостаточно бюджета");
+
+      tg.showPopup({
+        title: "Подтверждение",
+        message: `Создать ${count} заданий за ${budget} ₽?`,
+        buttons: [{type: "ok", text: "Да, оплатить"}, {type: "cancel"}]
+      }, (btn) => {
+        if (btn === "ok") {
+          tg.sendData(JSON.stringify({action: "create_task", title, link, type, budget, count}));
+          tg.showAlert("Задание создано! Ожидайте выполнения");
+          document.getElementById('create-form').classList.remove('active');
+        }
+      });
+    }
+
     function loadEmployerTasks() {
-      const container = document.getElementById('employer-tasks');
-      container.innerHTML = '';
+      const list = document.getElementById('employer-tasks');
+      list.innerHTML = '';
       const mine = tasks.filter(t => t.creator_id === user.id);
-      if (mine.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:100px 20px;color:#88c0d0;">
-          <i class="fas fa-box-open" style="font-size:60px;"></i><br><br>
-          У вас пока нет созданных заданий
-        </div>`;
+      if (!mine.length) {
+        list.innerHTML = '<p style="text-align:center;padding:80px;color:#88c0d0;">Нет активных заданий</p>';
         return;
       }
       mine.forEach(t => {
-        const done = t.completed || 0;
-        const total = t.total_count || 1;
-        const percent = Math.round((done / total) * 100);
-        const finished = done >= total;
-
-        container.innerHTML += `
+        const percent = Math.round((t.completed / t.total_count) * 100);
+        list.innerHTML += `
           <div class="task">
             <div class="task-type ${t.type}">${t.type.toUpperCase()}</div>
             <div class="task-title">${t.title}</div>
             <div class="task-reward">Бюджет: ${t.budget} ₽</div>
             <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-            <div class="progress-text">
-              ${finished ? 'ЗАДАНИЕ ВЫПОЛНЕНО ПОЛНОСТЬЮ' : `Выполнено: ${done} из ${total} (${percent}%)`}
-            </div>
-            ${finished ? '<div style="text-align:center;color:#00ff88;font-weight:900;margin-top:15px;">Деньги выплачены исполнителям</div>' : ''}
+            <div class="progress-text">Выполнено: ${t.completed} из ${t.total_count} (${percent}%)</div>
           </div>`;
       });
     }
@@ -253,60 +324,47 @@
     function filterTasks(type) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-
-      const container = document.getElementById('tasks-list');
-      container.innerHTML = '';
-      const filtered = type === 'all' ? tasks.filter(t => (t.completed || 0) < (t.total_count || 1)) : tasks.filter(t => t.type === type && (t.completed || 0) < (t.total_count || 1));
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:120px 20px;color:#88c0d0;">
-          <i class="fas fa-search" style="font-size:60px;"></i><br><br>
-          Нет доступных заданий
-        </div>`;
-        return;
-      }
-
+      const list = document.getElementById('tasks-list');
+      list.innerHTML = '';
+      const filtered = type === 'all' ? tasks : tasks.filter(t => t.type === type);
       filtered.forEach(t => {
-        const isDone = (t.completed_by || []).includes(user.id);
-        container.innerHTML += `
+        const done = t.completed_by?.includes(user.id);
+        list.innerHTML += `
           <div class="task">
             <div class="task-type ${t.type}">${t.type.toUpperCase()}</div>
             <div class="task-title">${t.title}</div>
             <div class="task-reward">+${t.reward_per_task} ₽</div>
-            <button class="task-do ${t.type} ${isDone ? '' : 'active'}" ${isDone ? 'disabled' : ''} onclick="${isDone ? '' : 'completeTask(' + t.id + ')'}">
-              ${isDone ? 'ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ'}
+            <button class="task-do ${t.type} ${done?'':'active'}" ${done?'disabled':''} onclick="${done?'':'doTask('+t.id+')'}">
+              ${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}
             </button>
           </div>`;
       });
     }
 
-    function completeTask(taskId) {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
+    function doTask(id) {
+      const task = tasks.find(t => t.id === id);
       tg.openLink(task.link);
       setTimeout(() => {
-        tg.showPopup({
-          title: "Подтверждение",
-          message: "Вы точно выполнили задание?",
-          buttons: [{type: "ok", text: "Да, выполнил"}, {type: "cancel", text: "Отмена"}]
-        }, (btn) => {
-          if (btn === "ok") {
-            tg.sendData(JSON.stringify({action: "complete_task", task_id: taskId}));
-            tg.showAlert("Спасибо! Заявка отправлена на проверку");
-          }
+        tg.showPopup({title: "Выполнено?", message: "Вы оставили отзыв/подписку?", buttons: [{type:"ok",text:"Да"},{type:"cancel",text:"Нет"}]}, (b) => {
+          if (b === "ok") tg.sendData(JSON.stringify({action:"complete_task", task_id: id}));
         });
       }, 1500);
     }
 
-    // Загрузка заданий каждые 6 секунд
-    function loadTasks() {
-      tg.sendData('{"action":"get_all_tasks"}');
-    }
-    setInterval(loadTasks, 6000);
+    // Загрузка заданий
+    function loadTasks() { tg.sendData('{"action":"get_tasks"}'); }
+    setInterval(loadTasks, 8000);
     loadTasks();
 
-    // Обработка ответа от бота
-    tg.onEvent('invoiceClosed', () => {});
+    // Получение данных от бота
+    tg.onEvent('dataReceived', (data) => {
+      try {
+        const d = JSON.parse(data);
+        if (d.tasks) tasks = d.tasks;
+        if (document.getElementById('worker-mode').style.display !== 'none') filterTasks('all');
+        if (document.getElementById('employer-mode').style.display !== 'none') loadEmployerTasks();
+      } catch(e) {}
+    });
   </script>
 </body>
 </html>
