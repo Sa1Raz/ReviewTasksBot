@@ -1,11 +1,33 @@
+# nixpacks.toml — ВЕЧНЫЙ И НЕПАДАЮЩИЙ ВАРИАНТ 2025
+
 [phases.setup]
-nixPkgs = ['python3', 'gcc']
+nixPkgs = ["python311", "python311Packages.pip", "gcc", "libffi", "openssl"]
+
+[phases.install]
+cmds = [
+  "pip install --upgrade pip setuptools wheel",
+  "pip install --no-cache-dir -r requirements.txt"
+]
 
 [phases.build]
-cmds = ['pip install -r requirements.txt']
+cmds = []
 
-[phases.runtime]
-nixPkgs = ['python3', 'gunicorn']
+[phases.start]
+cmd = "gunicorn bot:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120"
+
+# Если у тебя aiogram бот без gunicorn — используй этот вариант:
+# cmd = "python bot.py"
 
 [staticAssets]
-mountPath = '/public'
+mountPath = "/public"
+
+# САМОЕ ГЛАВНОЕ — ОТКЛЮЧАЕМ MISE НАВСЕГДА!
+[providers]
+# Полностью убираем mise из процесса — он нам не нужен!
+nixpacks = true
+mise = false
+
+# Дополнительная защита — если mise всё-таки попытается влезть
+[variables]
+MISE_PYTHON_COMPILE = "0"
+NIXPACKS_NO_MISE = "1"
