@@ -152,10 +152,11 @@
       font-weight: 900; 
       color: var(--gold);
       line-height: 1.4;
+      min-height: 70px;
     }
 
     .submit-create {
-      width:: 100%; 
+      width: 100%; 
       padding: 26px; 
       background: linear-gradient(45deg, var(--green), #00cc66);
       color: black; 
@@ -168,7 +169,6 @@
       text-transform: uppercase;
     }
 
-    /* ФИЛЬТРЫ — НОРМАЛЬНЫЙ РАЗМЕР */
     .filter-bar {
       display: flex; 
       gap: 16px; 
@@ -291,7 +291,6 @@
       display: flex; 
       box-shadow: 0 50px 100px rgba(0,0,0,0.9); 
       z-index: 999;
-      transition: all 0.4s;
     }
     .nav-btn {
       flex: 1; 
@@ -324,7 +323,6 @@
       <div class="role-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
     </div>
 
-    <!-- РАБОТОДАТЕЛЬ -->
     <div id="employer-mode">
       <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">
         + СОЗДАТЬ ЗАДАНИЕ
@@ -362,7 +360,6 @@
       <div id="employer-tasks"></div>
     </div>
 
-    <!-- ИСПОЛНИТЕЛЬ -->
     <div id="worker-mode" style="display:none;">
       <div class="filter-bar">
         <div class="filter-btn active" onclick="centerFilter(this,'all')">
@@ -382,7 +379,6 @@
     </div>
   </div>
 
-  <!-- ПРОФИЛЬ -->
   <div id="profile-page" class="container" style="display:none;">
     <div style="text-align:center;padding:40px 0;">
       <img id="user-avatar" class="profile-avatar" src="">
@@ -439,12 +435,8 @@
       const budget = parseInt(document.getElementById('task-budget').value) || 0;
       const min = minBudget[type] || 300;
 
-      if (!type) {
-        document.getElementById('budget-result').innerHTML = 'Выберите тип задания';
-        return;
-      }
-      if (budget < min) {
-        document.getElementById('budget-result').innerHTML = `Минимальный бюджет: <b>${min} ₽</b>`;
+      if (!type || budget < min) {
+        document.getElementById('budget-result').innerHTML = '';  // ПОЛНОСТЬЮ ПУСТО — НИКАКОГО ТЕКСТА!
         return;
       }
 
@@ -465,7 +457,7 @@
       const min = minBudget[type] || 300;
 
       if (!title || !link || !type || budget < min) {
-        tg.showAlert("Проверьте все поля и минимальный бюджет!");
+        tg.showAlert("Недостаточно средств для этого типа задания");
         return;
       }
 
