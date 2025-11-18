@@ -30,7 +30,7 @@
       text-shadow: 0 0 40px rgba(0,255,255,0.6);
     }
 
-    /* МАЛЕНЬКАЯ КНОПКА ПОДДЕРЖКИ — ТОЛЬКО В ПРОФИЛЕ */
+    /* МАЛЕНЬКАЯ ПОДДЕРЖКА ТОЛЬКО В ПРОФИЛЕ */
     .support-btn {
       position: absolute; top: 16px; right: 16px; width: 48px; height: 48px;
       background: rgba(0,136,204,0.3); border: 2.5px solid var(--neon); border-radius: 50%;
@@ -101,25 +101,7 @@
     .submit-create {
       width: 100%; padding: 26px; background: linear-gradient(45deg, var(--green), #00cc66);
       color: black; border: none; border-radius: 32px; font-size: 24px; font-weight: 900;
-      margin-top: 30px; cursor: pointer; text-transform: uppercase; transition: all 0.4s;
-    }
-
-    .filter-bar {
-      display: flex; gap: 16px; padding: 20px 16px; overflow-x: auto; scrollbar-width: none;
-      margin: 20px 0; background: rgba(20,20,50,0.9); border-radius: 32px; border: 3px solid var(--border);
-      backdrop-filter: blur(20px);
-    }
-    .filter-bar::-webkit-scrollbar { display: none; }
-    .filter-btn {
-      padding: 16px 26px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon);
-      border-radius: 30px; color: white; font-weight: 900; font-size: 14px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 90px;
-      transition: all 0.4s;
-    }
-    .filter-btn i { font-size: 28px; }
-    .filter-btn.active {
-      background: var(--neon); color: #000; transform: scale(1.15);
-      box-shadow: 0 0 80px #00ffff;
+      margin-top: 30px; cursor: pointer; text-transform: uppercase;
     }
 
     .profile-avatar {
@@ -143,6 +125,15 @@
       color: #000; transform: translateY(-8px);
       box-shadow: 0 0 70px rgba(0,255,255,0.9);
     }
+
+    /* КОПИРОВАНИЕ В ОДИН КЛИК */
+    .copy-block {
+      background: rgba(0,255,255,0.1); border: 2px dashed var(--neon); border-radius: 20px;
+      padding: 20px; margin: 15px 0; text-align: center; cursor: pointer; transition: all 0.4s;
+    }
+    .copy-block:hover { background: rgba(0,255,255,0.2); transform: scale(1.02); }
+    .copy-text { font-size: 24px; font-weight: 900; color: var(--gold); margin: 10px 0; }
+    .copy-hint { font-size: 14px; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -156,7 +147,6 @@
       <div class="role-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
     </div>
 
-    <!-- РАБОТОДАТЕЛЬ -->
     <div id="employer-mode">
       <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">
         + СОЗДАТЬ ЗАДАНИЕ
@@ -175,8 +165,8 @@
         <input type="number" id="task-budget" placeholder="Сколько потратить (₽)" oninput="autoRoundBudget()">
 
         <div class="price-buttons">
-          <div class="price-btn" onclick="setAndCenter(this,130)">130 ₽</div>
-          <div class="price-btn" onclick="setAndCenter(this,260)">260 ₽</div>
+          <div class="price-btn" onclick="setAndCenter(this,130)">100 ₽</div>
+          <div class="price-btn" onclick="setAndCenter(this,260)">200 ₽</div>
           <div class="price-btn" onclick="setAndCenter(this,500)">500 ₽</div>
           <div class="price-btn" onclick="setAndCenter(this,1000)">1000 ₽</div>
           <div class="price-btn" onclick="setAndCenter(this,2000)">2000 ₽</div>
@@ -189,23 +179,10 @@
       </div>
     </div>
 
-    <!-- ИСПОЛНИТЕЛЬ (пока пусто, но структура есть) -->
     <div id="worker-mode" style="display:none;">
-      <div class="filter-bar">
-        <div class="filter-btn active" onclick="centerFilter(this,'all')">
-          <i class="fas fa-th-large"></i><span>ВСЕ</span>
-        </div>
-        <div class="filter-btn" onclick="centerFilter(this,'yandex')">
-          <i class="fab fa-yandex"></i><span>ЯНДЕКС</span>
-        </div>
-        <div class="filter-btn" onclick="centerFilter(this,'google')">
-          <i class="fab fa-google"></i><span>GOOGLE</span>
-        </div>
-        <div class="filter-btn" onclick="centerFilter(this,'telegram')">
-          <i class="fab fa-telegram"></i><span>TG</span>
-        </div>
+      <div style="text-align:center;padding:50px;color:#888;">
+        <h2>Задания скоро появятся</h2>
       </div>
-      <div id="tasks-list"></div>
     </div>
   </div>
 
@@ -223,7 +200,7 @@
 
     <div style="background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:30px;margin:20px 0;text-align:center;backdrop-filter:blur(20px);">
       <div class="balance" id="user-balance">0 ₽</div>
-      <p style="margin:20px 0;font-size:17px;color:#bbb;">Выполнено заданий: <b id="tasks-done">0</b></p>
+      <p style="margin:20px 0;font-size:17px;color:#bbb;">Выполнено заданий: <b>0</b></p>
     </div>
 
     <button class="create-btn" style="background:linear-gradient(45deg,#00cc66,#00ff88);" onclick="showTopUp()">
@@ -235,7 +212,6 @@
     </button>
   </div>
 
-  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
   <div class="bottom-nav">
     <button class="nav-btn active" onclick="showPage('main')">Задания</button>
     <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
@@ -245,17 +221,27 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     const user = tg.initDataUnsafe.user || {};
-
-    // АКТУАЛЬНЫЕ ЦЕНЫ 2025
     const prices = { yandex: 100, google: 65, telegram: 10 };
     let roundTimeout;
 
-    // Профиль
     document.getElementById('user-name').innerText = user.first_name || 'Пользователь';
     document.getElementById('user-username').innerText = user.username ? '@'+user.username : '';
     if (user.photo_url) document.getElementById('user-avatar').src = user.photo_url;
 
-    // АВТООКРУГЛЕНИЕ ЧЕРЕЗ 4 СЕКУНДЫ
+    // КОПИРОВАНИЕ В 1 КЛИК
+    function copyToClipboard(text, hintElement) {
+      navigator.clipboard.writeText(text).then(() => {
+        const original = hintElement.innerText;
+        hintElement.innerText = 'Скопировано!';
+        hintElement.style.color = '#00ff88';
+        setTimeout(() => {
+          hintElement.innerText = original;
+          hintElement.style.color = '#88c0d0';
+        }, 1500);
+      });
+    }
+
+    // ОКРУГЛЕНИЕ ВНИЗ ЧЕРЕЗ 2 СЕКУНДЫ
     function autoRoundBudget() {
       clearTimeout(roundTimeout);
       roundTimeout = setTimeout(() => {
@@ -268,10 +254,9 @@
           document.getElementById('task-budget').value = rounded;
           updateBudgetInfo();
         }
-      }, 4000);
+      }, 2000);
     }
 
-    // ОБНОВЛЕНИЕ ИНФО О БЮДЖЕТЕ
     function updateBudgetInfo() {
       const type = document.getElementById('task-type').value;
       let budget = parseInt(document.getElementById('task-budget').value) || 0;
@@ -288,7 +273,6 @@
       `;
     }
 
-    // КНОПКИ ЦЕН + ЦЕНТРИРОВАНИЕ
     function setAndCenter(btn, amount) {
       document.getElementById('task-budget').value = amount;
       document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
@@ -297,78 +281,94 @@
       updateBudgetInfo();
     }
 
-    // СОЗДАНИЕ ЗАДАНИЯ
     function createTask() {
       const title = document.getElementById('task-title').value.trim();
       const link = document.getElementById('task-link').value.trim();
       const type = document.getElementById('task-type').value;
       const budget = parseInt(document.getElementById('task-budget').value);
-      if (!title || !link || !type || budget < 10) return tg.showAlert("Заполните все поля правильно!");
+      if (!title || !link || !type || budget < 10) return tg.showAlert("Заполните все поля!");
 
       const count = Math.floor(budget / prices[type]);
       const realBudget = count * prices[type];
 
       tg.showPopup({
-        title: "Подтверждение",
-        message: `Создать ${count} заданий за ${realBudget} ₽?`,
+        title: "Создать задание?",
+        message: `${count} заданий за ${realBudget} ₽`,
         buttons: [{type:"ok",text:"ДА"}, {type:"cancel",text:"НЕТ"}]
-      }, (button) => {
-        if (button === "ok") {
+      }, (b) => {
+        if (b === "ok") {
           tg.sendData(JSON.stringify({action:"create_task", title, link, type, budget: realBudget, count}));
           tg.showAlert("Задание опубликовано!");
           document.getElementById('create-form').classList.remove('active');
-          document.getElementById('task-title').value = '';
-          document.getElementById('task-link').value = '';
         }
       });
     }
 
-    // ПЕРЕКЛЮЧЕНИЕ РОЛЕЙ
-    function switchRole(role) {
+    // ПОПОЛНЕНИЕ С КОДОМ И КОПИРОВАНИЕМ
+    function showTopUp() {
+      const amount = prompt("Введите сумму пополнения (минимум 100 ₽):");
+      if (!amount || isNaN(amount) || amount < 100) return tg.showAlert("Неверная сумма!");
+
+      const code = "RC-" + Math.floor(1000 + Math.random() * 9000);
+      const phone = "+79600738559";
+
+      const html = `
+        <div style="text-align:center;padding:15px;">
+          <h3 style="color:#00ff88;margin:20px 0;">Переведи ТОЧНО:</h3>
+          <div class="copy-block" onclick="copyToClipboard('${amount}', this.querySelector('.copy-hint'))">
+            <div class="copy-text">${amount} ₽</div>
+            <div class="copy-hint">Нажми, чтобы скопировать сумму</div>
+          </div>
+
+          <h3 style="color:#ffd700;margin:25px 0 10px;">На телефон:</h3>
+          <div class="copy-block" onclick="copyToClipboard('${phone}', this.querySelector('.copy-hint'))">
+            <div class="copy-text">${phone}</div>
+            <div class="copy-hint">Нажми, чтобы скопировать номер</div>
+          </div>
+
+          <h3 style="color:#00ffff;margin:25px 0 10px;">Одноразовый код:</h3>
+          <div class="copy-block" onclick="copyToClipboard('${code}', this.querySelector('.copy-hint'))">
+            <div class="copy-text">${code}</div>
+            <div class="copy-hint">Нажми, чтобы скопировать код</div>
+          </div>
+
+          <p style="margin-top:25px;color:#ccc;font-size:14px;">После перевода пришли чек + код в поддержку</p>
+        </div>
+      `;
+
+      tg.showPopup({title: "Пополнение баланса", message: html, buttons: [{type:"close",text:"Понятно"}]});
+    }
+
+    // ВЫВОД — 3 ПОЛЯ
+    function showWithdraw() {
+      tg.showPopup({
+        title: "Вывод средств",
+        message: "Заполните реквизиты для вывода:",
+        buttons: [{type:"ok",text:"Отправить"}, {type:"cancel",text:"Отмена"}]
+      }, function(btn) {
+        if (btn === "ok") {
+          const name = prompt("1. Имя / Фамилия / Ник в банке:");
+          const card = prompt("2. Номер карты или телефона:");
+          const bank = prompt("3. Название банка:");
+          if (name && card && bank) {
+            tg.sendData(JSON.stringify({action: "withdraw", name, card, bank}));
+            tg.showAlert("Заявка на вывод отправлена!");
+          }
+        }
+      });
+    }
+
+    function switchRole(r) {
       document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
-      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      document.getElementById('employer-mode').style.display = r === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = r === 'worker' ? 'block' : 'none';
     }
 
-    // ПЕРЕКЛЮЧЕНИЕ СТРАНИЦ
-    function showPage(page) {
-      document.getElementById('main-page').style.display = page === 'main' ? 'block' : 'none';
-      document.getElementById('profile-page').style.display = page === 'profile' ? 'block' : 'none';
-      document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('active', i === (page === 'profile' ? 1 : 0)));
-    }
-
-    // ПОПОЛНЕНИЕ БАЛАНСА
-    function showTopUp() {
-      tg.showPopup({
-        title: "Пополнение баланса",
-        message: "Выберите сумму:",
-        buttons: [
-          {type: "default", text: "500 ₽", id: "500"},
-          {type: "default", text: "1000 ₽", id: "1000"},
-          {type: "default", text: "2000 ₽", id: "2000"},
-          {type: "cancel", text: "Отмена"}
-        ]
-      }, (btn) => {
-        if (btn !== "cancel") {
-          tg.sendData(JSON.stringify({action: "topup", amount: btn}));
-        }
-      });
-    }
-
-    // ВЫВОД СРЕДСТВ
-    function showWithdraw() {
-      tg.showScanQrPopup({text: "Отсканируйте QR-код карты или введите реквизиты"}, (text) => {
-        if (text) {
-          tg.sendData(JSON.stringify({action: "withdraw", data: text}));
-      });
-    }
-
-    // ЦЕНТРИРОВАНИЕ ФИЛЬТРОВ
-    function centerFilter(btn, type) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    function showPage(p) {
+      document.getElementById('main-page').style.display = p === 'main' ? 'block' : 'none';
+      document.getElementById('profile-page').style.display = p === 'profile' ? 'block' : 'none';
+      document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('active', i === (p === 'profile' ? 1 : 0)));
     }
   </script>
 </body>
