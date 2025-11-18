@@ -42,14 +42,14 @@
     input:focus, select:focus { border-color: var(--success); box-shadow: 0 0 20px rgba(0,255,136,0.4); }
     input.invalid { border: 3px solid var(--danger) !important; animation: shake 0.3s; }
     @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-    .quick-amounts { display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px; border: 2px solid rgba(0,255,255,0.3); scroll-snap-type: x mandatory; scroll-padding: 50%; }
+    .quick-amounts { display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px; border: 2px solid rgba(0,255,255,0.3); scroll-snap-type: x mandatory; }
     .quick-amounts::-webkit-scrollbar { display: none; }
     .quick-btn { padding: 13px 24px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon); border-radius: 30px; color: white; font-weight: 900; font-size: 15px; cursor: pointer; min-width: fit-content; flex-shrink: 0; transition: all 0.35s ease; box-shadow: 0 0 25px rgba(0,255,255,0.3); scroll-snap-align: center; }
     .quick-btn:hover { transform: translateY(-3px); }
     .quick-btn.active { background: var(--neon); color: #000; transform: scale(1.15); box-shadow: 0 0 60px rgba(0,255,255,1); }
     .submit-btn { width: 100%; padding: 28px; background: linear-gradient(45deg, var(--success), #00cc66); color: white; border: none; border-radius: 32px; font-weight: 900; font-size: 24px; margin-top: 40px; cursor: pointer; text-transform: uppercase; box-shadow: 0 10px 40px rgba(0,255,136,0.5); transition: all 0.3s; }
     .submit-btn:hover { transform: translateY(-4px); }
-    .filter-bar { display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px; border: 2px solid rgba(0,255,255,0.3); scroll-snap-type: x mandatory; scroll-padding: 50%; }
+    .filter-bar { display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px; border: 2px solid rgba(0,255,255,0.3); scroll-snap-type: x mandatory; }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-btn { padding: 13px 24px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon); border-radius: 30px; color: white; font-weight: 900; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; gap: 9px; min-width: fit-content; flex-shrink: 0; transition: all 0.35s ease; box-shadow: 0 0 25px rgba(0,255,255,0.3); scroll-snap-align: center; }
     .filter-btn:hover { transform: translateY(-3px); }
@@ -99,14 +99,9 @@
     .close-btn:hover { transform: rotate(90deg); }
     .copy-block { background: rgba(0,255,255,0.15); padding: 16px; border-radius: 20px; margin: 12px 0; cursor: pointer; font-weight: 900; transition: 0.3s; }
     .copy-block:hover { background: rgba(0,255,255,0.3); }
-    #admin-btn { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(45deg, #ffd700, #ff4500); color: black; padding: 16px 36px; border: none; border-radius: 50px; font-weight: 900; font-size: 20px; z-index: 999999; box-shadow: 0 0 50px #ffd700; animation: pulse 2s infinite; cursor: pointer; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 30px #ffd700; } 50% { box-shadow: 0 0 70px #ff4500; } }
   </style>
 </head>
 <body>
-
-  <!-- ТОЛЬКО ТЫ ВИДИШЬ ЭТУ КНОПКУ -->
-  <button id="admin-btn" style="display:none;">ГЛАВНЫЙ АДМИН</button>
 
   <div id="tasks-page" class="page visible">
     <div class="container">
@@ -129,10 +124,8 @@
           </select>
 
           <div id="reward-section" style="display:none;margin-top:20px;">
-            <div style="position:relative;">
-              <input type="number" id="create-reward" placeholder="Введите сумму (от 10 ₽)" min="10" oninput="updateRewardInfo(this)" style="text-align:center;font-size:24px;padding:22px;">
-              <div id="reward-info" style="text-align:center;margin-top:12px;font-size:18px;color:var(--gold);font-weight:900;opacity:0;"></div>
-            </div>
+            <input type="number" id="create-reward" placeholder="Введите сумму (от 10 ₽)" min="10" oninput="updateRewardInfo(this)" style="text-align:center;font-size:24px;">
+            <div id="reward-info" style="text-align:center;margin-top:12px;font-size:18px;color:var(--gold);font-weight:900;"></div>
             <div class="quick-amounts" id="quick-amounts">
               <div class="quick-btn active" onclick="selectAmount(100)">100 ₽</div>
               <div class="quick-btn" onclick="selectAmount(200)">200 ₽</div>
@@ -210,7 +203,7 @@
       <h2 style="color:#ff3366;font-size:32px;">ВЫВОД</h2>
       <input type="number" id="withdraw-amount" placeholder="Сумма от 250 ₽" min="250">
       <input type="text" id="withdraw-card" placeholder="Номер карты/телефона">
-      <input type="text" id="withdraw-bank" placeholder="Банк">
+      <input type="text" id="withdraw-bank" placeholder="Банк (по желанию)">
       <button style="background:#ff3366;color:white;padding:22px;border-radius:32px;font-size:22px;font-weight:900;margin-top:20px;" onclick="sendWithdraw()">ВЫВЕСТИ</button>
     </div>
   </div>
@@ -219,25 +212,20 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     const user = tg.initDataUnsafe.user || {};
-    const MY_ID = 6482440657; // ТВОЙ ID
+    const MY_ID = 6482440657; // ТОЛЬКО ТЫ
 
-    // Показываем кнопку админа только тебе
-    if (user.id === MY_ID) {
-      setTimeout(() => {
-        document.getElementById('admin-btn').style.display = 'block';
-        document.getElementById('admin-btn').onclick = () => window.location.href = 'mainadmin.html';
-      }, 1500);
-    }
-
-    // Автооткрытие админки по команде /mainadmin
-    if (new URLSearchParams(window.location.search).get('openadmin') === '1' && user.id === MY_ID) {
-      setTimeout(() => window.location.href = 'mainadmin.html', 800);
-    }
-
-    // Данные пользователя
+    // Профиль
     document.getElementById('user-name').innerText = (user.first_name || 'Пользователь') + (user.last_name ? ' ' + user.last_name : '');
     document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
     document.getElementById('user-avatar').src = user.photo_url || 'https://telegram.org/img/t_logo.png';
+
+    // СЕКРЕТНОЕ ОТКРЫТИЕ АДМИНКИ ТОЛЬКО ПО КОМАНДЕ /mainadmin
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('startapp') === 'mainadmin' && user.id === MY_ID) {
+      setTimeout(() => {
+        window.location.href = 'mainadmin.html';
+      }, 600);
+    }
 
     let tasks = [], completed = new Set(JSON.parse(localStorage.getItem('completedTasks') || '[]'));
     const prices = { yandex: 100, google: 65, telegram: 10 };
@@ -268,35 +256,24 @@
     function selectAmount(a) {
       document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-      const input = document.getElementById('create-reward');
-      input.value = a;
-      clearTimeout(rewardTimeout);
-      updateRewardInfo(input);
-      document.getElementById('quick-amounts').scrollTo({left: event.target.offsetLeft - 200, behavior: 'smooth'});
+      document.getElementById('create-reward').value = a;
+      updateRewardInfo(document.getElementById('create-reward'));
     }
 
     function updateRewardInfo(input) {
       clearTimeout(rewardTimeout);
       const val = parseInt(input.value) || 0;
       const type = document.getElementById('task-type').value;
-      if (!type) return;
-
-      document.getElementById('reward-info').style.opacity = '0.7';
-      document.getElementById('reward-info').innerHTML = `Введено: ${val} ₽`;
+      if (!type || val < 10) return;
 
       rewardTimeout = setTimeout(() => {
-        if (val < 10) return;
         const price = prices[type];
         const count = Math.floor(val / price);
         const total = count * price;
         input.value = total;
 
-        let text = type === 'yandex' ? `${count} отзыв${count > 1 ? 'а' : ''}` :
-                   type === 'google' ? `${count} отзыв${count > 1 ? 'а' : ''} в Google` :
-                   `${count} подпис${count > 1 ? 'ок' : 'ка'}`;
-
-        document.getElementById('reward-info').innerHTML = `<i class="fas fa-star" style="color:#ffd700"></i> ${text} за ${total} ₽ <i class="fas fa-star" style="color:#ffd700"></i>`;
-        document.getElementById('reward-info').style.opacity = '1';
+        const texts = { yandex: 'отзывов', google: 'отзывов', telegram: 'подписок' };
+        document.getElementById('reward-info').innerHTML = `Будет создано: <b>${count}</b> ${texts[type]} за ${total} ₽`;
       }, 800);
     }
 
@@ -305,11 +282,10 @@
       const link = document.getElementById('task-link').value.trim();
       const type = document.getElementById('task-type').value;
       const reward = parseInt(document.getElementById('create-reward').value);
-      if (!title || !link || !type || reward < 10) return tg.showAlert("Заполни всё правильно!");
+      if (!title || !link || !type || reward < 10) return tg.showAlert("Заполните все поля правильно!");
       tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
-      tg.showAlert("Задание отправлено!");
+      tg.showAlert("Задание отправлено на модерацию!");
       document.getElementById('create-form').classList.remove('active');
-      document.querySelectorAll('#create-form input, #create-form select').forEach(i => i.value = '');
     }
 
     function centerFilter(btn, type) {
@@ -322,11 +298,8 @@
       const list = document.getElementById('tasks-list');
       list.innerHTML = '';
       const filtered = type === 'all' ? tasks : tasks.filter(t => t.type === type);
-      document.getElementById('total-tasks').innerText = tasks.length;
-      document.getElementById('done-tasks').innerText = [...completed].filter(id => tasks.some(t => t.id === id)).length;
-
       if (!filtered.length) {
-        list.innerHTML = '<p style="text-align:center;color:#88c0d0;padding:100px 0;">Нет заданий</p>';
+        list.innerHTML = '<p style="text-align:center;color:#88c0d0;padding:100px 0;">Нет доступных заданий</p>';
         return;
       }
       filtered.forEach(t => {
@@ -335,7 +308,9 @@
           <div class="task">
             <div class="task-title">${t.title}</div>
             <div class="task-reward">+${t.reward} ₽</div>
-            <button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="${done?'':`tg.openLink('${t.link}')`}">${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}</button>
+            <button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="${done?'':`tg.openLink('${t.link}')`}">
+              ${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}
+            </button>
           </div>`;
       });
     }
@@ -362,6 +337,7 @@
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     function copy(t) { navigator.clipboard.writeText(t); tg.showAlert("Скопировано!"); }
 
+    // Загрузка заданий
     setInterval(() => tg.sendData('{"action":"get_tasks"}'), 8000);
     tg.sendData('{"action":"get_tasks"}');
   </script>
