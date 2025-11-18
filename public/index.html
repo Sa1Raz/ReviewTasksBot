@@ -3,343 +3,310 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ReviewCash</title>
+  <title>ReviewCash — Лучший сервис отзывов и заданий</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
     :root {
-      --bg: #0a0a14;
-      --glass: rgba(20,20,38,0.92);
-      --neon: #00ffff;
-      --success: #00ff88;
+      --bg: #0a0014;
+      --glass: rgba(15, 10, 45, 0.95);
+      --neon-cyan: #00ffff;
+      --neon-green: #00ff88;
+      --gold: #ffd700;
       --danger: #ff3366;
-      --border: rgba(0,255,255,0.4);
+      --border: rgba(0, 255, 255, 0.6);
       --text: #e0f7ff;
       --muted: #88c0d0;
-      --gold: #ffd700;
+      --purple: #8a2be2;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body { background: linear-gradient(135deg, #0a0014, #001122); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; overflow-x: hidden; }
     .container { max-width: 420px; margin: 0 auto; padding: 16px 16px 140px; }
-    .page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 10; padding-bottom: 120px; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); }
-    .page.hidden-left { transform: translateX(-100%); }
-    .page.hidden-right { transform: translateX(100%); }
-    .page.visible { transform: translateX(0); }
-    .header { position: relative; }
-    .header h1 { text-align: center; font-size: 28px; font-weight: 900; margin: 20px 0; background: linear-gradient(90deg, #00ffff, #00ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .support-btn { position: absolute; top: 16px; right: 16px; background: rgba(0,255,255,0.2); border: 2px solid var(--neon); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 30px rgba(0,255,255,0.5); z-index: 100; transition: all 0.3s; }
-    .support-btn:hover { transform: scale(1.15); }
-    .support-btn i { font-size: 22px; color: white; }
-    .role-switch { display: flex; background: #141426; border: 2px solid var(--border); border-radius: 30px; padding: 6px; margin: 16px 0; overflow: hidden; }
-    .role-btn { flex: 1; padding: 12px; border-radius: 24px; font-weight: 800; font-size: 15px; cursor: pointer; text-align: center; color: var(--muted); transition: 0.4s; }
-    .role-btn.active { background: linear-gradient(135deg, #00ffff, #00ff88); color: #000; box-shadow: 0 0 30px rgba(0,255,255,0.6); }
-    .create-btn { width: 100%; padding: 20px; background: #ffeb3b; color: #000; border: none; border-radius: 26px; font-size: 18px; font-weight: 900; margin: 20px 0; cursor: pointer; box-shadow: 0 10px 30px rgba(255,235,59,0.4); text-transform: uppercase; transition: all 0.3s; }
-    .create-btn:hover { transform: translateY(-3px); }
-    .create-form { background: var(--glass); backdrop-filter: blur(20px); border: 2px solid var(--border); border-radius: 28px; padding: 24px; margin: 16px 0; display: none; }
-    .create-form.active { display: block; animation: slideDown 0.5s ease-out; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-    input, select { width: 100%; padding: 18px; margin: 12px 0; background: #000; border: 3px solid var(--neon); border-radius: 20px; color: white; font-size: 16px; font-weight: 600; transition: all 0.3s; }
-    input:focus, select:focus { border-color: var(--success); box-shadow: 0 0 20px rgba(0,255,136,0.4); }
-    input.invalid { border: 3px solid var(--danger) !important; animation: shake 0.3s; }
-    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-    .quick-amounts { display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px; border: 2px solid rgba(0,255,255,0.3); scroll-snap-type: x mandatory; }
-    .quick-amounts::-webkit-scrollbar { display: none; }
-    .quick-btn { padding: 13px 24px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon); border-radius: 30px; color: white; font-weight: 900; font-size: 15px; cursor: pointer; min-width: fit-content; flex-shrink: 0; transition: all 0.35s ease; box-shadow: 0 0 25px rgba(0,255,255,0.3); scroll-snap-align: center; }
-    .quick-btn:hover { transform: translateY(-3px); }
-    .quick-btn.active { background: var(--neon); color: #000; transform: scale(1.15); box-shadow: 0 0 60px rgba(0,255,255,1); }
-    .submit-btn { width: 100%; padding: 28px; background: linear-gradient(45deg, var(--success), #00cc66); color: white; border: none; border-radius: 32px; font-weight: 900; font-size: 24px; margin-top: 40px; cursor: pointer; text-transform: uppercase; box-shadow: 0 10px 40px rgba(0,255,136,0.5); transition: all 0.3s; }
-    .submit-btn:hover { transform: translateY(-4px); }
-    .filter-bar { display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; margin: 16px 0; background: rgba(20,20,38,0.9); border-radius: 32px; border: 2px solid rgba(0,255,255,0.3); scroll-snap-type: x mandatory; }
-    .filter-bar::-webkit-scrollbar { display: none; }
-    .filter-btn { padding: 13px 24px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon); border-radius: 30px; color: white; font-weight: 900; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; gap: 9px; min-width: fit-content; flex-shrink: 0; transition: all 0.35s ease; box-shadow: 0 0 25px rgba(0,255,255,0.3); scroll-snap-align: center; }
-    .filter-btn:hover { transform: translateY(-3px); }
-    .filter-btn.active { background: var(--neon); color: #000; transform: scale(1.15); box-shadow: 0 0 60px rgba(0,255,255,1); }
-    .filter-btn i { font-size: 18px; }
-    .task { background: var(--glass); backdrop-filter: blur(16px); border: 2px solid var(--border); border-radius: 28px; padding: 20px; margin: 16px 0; position: relative; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); transition: all 0.3s; }
-    .task:hover { transform: translateY(-5px); }
-    .task::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #00ffff, #00ff88); }
-    .task-title { font-size: 18px; font-weight: 900; margin: 8px 0; }
-    .task-reward { font-size: 24px; font-weight: 900; color: var(--success); margin: 12px 0; text-align: center; }
-    .task-do { width: 100%; padding: 18px; background: linear-gradient(45deg, var(--success), #00cc66); color: black; border: none; border-radius: 24px; font-weight: 900; font-size: 18px; margin-top: 16px; cursor: pointer; text-transform: uppercase; transition: all 0.3s; }
-    .task-do:hover { transform: translateY(-3px); }
-    .task-do.yandex { background: linear-gradient(45deg, #ffcc00, #ffb700); }
-    .task-do:disabled { background: #333; color: #888; opacity: 0.7; cursor: not-allowed; }
-    .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(20,20,38,0.95); backdrop-filter: blur(25px); border: 3px solid var(--border); border-radius: 36px; padding: 10px; display: flex; box-shadow: 0 40px 80px rgba(0,0,0,0.9); z-index: 999; }
-    .nav-btn { flex: 1; padding: 18px; border: none; border-radius: 28px; font-weight: 800; font-size: 17px; background: transparent; color: var(--muted); transition: all 0.4s ease; }
-    .nav-btn.active { background: linear-gradient(45deg, #00ffff, #00ff88); color: #000; transform: translateY(-6px); box-shadow: 0 0 60px rgba(0,255,255,0.8); }
-    .profile-header { text-align: center; padding: 30px 20px 10px; }
-    .profile-avatar { width: 110px; height: 110px; border-radius: 50%; border: 5px solid var(--neon); object-fit: cover; box-shadow: 0 0 60px rgba(0,255,255,0.7); margin-bottom: 16px; }
-    .profile-card { background: var(--glass); backdrop-filter: blur(20px); border: 3px solid var(--neon); border-radius: 32px; padding: 24px; margin: 20px 0; text-align: center; }
-    .balance { font-size: 48px; font-weight: 900; color: var(--success); margin: 10px 0; }
-    .stat-line { font-size: 18px; margin: 10px 0; color: var(--text); }
-    .stat-line b { color: var(--gold); font-size: 20px; }
-    .stats-block {
-      background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,136,0.15));
-      border: 3px solid var(--neon);
-      border-radius: 32px;
-      padding: 32px;
-      margin: 25px 0;
+
+    /* Заголовок */
+    .header {
       text-align: center;
-      font-weight: 900;
-      font-size: 22px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 15px 50px rgba(0,255,255,0.3);
-      line-height: 2.6;
+      padding: 30px 0 10px;
+      position: relative;
     }
-    .stats-block span { color: var(--gold); font-size: 30px; }
-    .btn { width: 100%; padding: 18px; margin: 12px 0; border: none; border-radius: 28px; font-weight: 900; font-size: 18px; cursor: pointer; transition: all 0.3s; }
-    .btn-topup { background: linear-gradient(45deg, var(--gold), #ff8c00); color: #000; box-shadow: 0 0 40px rgba(255,215,0,0.6); }
-    .btn-topup:hover { transform: translateY(-4px); }
-    .btn-withdraw { background: linear-gradient(45deg, var(--danger), #ff1a50); color: white; }
-    .btn-withdraw:hover { transform: translateY(-4px); }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-    .modal.active { display: flex; }
-    .modal-content { background: var(--glass); border: 3px solid var(--neon); border-radius: 32px; padding: 40px 28px; width: 100%; max-width: 460px; text-align: center; position: relative; overflow-y: auto; max-height: 90vh; }
-    .close-btn { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--neon); font-size: 32px; cursor: pointer; transition: 0.3s; }
-    .close-btn:hover { transform: rotate(90deg); }
-    .copy-block { background: rgba(0,255,255,0.15); padding: 16px; border-radius: 20px; margin: 12px 0; cursor: pointer; font-weight: 900; transition: 0.3s; }
-    .copy-block:hover { background: rgba(0,255,255,0.3); }
+    .header h1 {
+      font-size: 36px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #00ffff, #00ff88, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0,255,255,0.5);
+    }
+    .support-btn {
+      position: absolute; top: 16px; right: 16px; background: rgba(0,255,255,0.2); border: 3px solid var(--neon-cyan);
+      border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 0 40px rgba(0,255,255,0.6); transition: all 0.4s; z-index: 100;
+    }
+    .support-btn:hover { transform: scale(1.2) rotate(15deg); }
+
+    /* Переключатель ролей */
+    .role-switch {
+      display: flex; background: rgba(20,20,50,0.9); border: 3px solid var(--border); border-radius: 32px;
+      padding: 8px; margin: 20px 0; backdrop-filter: blur(20px);
+    }
+    .role-btn {
+      flex: 1; padding: 16px; border-radius: 26px; font-weight: 900; font-size: 17px; text-align: center;
+      color: var(--muted); cursor: pointer; transition: all 0.5s;
+    }
+    .role-btn.active {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
+      color: #000; box-shadow: 0 0 50px rgba(0,255,255,0.8); transform: translateY(-4px);
+    }
+
+    /* Фильтры с иконками */
+    .filter-bar {
+      display: flex; gap: 14px; padding: 16px; overflow-x: auto; scrollbar-width: none; margin: 20px 0;
+      background: rgba(20,20,50,0.9); border-radius: 32px; border: 3px solid var(--border); backdrop-filter: blur(20px);
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      padding: 14px 28px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon-cyan);
+      border-radius: 30px; color: white; font-weight: 900; font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; gap: 10px; min-width: fit-content; transition: all 0.4s;
+      box-shadow: 0 0 30px rgba(0,255,255,0.3);
+    }
+    .filter-btn.active {
+      background: var(--neon-cyan); color: #000; transform: scale(1.15);
+      box-shadow: 0 0 80px #00ffff; border-color: #fff;
+    }
+
+    /* УЛЬТРА-КРАСИВЫЕ КАРТОЧКИ ЗАДАНИЙ */
+    .task {
+      background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,136,0.1));
+      border: 3px solid var(--neon-cyan); border-radius: 32px; padding: 24px; margin: 20px 0;
+      position: relative; overflow: hidden; box-shadow: 0 20px 60px rgba(0,255,255,0.25);
+      transition: all 0.5s; backdrop-filter: blur(20px);
+    }
+    .task:hover { transform: translateY(-10px); box-shadow: 0 30px 90px rgba(0,255,255,0.5); }
+    .task::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 8px;
+      background: linear-gradient(90deg, #00ffff, #00ff88, #ffd700, #ff3366);
+    }
+    .task-type {
+      position: absolute; top: 14px; right: 14px; padding: 8px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 900; color: #000;
+    }
+    .task-type.yandex { background: #ffcc00; }
+    .task-type.google { background: #4285f4; color: white; }
+    .task-type.telegram { background: #0088cc; color: white; }
+
+    .task-title { font-size: 20px; font-weight: 900; margin-bottom: 12px; color: #fff; }
+    .task-reward {
+      font-size: 32px; font-weight: 900; color: var(--neon-green); text-align: center;
+      margin: 16px 0; text-shadow: 0 0 20px rgba(0,255,136,0.7);
+    }
+    .progress-bar {
+      height: 14px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;
+      margin: 18px 0; border: 2px solid rgba(0,255,255,0.3);
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+      width: 0%; transition: width 1s ease;
+    }
+    .progress-text {
+      text-align: center; font-weight: 900; color: var(--gold); font-size: 17px; margin: 10px 0;
+    }
+    .task-do {
+      width: 100%; padding: 20px; border: none; border-radius: 28px; font-weight: 900;
+      font-size: 19px; cursor: pointer; transition: all 0.4s; text-transform: uppercase;
+    }
+    .task-do.active {
+      background: linear-gradient(45deg, var(--neon-green), #00cc66); color: black;
+      box-shadow: 0 10px 40px rgba(0,255,136,0.6);
+    }
+    .task-do.active:hover { transform: translateY(-4px); }
+    .task-do.yandex { background: linear-gradient(45deg, #ffcc00, #ffb700); color: black; }
+    .task-do:disabled {
+      background: #333; color: #888; opacity: 0.7; cursor: not-allowed;
+    }
+
+    /* Нижняя навигация */
+    .bottom-nav {
+      position: fixed; bottom: 20px; left: 20px; right: 20px;
+      background: rgba(15,15,45,0.98); backdrop-filter: blur(30px);
+      border: 4px solid var(--border); border-radius: 40px; padding: 12px;
+      display: flex; box-shadow: 0 50px 100px rgba(0,0,0,0.9); z-index: 999;
+    }
+    .nav-btn {
+      flex: 1; padding: 20px; border: none; border-radius: 32px; font-weight: 900;
+      font-size: 18px; background: transparent; color: var(--muted); transition: all 0.5s;
+    }
+    .nav-btn.active {
+      background: linear-gradient(45deg, var(--neon-cyan), var(--neon-green));
+      color: #000; transform: translateY(-8px);
+      box-shadow: 0 0 70px rgba(0,255,255,0.9);
+    }
+
+    /* Профиль */
+    .profile-avatar {
+      width: 120px; height: 120px; border-radius: 50%; border: 6px solid var(--neon-cyan);
+      box-shadow: 0 0 80px rgba(0,255,255,0.8); object-fit: cover;
+    }
+    .balance {
+      font-size: 56px; font-weight: 900; color: var(--neon-green);
+      text-shadow: 0 0 30px rgba(0,255,136,0.7);
+    }
   </style>
 </head>
 <body>
 
-  <div id="tasks-page" class="page visible">
-    <div class="container">
-      <div class="header"><h1>ЗАДАНИЯ</h1></div>
-      <div class="role-switch">
-        <div class="role-btn active" onclick="switchRole('employer')">РАБОТОДАТЕЛЬ</div>
-        <div class="role-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
+  <div class="container">
+    <div class="header">
+      <h1>REVIEWCASH</h1>
+      <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
+        <i class="fas fa-crown" style="font-size:28px;color:#ffd700;"></i>
       </div>
+    </div>
 
-      <div id="employer-mode">
-        <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">+ СОЗДАТЬ ЗАДАНИЕ</button>
-        <div class="create-form" id="create-form">
-          <input type="text" id="task-title" placeholder="Что нужно сделать? (например: Оставить 5★ отзыв)">
-          <input type="url" id="task-link" placeholder="Ссылка на товар/канал (обязательно)">
-          <select id="task-type" onchange="updateRewardSection()">
-            <option value="">Выберите тип задания</option>
-            <option value="yandex">Яндекс Отзыв</option>
-            <option value="google">Google Отзыв</option>
-            <option value="telegram">Telegram Подписка</option>
-          </select>
+    <!-- Переключатель ролей -->
+    <div class="role-switch">
+      <div class="role-btn active" onclick="switchRole('employer')">РАБОТОДАТЕЛЬ</div>
+      <div class="role-btn" onclick="switchRole('worker')">ИСПОЛНИТЕЛЬ</div>
+    </div>
 
-          <div id="reward-section" style="display:none;margin-top:20px;">
-            <input type="number" id="create-reward" placeholder="Введите сумму (от 10 ₽)" min="10" oninput="updateRewardInfo(this)" style="text-align:center;font-size:24px;">
-            <div id="reward-info" style="text-align:center;margin-top:12px;font-size:18px;color:var(--gold);font-weight:900;"></div>
-            <div class="quick-amounts" id="quick-amounts">
-              <div class="quick-btn active" onclick="selectAmount(100)">100 ₽</div>
-              <div class="quick-btn" onclick="selectAmount(200)">200 ₽</div>
-              <div class="quick-btn" onclick="selectAmount(500)">500 ₽</div>
-              <div class="quick-btn" onclick="selectAmount(1000)">1000 ₽</div>
-              <div class="quick-btn" onclick="selectAmount(2000)">2000 ₽</div>
-              <div class="quick-btn" onclick="selectAmount(5000)">5000 ₽</div>
-            </div>
-          </div>
-          <button class="submit-btn" onclick="createTask()">ОПУБЛИКОВАТЬ ЗАДАНИЕ</button>
-        </div>
+    <!-- Режим РАБОТОДАТЕЛЯ -->
+    <div id="employer-mode">
+      <div style="text-align:center;padding:40px 20px;color:#88c0d0;font-size:18px;">
+        <i class="fas fa-chart-line" style="font-size:50px;margin-bottom:20px;color:#00ffff;"></i><br>
+        Ваши активные задания
       </div>
+      <div id="employer-tasks"></div>
+    </div>
 
-      <div id="worker-mode" style="display:none;">
-        <div class="filter-bar" id="filter-bar">
-          <div class="filter-btn active" onclick="centerFilter(this,'all')">ВСЕ</div>
-          <div class="filter-btn" onclick="centerFilter(this,'yandex')">Яндекс</div>
-          <div class="filter-btn" onclick="centerFilter(this,'google')">Google</div>
-          <div class="filter-btn" onclick="centerFilter(this,'telegram')">TG</div>
-        </div>
-        <div id="tasks-list"></div>
+    <!-- Режим ИСПОЛНИТЕЛЯ -->
+    <div id="worker-mode" style="display:none;">
+      <div class="filter-bar">
+        <div class="filter-btn active" onclick="filterTasks('all')"><i class="fas fa-th-large"></i> ВСЕ</div>
+        <div class="filter-btn" onclick="filterTasks('yandex')"><i class="fab fa-yandex"></i> ЯНДЕКС</div>
+        <div class="filter-btn" onclick="filterTasks('google')"><i class="fab fa-google"></i> GOOGLE</div>
+        <div class="filter-btn" onclick="filterTasks('telegram')"><i class="fab fa-telegram"></i> TELEGRAM</div>
       </div>
+      <div id="tasks-list"></div>
     </div>
   </div>
 
-  <div id="profile-page" class="page hidden-right">
-    <div class="container">
-      <div class="header"><h1>ПРОФИЛЬ</h1><div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')"><i class="fas fa-headset"></i></div></div>
-      <div class="profile-header">
-        <img id="user-avatar" class="profile-avatar" src="">
-        <div style="font-size:26px;font-weight:900;color:#fff;margin:10px 0;" id="user-name">Загрузка...</div>
-        <div style="color:#88c0d0;font-size:18px;" id="user-username">@username</div>
-      </div>
-      <div class="profile-card">
-        <div class="balance" id="user-balance">0 ₽</div>
-        <div class="stat-line">Заданий выполнено: <b id="tasks-done">0</b></div>
-        <div class="stat-line">Всего заработано: <b id="total-earned">0</b> ₽</div>
-      </div>
-
-      <div class="stats-block">
-        Всего заданий<br><span id="total-tasks">0</span><br><br>
-        Выполнено<br><span id="done-tasks">0</span>
-      </div>
-
-      <button class="btn btn-topup" onclick="openTopup()">ПОПОЛНИТЬ</button>
-      <button class="btn btn-withdraw" onclick="openWithdraw()">ВЫВОД ОТ 250 ₽</button>
-    </div>
-  </div>
-
+  <!-- Нижняя навигация -->
   <div class="bottom-nav">
-    <button class="nav-btn active" onclick="showPage('tasks')">Задания</button>
-    <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
-  </div>
-
-  <!-- Модальные окна -->
-  <div id="topup-modal" class="modal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('topup-modal')">×</button>
-      <h2 style="color:#ffd700;font-size:32px;margin-bottom:20px;">ПОПОЛНЕНИЕ</h2>
-      <input type="number" id="topup-amount" placeholder="Сумма от 100 ₽" min="100" value="100">
-      <div style="background:rgba(255,215,0,0.2);padding:30px;border-radius:28px;border:3px solid #ffd700;margin:25px 0;">
-        <p><b>Получатель:</b> Раяз Н.</p>
-        <div class="copy-block" onclick="copy('+79600738559')">+7 (960) 073-85-59</div>
-        <p><b>Банк:</b> Т-Банк</p>
-      </div>
-      <p>В комментарии укажи код:</p>
-      <div class="copy-block" id="topup-code">000000</div>
-      <button style="background:#ffd700;color:#000;padding:22px;border-radius:32px;font-size:22px;font-weight:900;margin-top:20px;" onclick="sendTopup()">ОТПРАВИТЬ</button>
-    </div>
-  </div>
-
-  <div id="withdraw-modal" class="modal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('withdraw-modal')">×</button>
-      <h2 style="color:#ff3366;font-size:32px;">ВЫВОД</h2>
-      <input type="number" id="withdraw-amount" placeholder="Сумма от 250 ₽" min="250">
-      <input type="text" id="withdraw-card" placeholder="Номер карты/телефона">
-      <input type="text" id="withdraw-bank" placeholder="Банк (по желанию)">
-      <button style="background:#ff3366;color:white;padding:22px;border-radius:32px;font-size:22px;font-weight:900;margin-top:20px;" onclick="sendWithdraw()">ВЫВЕСТИ</button>
-    </div>
+    <button class="nav-btn active" onclick="showPage('tasks')"><i class="fas fa-tasks"></i><br>Задания</button>
+    <button class="nav-btn" onclick="showPage('profile')"><i class="fas fa-user"></i><br>Профиль</button>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     const user = tg.initDataUnsafe.user || {};
-    const MY_ID = 6482440657; // ТОЛЬКО ТЫ
+    const MY_ID = 6482440657;
 
-    // Профиль
-    document.getElementById('user-name').innerText = (user.first_name || 'Пользователь') + (user.last_name ? ' ' + user.last_name : '');
-    document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
-    document.getElementById('user-avatar').src = user.photo_url || 'https://telegram.org/img/t_logo.png';
-
-    // СЕКРЕТНОЕ ОТКРЫТИЕ АДМИНКИ ТОЛЬКО ПО КОМАНДЕ /mainadmin
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('startapp') === 'mainadmin' && user.id === MY_ID) {
-      setTimeout(() => {
-        window.location.href = 'mainadmin.html';
-      }, 600);
+    // Секретная админка только по команде
+    if (new URLSearchParams(window.location.search).get('startapp') === 'mainadmin' && user.id === MY_ID) {
+      setTimeout(() => window.location.href = 'mainadmin.html', 700);
     }
 
-    let tasks = [], completed = new Set(JSON.parse(localStorage.getItem('completedTasks') || '[]'));
-    const prices = { yandex: 100, google: 65, telegram: 10 };
-    let rewardTimeout;
+    let tasks = [];
+    let myTasks = [];
 
-    function showPage(p) {
-      document.getElementById('tasks-page').classList.toggle('visible', p === 'tasks');
-      document.getElementById('profile-page').classList.toggle('visible', p === 'profile');
-      document.getElementById('tasks-page').classList.toggle('hidden-left', p === 'profile');
-      document.getElementById('profile-page').classList.toggle('hidden-right', p === 'tasks');
-      document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('active', i === (p === 'profile' ? 1 : 0)));
-    }
-
-    function switchRole(r) {
+    function switchRole(role) {
       document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
-      document.getElementById('employer-mode').style.display = r === 'employer' ? 'block' : 'none';
-      document.getElementById('worker-mode').style.display = r === 'worker' ? 'block' : 'none';
-      if (r === 'worker') filterTasks('all');
+      document.getElementById('employer-mode').style.display = role === 'employer' ? 'block' : 'none';
+      document.getElementById('worker-mode').style.display = role === 'worker' ? 'block' : 'none';
+      if (role === 'employer') loadEmployerTasks();
+      if (role === 'worker') filterTasks('all');
     }
 
-    function updateRewardSection() {
-      const type = document.getElementById('task-type').value;
-      document.getElementById('reward-section').style.display = type ? 'block' : 'none';
-      if (type) updateRewardInfo(document.getElementById('create-reward'));
-    }
+    function loadEmployerTasks() {
+      const container = document.getElementById('employer-tasks');
+      container.innerHTML = '';
+      const mine = tasks.filter(t => t.creator_id === user.id);
+      if (mine.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:100px 20px;color:#88c0d0;">
+          <i class="fas fa-box-open" style="font-size:60px;"></i><br><br>
+          У вас пока нет созданных заданий
+        </div>`;
+        return;
+      }
+      mine.forEach(t => {
+        const done = t.completed || 0;
+        const total = t.total_count || 1;
+        const percent = Math.round((done / total) * 100);
+        const finished = done >= total;
 
-    function selectAmount(a) {
-      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('create-reward').value = a;
-      updateRewardInfo(document.getElementById('create-reward'));
-    }
-
-    function updateRewardInfo(input) {
-      clearTimeout(rewardTimeout);
-      const val = parseInt(input.value) || 0;
-      const type = document.getElementById('task-type').value;
-      if (!type || val < 10) return;
-
-      rewardTimeout = setTimeout(() => {
-        const price = prices[type];
-        const count = Math.floor(val / price);
-        const total = count * price;
-        input.value = total;
-
-        const texts = { yandex: 'отзывов', google: 'отзывов', telegram: 'подписок' };
-        document.getElementById('reward-info').innerHTML = `Будет создано: <b>${count}</b> ${texts[type]} за ${total} ₽`;
-      }, 800);
-    }
-
-    function createTask() {
-      const title = document.getElementById('task-title').value.trim();
-      const link = document.getElementById('task-link').value.trim();
-      const type = document.getElementById('task-type').value;
-      const reward = parseInt(document.getElementById('create-reward').value);
-      if (!title || !link || !type || reward < 10) return tg.showAlert("Заполните все поля правильно!");
-      tg.sendData(JSON.stringify({action: "create_task", title, link, type, reward}));
-      tg.showAlert("Задание отправлено на модерацию!");
-      document.getElementById('create-form').classList.remove('active');
-    }
-
-    function centerFilter(btn, type) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filterTasks(type);
+        container.innerHTML += `
+          <div class="task">
+            <div class="task-type ${t.type}">${t.type.toUpperCase()}</div>
+            <div class="task-title">${t.title}</div>
+            <div class="task-reward">Бюджет: ${t.budget} ₽</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+            <div class="progress-text">
+              ${finished ? 'ЗАДАНИЕ ВЫПОЛНЕНО ПОЛНОСТЬЮ' : `Выполнено: ${done} из ${total} (${percent}%)`}
+            </div>
+            ${finished ? '<div style="text-align:center;color:#00ff88;font-weight:900;margin-top:15px;">Деньги выплачены исполнителям</div>' : ''}
+          </div>`;
+      });
     }
 
     function filterTasks(type) {
-      const list = document.getElementById('tasks-list');
-      list.innerHTML = '';
-      const filtered = type === 'all' ? tasks : tasks.filter(t => t.type === type);
-      if (!filtered.length) {
-        list.innerHTML = '<p style="text-align:center;color:#88c0d0;padding:100px 0;">Нет доступных заданий</p>';
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const container = document.getElementById('tasks-list');
+      container.innerHTML = '';
+      const filtered = type === 'all' ? tasks.filter(t => (t.completed || 0) < (t.total_count || 1)) : tasks.filter(t => t.type === type && (t.completed || 0) < (t.total_count || 1));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:120px 20px;color:#88c0d0;">
+          <i class="fas fa-search" style="font-size:60px;"></i><br><br>
+          Нет доступных заданий
+        </div>`;
         return;
       }
+
       filtered.forEach(t => {
-        const done = completed.has(t.id);
-        list.innerHTML += `
+        const isDone = (t.completed_by || []).includes(user.id);
+        container.innerHTML += `
           <div class="task">
+            <div class="task-type ${t.type}">${t.type.toUpperCase()}</div>
             <div class="task-title">${t.title}</div>
-            <div class="task-reward">+${t.reward} ₽</div>
-            <button class="task-do ${t.type==='yandex'?'yandex':''}" ${done?'disabled':''} onclick="${done?'':`tg.openLink('${t.link}')`}">
-              ${done?'ВЫПОЛНЕНО':'ВЫПОЛНИТЬ'}
+            <div class="task-reward">+${t.reward_per_task} ₽</div>
+            <button class="task-do ${t.type} ${isDone ? '' : 'active'}" ${isDone ? 'disabled' : ''} onclick="${isDone ? '' : 'completeTask(' + t.id + ')'}">
+              ${isDone ? 'ВЫПОЛНЕНО' : 'ВЫПОЛНИТЬ'}
             </button>
           </div>`;
       });
     }
 
-    function openTopup() {
-      document.getElementById('topup-modal').classList.add('active');
-      document.getElementById('topup-code').innerText = Math.floor(100000 + Math.random() * 900000);
+    function completeTask(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      tg.openLink(task.link);
+      setTimeout(() => {
+        tg.showPopup({
+          title: "Подтверждение",
+          message: "Вы точно выполнили задание?",
+          buttons: [{type: "ok", text: "Да, выполнил"}, {type: "cancel", text: "Отмена"}]
+        }, (btn) => {
+          if (btn === "ok") {
+            tg.sendData(JSON.stringify({action: "complete_task", task_id: taskId}));
+            tg.showAlert("Спасибо! Заявка отправлена на проверку");
+          }
+        });
+      }, 1500);
     }
-    function sendTopup() {
-      const amount = document.getElementById('topup-amount').value;
-      if (amount < 100) return tg.showAlert("Минимум 100 ₽");
-      tg.sendData(JSON.stringify({action:"topup", amount, code: document.getElementById('topup-code').innerText}));
-      tg.showAlert("Заявка отправлена!");
-      closeModal('topup-modal');
-    }
-    function openWithdraw() { document.getElementById('withdraw-modal').classList.add('active'); }
-    function sendWithdraw() {
-      const amount = document.getElementById('withdraw-amount').value;
-      if (amount < 250) return tg.showAlert("Минимум 250 ₽");
-      tg.sendData(JSON.stringify({action:"withdraw", amount, card: document.getElementById('withdraw-card').value, bank: document.getElementById('withdraw-bank').value}));
-      tg.showAlert("Заявка на вывод отправлена!");
-      closeModal('withdraw-modal');
-    }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-    function copy(t) { navigator.clipboard.writeText(t); tg.showAlert("Скопировано!"); }
 
-    // Загрузка заданий
-    setInterval(() => tg.sendData('{"action":"get_tasks"}'), 8000);
-    tg.sendData('{"action":"get_tasks"}');
+    // Загрузка заданий каждые 6 секунд
+    function loadTasks() {
+      tg.sendData('{"action":"get_all_tasks"}');
+    }
+    setInterval(loadTasks, 6000);
+    loadTasks();
+
+    // Обработка ответа от бота
+    tg.onEvent('invoiceClosed', () => {});
   </script>
 </body>
 </html>
