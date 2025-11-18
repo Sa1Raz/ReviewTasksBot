@@ -30,7 +30,6 @@
       text-shadow: 0 0 40px rgba(0,255,255,0.6);
     }
 
-    /* МАЛЕНЬКАЯ ПОДДЕРЖКА ТОЛЬКО В ПРОФИЛЕ */
     .support-btn {
       position: absolute; top: 16px; right: 16px; width: 48px; height: 48px;
       background: rgba(0,136,204,0.3); border: 2.5px solid var(--neon); border-radius: 50%;
@@ -75,7 +74,6 @@
       border: 3px solid var(--neon); border-radius: 20px; color: white; font-size: 16px;
       font-weight: 600; transition: all 0.4s;
     }
-    input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 30px rgba(0,255,136,0.5); outline: none; }
 
     .price-buttons {
       display: flex; gap: 12px; overflow-x: auto; padding: 16px 0; scrollbar-width: none; margin: 20px 0;
@@ -104,10 +102,30 @@
       margin-top: 30px; cursor: pointer; text-transform: uppercase;
     }
 
+    .filter-bar {
+      display: flex; gap: 16px; padding: 20px 16px; overflow-x: auto; scrollbar-width: none;
+      margin: 20px 0; background: rgba(20,20,50,0.9); border-radius: 32px; border: 3px solid var(--border);
+      backdrop-filter: blur(20px);
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      padding: 16px 26px; background: rgba(0,255,255,0.15); border: 3px solid var(--neon);
+      border-radius: 30px; color: white; font-weight: 900; font-size: 14px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 90px;
+      transition: all 0.4s;
+    }
+    .filter-btn i { font-size: 28px; }
+    .filter-btn.active {
+      background: var(--neon); color: #000; transform: scale(1.15);
+      box-shadow: 0 0 80px #00ffff;
+    }
+
     .profile-avatar {
       width: 130px; height: 130px; border-radius: 50%; border: 6px solid var(--neon);
       box-shadow: 0 0 80px rgba(0,255,255,0.9); object-fit: cover; margin: 20px auto; display: block;
+      background: linear-gradient(45deg, #00ffff, #00ff88);
     }
+
     .balance { font-size: 56px; font-weight: 900; color: var(--green); text-shadow: 0 0 30px rgba(0,255,136,0.7); text-align: center; }
 
     .bottom-nav {
@@ -126,7 +144,6 @@
       box-shadow: 0 0 70px rgba(0,255,255,0.9);
     }
 
-    /* КОПИРОВАНИЕ В ОДИН КЛИК */
     .copy-block {
       background: rgba(0,255,255,0.1); border: 2px dashed var(--neon); border-radius: 20px;
       padding: 20px; margin: 15px 0; text-align: center; cursor: pointer; transition: all 0.4s;
@@ -138,7 +155,6 @@
 </head>
 <body>
 
-  <!-- ГЛАВНАЯ -->
   <div id="main-page" class="container">
     <div class="header"><h1>REVIEWCASH</h1></div>
 
@@ -149,7 +165,7 @@
 
     <div id="employer-mode">
       <button class="create-btn" onclick="document.getElementById('create-form').classList.toggle('active')">
-        + СОЗДАТЬ ЗАДАНИЕ
+        + СОwyn СОЗДАТЬ ЗАДАНИЕ
       </button>
 
       <div class="create-form" id="create-form">
@@ -165,12 +181,16 @@
         <input type="number" id="task-budget" placeholder="Сколько потратить (₽)" oninput="autoRoundBudget()">
 
         <div class="price-buttons">
-          <div class="price-btn" onclick="setAndCenter(this,130)">100 ₽</div>
-          <div class="price-btn" onclick="setAndCenter(this,260)">200 ₽</div>
-          <div class="price-btn" onclick="setAndCenter(this,500)">500 ₽</div>
-          <div class="price-btn" onclick="setAndCenter(this,1000)">1000 ₽</div>
-          <div class="price-btn" onclick="setAndCenter(this,2000)">2000 ₽</div>
-          <div class="price-btn" onclick="setAndCenter(this,5000)">5000 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,100)">100 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,200)">200 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,300)">300 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,400)">400 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,500)">500 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,1000)">1000 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,1500)">1500 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,2000)">2000 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,2500)">2500 ₽</div>
+          <div class="price-btn" onclick="setBudget(this,3000)">3000 ₽</div>
         </div>
 
         <div class="budget-result" id="budget-result">Введите сумму и выберите тип</div>
@@ -180,13 +200,18 @@
     </div>
 
     <div id="worker-mode" style="display:none;">
-      <div style="text-align:center;padding:50px;color:#888;">
+      <div class="filter-bar">
+        <div class="filter-btn active" onclick="centerFilter(this)"><i class="fas fa-th-large"></i><span>ВСЕ</span></div>
+        <div class="filter-btn" onclick="centerFilter(this)"><i class="fab fa-yandex"></i><span>ЯНДЕКС</span></div>
+        <div class="filter-btn" onclick="centerFilter(this)"><i class="fab fa-google"></i><span>GOOGLE</span></div>
+        <div class="filter-btn" onclick="centerFilter(this)"><i class="fab fa-telegram"></i><span>TG</span></div>
+      </div>
+      <div id="tasks-list" style="text-align:center;padding:50px;color:#888;">
         <h2>Задания скоро появятся</h2>
       </div>
     </div>
   </div>
 
-  <!-- ПРОФИЛЬ -->
   <div id="profile-page" class="container" style="display:none; position:relative;">
     <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
       <i class="fas fa-headset"></i>
@@ -200,16 +225,10 @@
 
     <div style="background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:30px;margin:20px 0;text-align:center;backdrop-filter:blur(20px);">
       <div class="balance" id="user-balance">0 ₽</div>
-      <p style="margin:20px 0;font-size:17px;color:#bbb;">Выполнено заданий: <b>0</b></p>
     </div>
 
-    <button class="create-btn" style="background:linear-gradient(45deg,#00cc66,#00ff88);" onclick="showTopUp()">
-      ПОПОЛНИТЬ БАЛАНС
-    </button>
-
-    <button class="create-btn" style="background:linear-gradient(45deg,#ff3366,#ff1a50);margin-top:15px;" onclick="showWithdraw()">
-      ВЫВОД СРЕДСТВ
-    </button>
+    <button class="create-btn" style="background:linear-gradient(45deg,#00cc66,#00ff88);" onclick="showTopUp()">ПОПОЛНИТЬ БАЛАНС</button>
+    <button class="create-btn" style="background:linear-gradient(45deg,#ff3366,#ff1a50);margin-top:15px;" onclick="showWithdraw()">ВЫВОД СРЕДСТВ</button>
   </div>
 
   <div class="bottom-nav">
@@ -226,22 +245,17 @@
 
     document.getElementById('user-name').innerText = user.first_name || 'Пользователь';
     document.getElementById('user-username').innerText = user.username ? '@'+user.username : '';
-    if (user.photo_url) document.getElementById('user-avatar').src = user.photo_url;
+    document.getElementById('user-avatar').src = user.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user.id || 'user');
 
-    // КОПИРОВАНИЕ В 1 КЛИК
-    function copyToClipboard(text, hintElement) {
+    function copyToClipboard(text, hint) {
       navigator.clipboard.writeText(text).then(() => {
-        const original = hintElement.innerText;
-        hintElement.innerText = 'Скопировано!';
-        hintElement.style.color = '#00ff88';
-        setTimeout(() => {
-          hintElement.innerText = original;
-          hintElement.style.color = '#88c0d0';
-        }, 1500);
+        const orig = hint.innerText;
+        hint.innerText = 'Скопировано!';
+        hint.style.color = '#00ff88';
+        setTimeout(() => { hint.innerText = orig; hint.style.color = '#88c0d0'; }, 1500);
       });
     }
 
-    // ОКРУГЛЕНИЕ ВНИЗ ЧЕРЕЗ 2 СЕКУНДЫ
     function autoRoundBudget() {
       clearTimeout(roundTimeout);
       roundTimeout = setTimeout(() => {
@@ -250,7 +264,7 @@
         let budget = parseInt(document.getElementById('task-budget').value) || 0;
         const price = prices[type];
         const rounded = Math.floor(budget / price) * price;
-        if (rounded > 0 && rounded !== budget) {
+        if (rounded > 0 && rounded < budget) {
           document.getElementById('task-budget').value = rounded;
           updateBudgetInfo();
         }
@@ -273,11 +287,17 @@
       `;
     }
 
-    function setAndCenter(btn, amount) {
+    function setBudget(btn, amount) {
       document.getElementById('task-budget').value = amount;
       document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      const type = document.getElementById('task-type').value;
+      if (type) {
+        const price = prices[type];
+        const rounded = Math.floor(amount / price) * price;
+        document.getElementById('task-budget').value = rounded;
+      }
       updateBudgetInfo();
     }
 
@@ -304,14 +324,11 @@
       });
     }
 
-    // ПОПОЛНЕНИЕ С КОДОМ И КОПИРОВАНИЕМ
     function showTopUp() {
       const amount = prompt("Введите сумму пополнения (минимум 100 ₽):");
       if (!amount || isNaN(amount) || amount < 100) return tg.showAlert("Неверная сумма!");
-
       const code = "RC-" + Math.floor(1000 + Math.random() * 9000);
       const phone = "+79600738559";
-
       const html = `
         <div style="text-align:center;padding:15px;">
           <h3 style="color:#00ff88;margin:20px 0;">Переведи ТОЧНО:</h3>
@@ -319,33 +336,24 @@
             <div class="copy-text">${amount} ₽</div>
             <div class="copy-hint">Нажми, чтобы скопировать сумму</div>
           </div>
-
           <h3 style="color:#ffd700;margin:25px 0 10px;">На телефон:</h3>
           <div class="copy-block" onclick="copyToClipboard('${phone}', this.querySelector('.copy-hint'))">
             <div class="copy-text">${phone}</div>
             <div class="copy-hint">Нажми, чтобы скопировать номер</div>
           </div>
-
           <h3 style="color:#00ffff;margin:25px 0 10px;">Одноразовый код:</h3>
           <div class="copy-block" onclick="copyToClipboard('${code}', this.querySelector('.copy-hint'))">
             <div class="copy-text">${code}</div>
             <div class="copy-hint">Нажми, чтобы скопировать код</div>
           </div>
-
           <p style="margin-top:25px;color:#ccc;font-size:14px;">После перевода пришли чек + код в поддержку</p>
         </div>
       `;
-
       tg.showPopup({title: "Пополнение баланса", message: html, buttons: [{type:"close",text:"Понятно"}]});
     }
 
-    // ВЫВОД — 3 ПОЛЯ
     function showWithdraw() {
-      tg.showPopup({
-        title: "Вывод средств",
-        message: "Заполните реквизиты для вывода:",
-        buttons: [{type:"ok",text:"Отправить"}, {type:"cancel",text:"Отмена"}]
-      }, function(btn) {
+      tg.showPopup({title: "Вывод средств", message: "Заполните реквизиты:", buttons: [{type:"ok",text:"Отправить"}, {type:"cancel",text:"Отмена"}]}, (btn) => {
         if (btn === "ok") {
           const name = prompt("1. Имя / Фамилия / Ник в банке:");
           const card = prompt("2. Номер карты или телефона:");
@@ -369,6 +377,12 @@
       document.getElementById('main-page').style.display = p === 'main' ? 'block' : 'none';
       document.getElementById('profile-page').style.display = p === 'profile' ? 'block' : 'none';
       document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('active', i === (p === 'profile' ? 1 : 0)));
+    }
+
+    function centerFilter(btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   </script>
 </body>
