@@ -1,185 +1,554 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>АДМИНКА ReviewCash</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+  <title>ReviewCash</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
-    :root {
-      --bg: #0a0014;
-      --card: rgba(20,0,50,0.9);
-      --neon: #00ffff;
-      --gold: #ffd700;
-      --green: #00ff88;
-      --red: #ff3366;
-      --purple: #9d00ff;
-    }
-    body { background: linear-gradient(135deg, #0f0020, #000); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; min-height: 100vh; }
-    .header { background: linear-gradient(90deg, var(--gold), var(--neon)); padding: 20px; text-align: center; font-size: 28px; font-weight: 900; color: #000; box-shadow: 0 10px 30px rgba(255,215,0,0.5); }
-    .container { max-width: 500px; margin: 20px auto; padding: 20px; }
-    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
-    .stat-card { background: var(--card); border: 2px solid var(--neon); border-radius: 20px; padding: 20px; text-align: center; backdrop-filter: blur(15px); }
-    .stat-card h3 { color: var(--gold); margin: 0; font-size: 14px; }
-    .stat-card p { font-size: 24px; font-weight: 900; margin: 10px 0 0; color: var(--neon); }
+    :root{--bg:#0a0014;--glass:rgba(15,10,45,0.98);--neon:#00ffff;--green:#00ff88;--gold:#ffd700;--red:#ff3366;--border:rgba(0,255,255,0.6);--text:#e0f7ff;--muted:#88c0d0;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:linear-gradient(135deg,#0a0014,#001133);color:var(--text);font-family:-apple-system,system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
+    .container{max-width:420px;margin:0 auto;padding:16px 16px 150px;position:relative;}
+    .header h1{font-size:44px;font-weight:900;text-align:center;padding:40px 0 20px;background:linear-gradient(90deg,#00ffff,#00ff88,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 50px rgba(0,255,255,0.7);}
+    .support{position:absolute;top:16px;right:16px;width:56px;height:56px;background:rgba(0,136,204,0.3);border:3px solid var(--neon);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 50px rgba(0,255,255,0.7);backdrop-filter:blur(15px);z-index:1000;}
+    .support i{font-size:28px;color:#00ffff;}
+    .role-switch{display:flex;background:rgba(20,20,50,0.9);border:3px solid var(--border);border-radius:32px;padding:8px;margin:25px 0;backdrop-filter:blur(20px);}
+    .role-btn{flex:1;padding:18px;border-radius:26px;font-weight:900;font-size:16px;text-align:center;color:var(--muted);cursor:pointer;transition:all .5s;}
+    .role-btn.active{background:linear-gradient(135deg,var(--neon),var(--green));color:#000;box-shadow:0 0 70px rgba(0,255,255,0.9);transform:translateY(-5px);}
+    .create-btn{width:100%;padding:30px;background:linear-gradient(45deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:32px;font-size:28px;font-weight:900;margin:30px 0;cursor:pointer;box-shadow:0 20px 60px rgba(255,215,0,0.6);text-transform:uppercase;letter-spacing:2px;}
+    .create-form{background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:35px;margin:20px 0;display:none;backdrop-filter:blur(30px);box-shadow:0 25px 80px rgba(0,255,255,0.4);}
+    .create-form.active{display:block;animation:slideDown .7s;}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-50px)}to{opacity:1;transform:translateY(0)}}
+    input,select{width:100%;padding:22px;margin:16px 0;background:rgba(0,0,0,0.7);border:3px solid var(--neon);border-radius:20px;color:white;font-size:17px;font-weight:600;}
+    .price-buttons{display:flex;gap:14px;overflow-x:auto;padding:20px 0;scrollbar-width:none;margin:25px 0;scroll-behavior:smooth;}
+    .price-btn{padding:18px 32px;background:rgba(0,255,255,0.15);border:3px solid var(--neon);border-radius:30px;color:white;font-weight:900;font-size:16px;cursor:pointer;min-width:130px;text-align:center;transition:all .4s;white-space:nowrap;}
+    .price-btn.active{background:var(--neon);color:#000;transform:scale(1.2);box-shadow:0 0 90px #00ffff;}
+    .budget-result{background:linear-gradient(135deg,rgba(0,255,136,0.3),rgba(0,255,255,0.3));padding:32px;border-radius:26px;text-align:center;margin:25px 0;border:3px solid var(--green);font-size:22px;font-weight:900;color:var(--gold);line-height:1.6;min-height:100px;}
+    .submit-create{width:100%;padding:30px;background:linear-gradient(45deg,var(--green),#00cc66);color:black;border:none;border-radius:32px;font-size:28px;font-weight:900;margin-top:35px;cursor:pointer;text-transform:uppercase;}
+    .filter-bar{display:flex;gap:16px;padding:20px 16px;overflow-x:auto;scrollbar-width:none;margin:20px 0;background:rgba(20,20,50,0.9);border-radius:32px;border:3px solid var(--border);backdrop-filter:blur(20px);scroll-behavior:smooth;}
+    .filter-btn{padding:18px 28px;background:rgba(0,255,255,0.15);border:3px solid var(--neon);border-radius:30px;color:white;font-weight:900;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:100px;cursor:pointer;transition:all .4s;}
+    .filter-btn i{font-size:32px;}
+    .filter-btn.active{background:var(--neon);color:#000;transform:scale(1.2);box-shadow:0 0 90px #00ffff;}
+    .profile-avatar{width:150px;height:150px;border-radius:50%;border:8px solid var(--neon);box-shadow:0 0 100px rgba(0,255,255,0.9);object-fit:cover;margin:25px auto;display:block;background:#001;}
+    .balance{font-size:68px;font-weight:900;color:var(--green);text-shadow:0 0 40px rgba(0,255,136,0.9);text-align:center;}
+    .balance-card{background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:40px;margin:30px 0;text-align:center;backdrop-filter:blur(20px);}
+    .action-btn{width:100%;padding:28px;margin:15px 0;border:none;border-radius:32px;font-size:26px;font-weight:900;cursor:pointer;}
+    .topup-btn{background:linear-gradient(45deg,#00cc66,#00ff88);color:black;}
+    .withdraw-btn{background:linear-gradient(45deg,#ff3366,#ff1a50);color:white;}
+    .bottom-nav{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(15,15,45,0.98);backdrop-filter:blur(35px);border:4px solid var(--border);border-radius:42px;padding:16px;display:flex;box-shadow:0 60px 120px rgba(0,0,0,0.9);z-index:999;}
+    .nav-btn{flex:1;padding:24px;border:none;border-radius:32px;font-weight:900;font-size:20px;background:transparent;color:var(--muted);transition:all .5s;}
+    .nav-btn.active{background:linear-gradient(45deg,var(--neon),var(--green));color:#000;transform:translateY(-12px);box-shadow:0 0 90px rgba(0,255,255,0.9);}
+    .copy-block{background:rgba(0,255,255,0.15);border:2px dashed var(--neon);border-radius:22px;padding:26px;margin:22px 0;text-align:center;cursor:pointer;transition:all .4s;}
+    .copy-block:hover{background:rgba(0,255,255,0.35);transform:scale(1.05);}
+    .copy-text{font-size:36px;font-weight:900;color:var(--gold);}
+    .copy-hint{font-size:16px;color:var(--muted);margin-top:10px;}
+    .important{color:var(--red);font-weight:900;font-size:20px;}
+    .error{color:var(--red);font-size:14px;margin-top:5px;text-align:center;display:none;}
+    .small-list{background:rgba(0,0,0,0.5);padding:12px;border-radius:12px;margin:10px 0;font-size:14px;}
+    .link-muted{color:var(--muted);font-size:13px;}
+    .requests-list{margin-top:10px;}
+    .req-item{background:#051028;padding:12px;border-radius:10px;margin-bottom:8px;border:1px solid rgba(0,255,255,0.06);}
+    .muted{color:#88c0d0;font-size:13px;}
 
-    .section { background: var(--card); border: 2px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 25px; backdrop-filter: blur(15px); }
-    .section h2 { color: var(--gold); text-align: center; margin-bottom: 20px; font-size: 22px; }
-
-    .item { background: rgba(0,255,255,0.1); border-radius: 15px; padding: 15px; margin: 10px 0; border-left: 5px solid var(--neon); }
-    .item.new { border-left-color: var(--gold); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 10px var(--gold); } 50% { box-shadow: 0 0 30px var(--gold); } }
-
-    .btn { padding: 10px 15px; margin: 5px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-    .btn-success { background: var(--green); color: black; }
-    .btn-danger { background: var(--red); color: white; }
-    .btn-small { padding: 6px 12px; font-size: 12px; }
-
-    .footer { text-align: center; padding: 20px; color: #888; font-size: 14px; }
-    .hidden { display: none; }
+    /* fallback modal (used when tg.showPopup is not present) */
+    .rc-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:3000;}
+    .rc-modal{width:92%;max-width:420px;background:linear-gradient(180deg,#07132a,#081a33);padding:18px;border-radius:12px;border:2px solid rgba(0,255,255,0.06);color:#e6fbff;box-shadow:0 30px 80px rgba(0,0,0,0.8);}
+    .rc-modal .rc-btn{display:block;width:100%;padding:12px;margin-top:12px;border-radius:10px;border:none;font-weight:900;cursor:pointer;}
+    .rc-modal .rc-close{position:absolute;top:12px;right:18px;color:#fff;cursor:pointer;}
+    .rc-modal .rc-copy-block{cursor:pointer;margin:8px 0;padding:10px;border-radius:8px;border:1px dashed rgba(0,255,255,0.06);background:rgba(255,255,255,0.01);}
   </style>
 </head>
 <body>
+  <div id="main-page" class="container">
+    <div class="header"><h1>REVIEWCASH</h1></div>
 
-  <div class="header">
-    АДМИН-ПАНЕЛЬ REVIEWCASH
+    <div class="role-switch">
+      <div class="role-btn active" data-role="employer">РАБОТОДАТЕЛЬ</div>
+      <div class="role-btn" data-role="worker">ИСПОЛНИТЕЛЬ</div>
+    </div>
+
+    <div id="employer-mode">
+      <button class="create-btn" id="create-task-btn">+ СОЗДАТЬ ЗАДАНИЕ</button>
+
+      <div class="create-form" id="create-form">
+        <input type="text" id="task-title" placeholder="Название задания">
+        <input type="url" id="task-link" placeholder="Ссылка на отзыв / канал">
+        <div id="link-error" class="error"></div>
+
+        <select id="task-type">
+          <option value="">Выберите тип</option>
+          <option value="yandex">Яндекс Отзыв — 100 ₽</option>
+          <option value="google">Google Отзыв — 65 ₽</option>
+          <option value="telegram">Telegram Подписка — 10 ₽</option>
+        </select>
+
+        <input type="number" id="task-budget" placeholder="Бюджет (макс. 15 000 ₽)" min="100" max="15000">
+
+        <div class="price-buttons" id="priceButtons">
+          <div class="price-btn" data-amount="1000">1 000 ₽</div>
+          <div class="price-btn" data-amount="3000">3 000 ₽</div>
+          <div class="price-btn" data-amount="5000">5 000 ₽</div>
+          <div class="price-btn" data-amount="10000">10 000 ₽</div>
+          <div class="price-btn" data-amount="15000">15 000 ₽</div>
+        </div>
+
+        <div class="budget-result" id="budget-result">Выберите тип и бюджет</div>
+        <button class="submit-create" id="publish-task">ОПУБЛИКОВАТЬ</button>
+      </div>
+    </div>
+
+    <div id="worker-mode" style="display:none;">
+      <div class="filter-bar" id="filterBar">
+        <div class="filter-btn active"><i class="fas fa-th-large"></i><span>ВСЕ</span></div>
+        <div class="filter-btn"><i class="fab fa-yandex"></i><span>ЯНДЕКС</span></div>
+        <div class="filter-btn"><i class="fab fa-google"></i><span>GOOGLE</span></div>
+        <div class="filter-btn"><i class="fab fa-telegram"></i><span>TG</span></div>
+      </div>
+      <div style="text-align:center;padding:120px;color:#888;"><h2>Задания скоро появятся...</h2></div>
+    </div>
   </div>
 
-  <div class="container" id="admin-content" style="display:none;">
-    <div class="stats">
-      <div class="stat-card">
-        <h3>Пользователей</h3>
-        <p id="total-users">0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Заданий всего</h3>
-        <p id="total-tasks">0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Выполнено</h3>
-        <p id="done-tasks">0</p>
-      </div>
-      <div class="stat-card">
-        <h3>Баланс системы</h3>
-        <p id="total-balance">0 ₽</p>
-      </div>
+  <div id="profile-page" class="container" style="display:none;position:relative;">
+    <div class="support" id="supportBtn" title="Поддержка">
+      <i class="fas fa-headset"></i>
     </div>
 
-    <!-- Заявки на пополнение -->
-    <div class="section">
-      <h2>Пополнения</h2>
-      <div id="topups-list">Загрузка...</div>
+    <div style="text-align:center;padding:50px 0 20px;">
+      <img id="user-avatar" class="profile-avatar" src="" alt="Аватар">
+      <h2 id="user-name" style="color:white;margin:20px 0;font-size:32px;font-weight:900;">Имя</h2>
+      <p id="user-username" style="color:#88c0d0;font-size:18px;">@username</p>
     </div>
 
-    <!-- Заявки на вывод -->
-    <div class="section">
-      <h2>Выводы</h2>
-      <div id="withdraws-list">Загрузка...</div>
+    <div class="balance-card">
+      <div class="balance" id="user-balance">0 ₽</div>
+      <p style="color:#aaa;font-size:17px;margin-top:10px;">Доступно для вывода</p>
     </div>
 
-    <!-- Все задания -->
-    <div class="section">
-      <h2>Последние задания</h2>
-      <div id="tasks-admin-list">Загрузка...</div>
+    <button class="action-btn topup-btn" id="topup-btn">ПОПОЛНИТЬ БАЛАНС</button>
+    <button class="action-btn withdraw-btn" id="withdraw-btn">ВЫВОД СРЕДСТВ</button>
+
+    <div class="small-list">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="muted">Мои заявки</div>
+        <div class="link-muted"><a id="open-admin" href="mainadmin.html" target="_blank" style="color:var(--neon);text-decoration:none;">Админ (только для вас)</a></div>
+      </div>
+
+      <div class="requests-list" id="my-requests"></div>
     </div>
   </div>
 
-  <div id="access-denied" class="container" style="text-align:center;padding:100px 20px;">
-    <h1 style="color:var(--red);">ДОСТУП ЗАПРЕЩЁН</h1>
-    <p>Только для Раяза Н.</p>
-  </div>
-
-  <div class="footer">
-    © 2025 ReviewCash | Админка только для Царя
+  <div class="bottom-nav">
+    <button class="nav-btn active" data-page="main">Задания</button>
+    <button class="nav-btn" data-page="profile">Профиль</button>
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const key = urlParams.get('key');
+    // Robust Telegram WebApp detection and safe usage:
+    const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+    try { tg?.ready?.(); tg?.expand?.(); } catch (e) { /* ignore */ }
 
-    // ТОЛЬКО ТЫ МОЖЕШЬ ВОЙТИ
-    if (key !== 'rayaz1337') {
-      document.getElementById('admin-content').style.display = 'none';
-      document.getElementById('access-denied').style.display = 'block';
-    } else {
-      document.getElementById('admin-content').style.display = 'block';
-      document.getElementById('access-denied').style.display = 'none';
-      loadAdminData();
-      setInterval(loadAdminData, 3000); // каждые 3 сек
-    }
+    // safe user object (avoid throwing if tg absent)
+    const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : { id: null, username: null, first_name: null, photo_url: null };
 
-    function loadAdminData() {
-      fetch('https://твой-сервер.ру/api/admin.php') // ← замени на свой бэкенд
-        .then(r => r.json())
-        .then(data => {
-          document.getElementById('total-users').innerText = data.stats.users || 0;
-          document.getElementById('total-tasks').innerText = data.stats.tasks || 0;
-          document.getElementById('done-tasks').innerText = data.stats.completed || 0;
-          document.getElementById('total-balance').innerText = data.stats.balance + ' ₽';
+    // --- Fallback helpers for showPopup / showAlert used by original code ---
+    function showAlertFallback(text) { try { alert(text); } catch(e){} }
 
-          // Пополнения
-          let topups = '';
-          data.topups.forEach(t => {
-            const status = t.status === 'paid' ? 'Зачислено' : 'Новое';
-            topups += `
-              <div class="item ${t.status !== 'paid' ? 'new' : ''}">
-                <b>${t.amount} ₽</b> от @${t.username || t.user_id}<br>
-                Код: <b>${t.code}</b> | ${new Date(t.time).toLocaleString()}<br>
-                ${t.status === 'paid' ? 'Зачислено' : 
-                  `<button class="btn btn-success btn-small" onclick="confirmTopup(${t.id})">ЗАЧИСЛИТЬ</button>`}
-              </div>`;
-          });
-          document.getElementById('topups-list').innerHTML = topups || '<p style="text-align:center;color:#666;">Нет заявок</p>';
+    // Fallback modal implementation. We create elements with ids used in original code (topupNext, topupSubmit, withdrawNext, withdrawSubmit, etc.)
+    function showPopupFallback({ title = '', message = '', buttons = [] } = {}) {
+      // remove existing
+      const existing = document.querySelector('.rc-modal-overlay');
+      if (existing) existing.remove();
 
-          // Выводы
-          let withdraws = '';
-          data.withdraws.forEach(w => {
-            const status = w.status;
-            withdraws += `
-              <div class="item ${status === 'new' ? 'new' : ''}">
-                <b>${w.amount} ₽</b> → ${w.card} (${w.bank})<br>
-                @${w.username || w.user_id} | ${new Date(w.time).toLocaleString()}<br>
-                ${status === 'new' ? `
-                  <button class="btn btn-success btn-small" onclick="payWithdraw(${w.id})">ВЫПЛАТИТЬ</button>
-                  <button class="btn btn-danger btn-small" onclick="rejectWithdraw(${w.id})">ОТКЛОНИТЬ</button>
-                ` : status === 'paid' ? 'Выплачено' : 'Отклонено'}
-              </div>`;
-          });
-          document.getElementById('withdraws-list').innerHTML = withdraws || '<p style="text-align:center;color:#666;">Нет заявок</p>';
+      const overlay = document.createElement('div');
+      overlay.className = 'rc-modal-overlay';
+      overlay.innerHTML = `
+        <div class="rc-modal" role="dialog" aria-modal="true">
+          <div style="position:relative;">
+            <div style="font-weight:900;font-size:18px;margin-bottom:10px;color:#00ffcc;">${escapeHtml(title)}</div>
+            <div>${message}</div>
+            <div style="text-align:right;margin-top:8px;">
+              ${buttons.map((b, i) => `<button class="rc-btn" data-idx="${i}" style="${b.type==='close' ? 'background:#444;color:#fff;' : 'background:#00aaee;color:#001;'}">${escapeHtml(b.text || 'OK')}</button>`).join('')}
+            </div>
+            <div class="rc-close" id="rcCloseBtn">✕</div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
 
-          // Задания
-          let tasksHtml = '';
-          data.tasks.slice(0, 10).forEach(t => {
-            tasksHtml += `<div class="item"><b>${t.title}</b><br>+${t.reward} ₽ | ${t.type} | @${t.username}</div>`;
-          });
-          document.getElementById('tasks-admin-list').innerHTML = tasksHtml || 'Нет заданий';
-        })
-        .catch(() => {
-          console.log("Ожидание бэкенда...");
+      // close handler
+      function close() { overlay.remove(); }
+
+      overlay.querySelector('#rcCloseBtn').addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+      // wire provided buttons - they don't have to be used by our flows, but we provide them
+      overlay.querySelectorAll('.rc-btn').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          const idx = +btn.dataset.idx;
+          const b = buttons[idx];
+          if (b && typeof b.onClick === 'function') {
+            try { b.onClick(); } catch (e) { console.error(e); }
+          }
+          if (b && b.type === 'close') close();
         });
+      });
+
+      // return control object (close)
+      return { close };
     }
 
-    function confirmTopup(id) {
-      if(confirm("Зачислить пополнение?")) {
-        fetch(`https://твой-сервер.ру/api/admin.php?action=topup&id=${id}`);
-        setTimeout(loadAdminData, 1000);
-      }
+    // unified showPopup wrapper — prefer Telegram API but fallback to our modal
+    function showPopup(opts) {
+      try {
+        if (tg && typeof tg.showPopup === 'function') {
+          return tg.showPopup(opts);
+        }
+      } catch (e) { console.warn('tg.showPopup failed', e); }
+      return showPopupFallback(opts);
     }
 
-    function payWithdraw(id) {
-      if(confirm("ВЫПЛАТИТЬ деньги?")) {
-        fetch(`https://твой-сервер.ру/api/admin.php?action=pay_withdraw&id=${id}`);
-        setTimeout(loadAdminData, 1000);
-      }
+    // unified showAlert wrapper
+    function showAlert(text) {
+      try { if (tg && typeof tg.showAlert === 'function') return tg.showAlert(text); } catch (e) {}
+      return showAlertFallback(text);
     }
 
-    function rejectWithdraw(id) {
-      if(confirm("ОТКЛОНИТЬ вывод?")) {
-        fetch(`https://твой-сервер.ру/api/admin.php?action=reject_withdraw&id=${id}`);
-        setTimeout(loadAdminData, 1000);
+    // provide a global copy function for inline onclick used in popup HTML
+    function copy(text) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showAlert("Скопировано!")).catch(() => showAlert("Скопировано!"));
+      } else {
+        try { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showAlert("Скопировано!"); } catch(e) { showAlert("Скопировано!"); }
       }
     }
+    window.copy = copy;
+
+    function escapeHtml(s) { if (s === undefined || s === null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // STORAGE helpers (local demo)
+    function storageGetJSON(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; } }
+    function storageSetJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+    // balances
+    function getBalanceForId(uid) { const map = storageGetJSON('rc_balances', {}); return parseInt(map[uid] || 0, 10); }
+    function setBalanceForId(uid, amount) { const map = storageGetJSON('rc_balances', {}); map[uid] = Math.max(0, parseInt(amount || 0, 10)); storageSetJSON('rc_balances', map); }
+
+    // push helpers
+    function pushTopupRequest(req) { const arr = storageGetJSON('rc_topups', []); arr.push(req); storageSetJSON('rc_topups', arr); }
+    function pushWithdrawRequest(req) { const arr = storageGetJSON('rc_withdraws', []); arr.push(req); storageSetJSON('rc_withdraws', arr); }
+    function pushTask(task) { const arr = storageGetJSON('rc_tasks', []); arr.push(task); storageSetJSON('rc_tasks', arr); }
+
+    // current user balance (per-user)
+    const currentUid = user.id || ('guest_' + (Math.random() * 100000 | 0));
+    if (!storageGetJSON('rc_balances', {})[currentUid]) {
+      // ensure key exists
+      setBalanceForId(currentUid, storageGetJSON('rc_balances', {})[currentUid] || 0);
+    }
+
+    // Profile UI initialization (safe)
+    document.getElementById('user-name').innerText = user.first_name || 'Пользователь';
+    document.getElementById('user-username').innerText = user.username ? '@' + user.username : '—';
+
+    // Avatar from Telegram if available; fallback to Dicebear
+    (function setAvatar() {
+      const avatarEl = document.getElementById('user-avatar');
+      // tg.initDataUnsafe.user.photo_url is not guaranteed. We try multiple fallbacks.
+      const photoUrl = (user && user.photo_url) ? user.photo_url : null;
+      if (photoUrl) {
+        avatarEl.src = photoUrl;
+      } else if (user.username) {
+        // try tg user avatar via t.me? Not reliable. Use dicebear seeded by username to keep visual consistency.
+        avatarEl.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(user.username);
+      } else if (user.id) {
+        avatarEl.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(String(user.id));
+      } else {
+        avatarEl.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest';
+      }
+    })();
+
+    function renderBalance() {
+      const bal = getBalanceForId(user.id || currentUid);
+      document.getElementById('user-balance').innerText = Number(bal).toLocaleString('ru-RU') + ' ₽';
+    }
+    renderBalance();
+
+    // Render my requests
+    function renderMyRequests() {
+      const container = document.getElementById('my-requests');
+      const myId = user.id || currentUid;
+      const topups = storageGetJSON('rc_topups', []).filter(t => t.user && (t.user.id || '') === myId).reverse();
+      const withdraws = storageGetJSON('rc_withdraws', []).filter(w => w.user && (w.user.id || '') === myId).reverse();
+      container.innerHTML = '';
+      if (topups.length === 0 && withdraws.length === 0) {
+        container.innerHTML = `<div class="muted">Заявок нет</div>`;
+        return;
+      }
+      if (topups.length) {
+        const h = document.createElement('div'); h.className='muted'; h.textContent='Пополнения'; container.appendChild(h);
+        topups.forEach(t => {
+          const d = document.createElement('div'); d.className='req-item';
+          d.innerHTML = `<div><b>${(t.amount||0).toLocaleString('ru-RU')} ₽</b> <span class="muted">· ${new Date(t.created_at).toLocaleString()}</span></div>
+            <div class="muted">Код: ${t.code} · Статус: ${t.status}</div>`;
+          container.appendChild(d);
+        });
+      }
+      if (withdraws.length) {
+        const h2 = document.createElement('div'); h2.className='muted'; h2.textContent='Выводы'; container.appendChild(h2);
+        withdraws.forEach(w => {
+          const d = document.createElement('div'); d.className='req-item';
+          d.innerHTML = `<div><b>${(w.amount||0).toLocaleString('ru-RU')} ₽</b> <span class="muted">· ${new Date(w.created_at).toLocaleString()}</span></div>
+            <div class="muted">Реквизиты: ${w.card || '-'} · Статус: ${w.status}</div>`;
+          container.appendChild(d);
+        });
+      }
+    }
+    renderMyRequests();
+
+    // --- Task creation (same as before) ---
+    function idPrefix(prefix) { return prefix + '_' + Date.now() + '_' + Math.floor(Math.random()*9999); }
+
+    function validateLink() {
+      const link = document.getElementById('task-link').value.trim();
+      const type = document.getElementById('task-type').value;
+      const error = document.getElementById('link-error');
+      error.style.display = 'none';
+      if (!link || !type) return true;
+      if (type === 'yandex' && !link.includes('yandex')) { error.textContent = 'Только Яндекс.Карты'; error.style.display = 'block'; return false; }
+      if (type === 'google' && !link.includes('google.com/maps') && !link.includes('goo.gl/maps')) { error.textContent = 'Только Google Карты'; error.style.display = 'block'; return false; }
+      if (type === 'telegram' && !link.includes('t.me/')) { error.textContent = 'Только t.me/ ссылки'; error.style.display = 'block'; return false; }
+      return true;
+    }
+
+    function updateBudget() {
+      const prices = { yandex: 100, google: 65, telegram: 10 };
+      const minBudget = { yandex: 100, google: 65, telegram: 10 };
+      const type = document.getElementById('task-type').value;
+      if (!type) { document.getElementById('budget-result').innerHTML = 'Выберите тип задания'; return; }
+      let budget = parseInt(document.getElementById('task-budget').value) || 0;
+      if (budget < minBudget[type]) budget = minBudget[type];
+      if (budget > 15000) budget = 15000;
+      const count = Math.floor(budget / prices[type]);
+      const rounded = count * prices[type];
+      document.getElementById('task-budget').value = rounded;
+      document.getElementById('budget-result').innerHTML = `
+        За <b style="color:#00ff88;font-size:32px;">${rounded.toLocaleString('ru-RU')} ₽</b><br>
+        → <b style="color:#ffd700;font-size:52px;">${count}</b> ${type==='telegram'?'подписок':'отзывов'}`;
+    }
+
+    // wire events for task UI
+    let budgetTimeout = null;
+    document.getElementById('task-budget').addEventListener('input', () => { clearTimeout(budgetTimeout); budgetTimeout = setTimeout(updateBudget, 600); });
+    document.getElementById('create-task-btn').onclick = () => document.getElementById('create-form').classList.toggle('active');
+    document.getElementById('task-type').onchange = () => { validateLink(); updateBudget(); };
+    document.getElementById('task-link').oninput = validateLink;
+    document.querySelectorAll('.price-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.getElementById('task-budget').value = btn.dataset.amount;
+        document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateBudget();
+        scrollToCenter(btn, document.getElementById('priceButtons'));
+      };
+    });
+
+    function scrollToCenter(el, container) {
+      container.scrollTo({ left: el.offsetLeft - container.offsetWidth/2 + el.offsetWidth/2, behavior: 'smooth' });
+    }
+
+    document.getElementById('publish-task').onclick = () => {
+      if (!validateLink()) return;
+      const budget = parseInt(document.getElementById('task-budget').value) || 0;
+      if (budget < 100) return showAlert("Минимум 100 ₽");
+      const task = {
+        id: idPrefix('task'),
+        title: (document.getElementById('task-title').value || '').trim(),
+        link: (document.getElementById('task-link').value || '').trim(),
+        type: document.getElementById('task-type').value,
+        budget: budget,
+        owner: { id: user.id || currentUid, username: user.username || '', first_name: user.first_name || '' },
+        created_at: new Date().toISOString(),
+        status: 'active'
+      };
+      pushTask(task);
+      showAlert("Задание опубликовано!");
+      document.getElementById('create-form').classList.remove('active');
+      // reset
+      document.getElementById('task-title').value = '';
+      document.getElementById('task-link').value = '';
+      document.getElementById('task-type').value = '';
+      document.getElementById('task-budget').value = '';
+      document.getElementById('budget-result').innerHTML = 'Выберите тип и бюджет';
+    };
+
+    // --------- TOPUP flow (uses showPopup wrapper which falls back) ----------
+    document.getElementById('topup-btn').addEventListener('click', () => {
+      const popup1 = showPopup({
+        title: "Пополнение баланса",
+        message: `<div style="padding:8px 0;">
+          <input type="number" id="topupAmount" placeholder="от 100 ₽" style="width:100%;padding:12px;background:#000;border:2px solid #00ffff;border-radius:10px;color:white;font-size:15px;">
+          <button id="topupNext" style="margin-top:12px;width:100%;padding:12px;background:#00ff88;color:black;border:none;border-radius:10px;font-weight:900;">ДАЛЕЕ</button>
+        </div>`,
+        buttons: [{type:"close", text:"Закрыть"}]
+      });
+
+      // safe attach after popup created (works for fallback modal and for tg.showPopup because fallback returns DOM elements with same ids)
+      requestAnimationFrame(() => {
+        const next = document.getElementById('topupNext');
+        if (!next) return;
+        next.onclick = () => {
+          const amount = parseInt(document.getElementById('topupAmount').value) || 0;
+          if (amount < 100) return showAlert("Минимум 100 ₽");
+          const code = "RC" + Math.floor(1000 + Math.random() * 9000);
+          showPopup({
+            title: "Перевод",
+            // include copy() inline calls which are defined globally
+            message: `<div style="padding:8px 0;font-size:15px;text-align:center;">
+              Переведи <b style="color:#00ff88;font-size:22px;">${amount.toLocaleString('ru-RU')} ₽</b><br><br>
+              <div style="font-weight:900;margin-bottom:6px;">Номер получателя</div>
+              <div class="copy-block rc-copy-block" id="copyPhone" onclick="copy('+79600738559')">
+                <div class="copy-text">+7 960 073 85 59</div>
+                <div class="copy-hint">Нажми — скопируется</div>
+              </div>
+              <div style="font-weight:900;margin-bottom:6px;">Получатель</div>
+              <div style="margin-bottom:10px;font-weight:700;">РАЯЗ Н.</div>
+              <div style="font-weight:900;margin-bottom:6px;">Код (обязательно в комментарии)</div>
+              <div class="copy-block rc-copy-block" id="copyCode" onclick="copy('${code}')">
+                <div class="copy-text">${code}</div>
+                <div class="copy-hint">Нажми — скопируется</div>
+              </div>
+              <button id="topupSubmit" style="margin-top:12px;width:100%;padding:12px;background:#00cc66;color:black;border:none;border-radius:10px;font-weight:900;">ОТПРАВИТЬ ЗАЯВКУ</button>
+            </div>`,
+            buttons: [{type:"close", text:"Закрыть"}]
+          });
+
+          requestAnimationFrame(() => {
+            const submit = document.getElementById('topupSubmit');
+            if (!submit) return;
+            submit.onclick = () => {
+              const ok = confirm(`Точно отправить заявку на пополнение ${amount.toLocaleString('ru-RU')} ₽?`);
+              if (!ok) return;
+              const req = {
+                id: idPrefix('T'),
+                user: { id: user.id || currentUid, username: user.username || '', first_name: user.first_name || '' },
+                amount,
+                code,
+                phone: '+79600738559',
+                status: 'pending',
+                created_at: new Date().toISOString()
+              };
+              pushTopupRequest(req);
+              showAlert("Заявка на пополнение отправлена! Ждёт проверки админа.");
+              renderMyRequests();
+            };
+          });
+        };
+      });
+    });
+
+    // --------- WITHDRAW flow ----------
+    document.getElementById('withdraw-btn').addEventListener('click', () => {
+      showPopup({
+        title: "Вывод средств",
+        message: `<div style="padding:8px 0;">
+          <p>Доступно: <b style="color:#00ff88;font-size:18px;">${getBalanceForId(user.id || currentUid).toLocaleString('ru-RU')} ₽</b></p>
+          <input type="number" id="withdrawAmount" placeholder="от 100 ₽" style="width:100%;padding:12px;background:#000;border:2px solid #ff3366;border-radius:10px;color:white;font-size:15px;">
+          <button id="withdrawNext" style="margin-top:12px;width:100%;padding:12px;background:#ff3366;color:white;border:none;border-radius:10px;font-weight:900;">ДАЛЕЕ</button>
+        </div>`,
+        buttons: [{type:"close", text:"Закрыть"}]
+      });
+
+      requestAnimationFrame(() => {
+        const next = document.getElementById('withdrawNext');
+        if (!next) return;
+        next.onclick = () => {
+          const sum = parseInt(document.getElementById('withdrawAmount').value) || 0;
+          if (sum < 100) return showAlert("Минимум 100 ₽");
+          if (sum > getBalanceForId(user.id || currentUid)) return showAlert("Недостаточно средств");
+          showPopup({
+            title: "Реквизиты для вывода",
+            message: `<div style="padding:8px 0;">
+              <input type="text" id="withdrawName" placeholder="ФИО получателя" style="width:100%;padding:10px;background:#000;border:1px solid #ff3366;border-radius:8px;color:white;margin-bottom:8px;">
+              <input type="text" id="withdrawCard" placeholder="Номер карты / счёт" style="width:100%;padding:10px;background:#000;border:1px solid #ff3366;border-radius:8px;color:white;margin-bottom:8px;">
+              <input type="text" id="withdrawBank" placeholder="Банк / Примечание" style="width:100%;padding:10px;background:#000;border:1px solid #ff3366;border-radius:8px;color:white;margin-bottom:8px;">
+              <button id="withdrawSubmit" style="margin-top:8px;width:100%;padding:12px;background:#ff3366;color:white;border:none;border-radius:8px;font-weight:900;">ОТПРАВИТЬ ЗАЯВКУ</button>
+            </div>`,
+            buttons: [{type:"close", text:"Закрыть"}]
+          });
+
+          requestAnimationFrame(() => {
+            const submit = document.getElementById('withdrawSubmit');
+            if (!submit) return;
+            submit.onclick = () => {
+              const name = (document.getElementById('withdrawName') || {}).value || '';
+              const card = (document.getElementById('withdrawCard') || {}).value || '';
+              const bank = (document.getElementById('withdrawBank') || {}).value || '';
+              if (!name || !card) return showAlert("Укажите ФИО и реквизиты (карта/счёт).");
+              const confirmText = `Точно вывести ${sum.toLocaleString('ru-RU')} ₽ на ${card}?`;
+              const ok = confirm(confirmText);
+              if (!ok) return;
+              // deduct (freeze) funds locally
+              const current = getBalanceForId(user.id || currentUid);
+              setBalanceForId(user.id || currentUid, current - sum);
+              renderBalance();
+              const req = {
+                id: idPrefix('W'),
+                user: { id: user.id || currentUid, username: user.username || '', first_name: user.first_name || '' },
+                amount: sum,
+                name,
+                card,
+                bank,
+                status: 'pending',
+                created_at: new Date().toISOString()
+              };
+              pushWithdrawRequest(req);
+              showAlert(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`);
+              renderMyRequests();
+            };
+          });
+        };
+      });
+    });
+
+    // --- Page switching & admin link visibility ---
+    document.querySelectorAll('.role-btn, .nav-btn').forEach(btn => {
+      btn.onclick = () => {
+        btn.parentElement.querySelectorAll('.active').forEach(e => e.classList.remove('active'));
+        btn.classList.add('active');
+        if (btn.dataset.role) {
+          document.getElementById('employer-mode').style.display = btn.dataset.role === 'employer' ? 'block' : 'none';
+          document.getElementById('worker-mode').style.display = btn.dataset.role === 'worker' ? 'block' : 'none';
+        }
+        if (btn.dataset.page) {
+          document.getElementById('main-page').style.display = btn.dataset.page === 'main' ? 'block' : 'none';
+          document.getElementById('profile-page').style.display = btn.dataset.page === 'profile' ? 'block' : 'none';
+        }
+      };
+    });
+
+    // support button behavior: try to open telegram link if available otherwise fallback to url open
+    document.getElementById('supportBtn').addEventListener('click', () => {
+      try {
+        if (tg && typeof tg.openTelegramLink === 'function') {
+          tg.openTelegramLink('https://t.me/RapiHappy');
+        } else {
+          window.open('https://t.me/RapiHappy', '_blank');
+        }
+      } catch (e) { window.open('https://t.me/RapiHappy', '_blank'); }
+    });
+
+    // admin link visibility: show only if username is in ADMIN_USERNAMES or query admin=1
+    const openAdmin = document.getElementById('open-admin');
+    const ADMIN_USERNAMES = ['Sa1Raz']; // update list as needed
+    if (!ADMIN_USERNAMES.includes((user.username || '').toString()) && !location.search.includes('admin=1')) {
+      openAdmin.style.display = 'none';
+    }
+
+    // ensure my requests / balance reflect up-to-date info after actions
+    const observerUpdater = new MutationObserver(() => { renderMyRequests(); renderBalance(); });
+    observerUpdater.observe(document.getElementById('my-requests'), { childList: true, subtree: true });
+
   </script>
 </body>
 </html>
