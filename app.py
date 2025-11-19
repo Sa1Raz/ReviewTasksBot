@@ -13,7 +13,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehM
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://web-production-398fb.up.railway.app")
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 
-# If ADMIN_USER_IDS env var is provided it will be used, otherwise default to your id (you provided 6482440657).
+# MAIN admins (you). Prefer numeric IDs. By default use the id you provided.
 ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "6482440657").split(",") if s.strip()]
 ADMIN_USERNAMES = [s.strip() for s in os.environ.get("ADMIN_USERNAMES", "Sa1Raz").split(",") if s.strip()]
 
@@ -23,6 +23,10 @@ ADMIN_TOKEN_TTL_SECONDS = int(os.environ.get("ADMIN_TOKEN_TTL_SECONDS", 300))  #
 DATA_DIR = os.environ.get("DATA_DIR", ".rc_data")
 TOPUPS_FILE = os.path.join(DATA_DIR, "topups.json")
 WITHDRAWS_FILE = os.path.join(DATA_DIR, "withdraws.json")
+TASKS_FILE = os.path.join(DATA_DIR, "tasks.json")
+WORKS_FILE = os.path.join(DATA_DIR, "works.json")
+USERS_FILE = os.path.join(DATA_DIR, "users.json")
+ADMINS_FILE = os.path.join(DATA_DIR, "admins.json")  # ordinary admins (receive notifications)
 
 # ensure data dir exists
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -37,18 +41,22 @@ def load_json_safe(path, default):
     except Exception:
         return default
 
+def save_json(path, obj):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+
 def append_json(path, obj):
     arr = load_json_safe(path, [])
     arr.append(obj)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(arr, f, ensure_ascii=False, indent=2)
+    save_json(path, arr)
 
 # ========== BOT & FLASK ==========
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__, static_folder='public')
 
-# in-memory users (keeps existing behavior)
-users = {}  # user_id: {balance, tasks_done, total_earned, subscribed}
+# load persisted users and admins
+users = load_json_safe(USERS_FILE, {})  # keyed by numeric id as string
+ordinary_admins = load_json_safe(ADMINS_FILE, [])  # array of strings: numeric ids or usernames
 
 # ========== SUBSCRIPTION CHECK ==========
 def check_subscription(user_id):
@@ -85,53 +93,45 @@ def main_keyboard():
     markup.add(btn)
     return markup
 
-# ========== START HANDLER WITH SUBSCRIPTION CHECK ==========
-@bot.message_handler(commands=['start'])
-def start(message):
-    user_id = message.from_user.id
-    if user_id not in users:
-        users[user_id] = {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False}
+# ========== USERS PERSISTENCE HELPERS ==========
+def save_users():
+    save_json(USERS_FILE, users)
 
-    # Автопроверка подписки
-    if not check_subscription(user_id):
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton("Подписаться на @ReviewCashNews", url=f"https://t.me/{CHANNEL_ID.lstrip('@')}"))
-        markup.add(telebot.types.InlineKeyboardButton("Проверить подписку", callback_data="check_sub"))
-        bot.send_message(
-            message.chat.id,
-            "ReviewCash — зарабатывай на отзывах!\n\n"
-            "Обязательно подпишись на канал:\n"
-            f"{CHANNEL_ID}\n\n"
-            "Нажми кнопку и проверь!",
-            parse_mode="Markdown",
-            reply_markup=markup
-        )
-    else:
-        users[user_id]["subscribed"] = True
-        bot.send_message(
-            message.chat.id,
-            "ReviewCash\n\n"
-            "Зарабатывай от 100 до 10 000 ₽ за отзыв!\n"
-            "Мгновенные выплаты • 100% честно\n\n"
-            "Нажми кнопку ниже и начинай!",
-            parse_mode="Markdown",
-            reply_markup=main_keyboard()
-        )
+def get_user_record(uid):
+    key = str(uid)
+    if key not in users:
+        users[key] = {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}}
+        save_users()
+    return users[key]
 
-# ========== CALLBACK CHECK SUB ==========
-@bot.callback_query_handler(func=lambda call: call.data == "check_sub")
-def check_sub(call):
-    user_id = call.from_user.id
-    if check_subscription(user_id):
-        users[user_id]["subscribed"] = True
-        bot.edit_message_text(
-            "✅ Подписка подтверждена!\n\nТеперь ты можешь зарабатывать!",
-            call.message.chat.id,
-            call.message.message_id
-        )
-        bot.send_message(call.message.chat.id, "Го зарабатывать! 👇", reply_markup=main_keyboard())
-    else:
-        bot.answer_callback_query(call.id, "Ты ещё не подписался! Нажми 'Подписаться'")
+# ========== ADMINS MANAGEMENT HELPERS ==========
+def save_ordinary_admins():
+    save_json(ADMINS_FILE, ordinary_admins)
+
+def is_main_admin(uid_or_username):
+    s = str(uid_or_username)
+    if s in ADMIN_USER_IDS: return True
+    if s in ADMIN_USERNAMES: return True
+    return False
+
+def is_ordinary_admin(uid_or_username):
+    s = str(uid_or_username)
+    return s in ordinary_admins
+
+def add_ordinary_admin(identifier):
+    s = str(identifier)
+    if s in ordinary_admins: return False
+    ordinary_admins.append(s)
+    save_ordinary_admins()
+    return True
+
+def remove_ordinary_admin(identifier):
+    s = str(identifier)
+    if s in ordinary_admins:
+        ordinary_admins.remove(s)
+        save_ordinary_admins()
+        return True
+    return False
 
 # ========== ADMIN TOKEN GENERATION & VERIFICATION ==========
 def generate_admin_token(uid, username):
@@ -155,39 +155,44 @@ def verify_admin_token(token):
             return True, payload
         if username and username in ADMIN_USERNAMES:
             return True, payload
+        # allow ordinary admins if their id/username matches payload? for mainadmin we restrict to main admins only
         return False, None
     except jwt.ExpiredSignatureError:
         return False, "expired"
     except Exception as e:
         return False, None
 
-# ========== ADMIN NOTIFICATION HELPERS ==========
+# ========== NOTIFY ORDINARY ADMINS (only ordinary admins are notified) ==========
+def notify_ordinary_admins_text(text, button_text="Открыть панель"):
+    # send a short-lived mainadmin-token for convenience to each ordinary admin
+    for admin in ordinary_admins:
+        try:
+            # if looks like numeric id
+            if admin.isdigit():
+                token = generate_admin_token(admin, "")
+                url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
+                kb = telebot.types.InlineKeyboardMarkup()
+                kb.add(telebot.types.InlineKeyboardButton(button_text, url=url))
+                bot.send_message(int(admin), text, reply_markup=kb)
+            else:
+                token = generate_admin_token("", admin)
+                url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
+                kb = telebot.types.InlineKeyboardMarkup()
+                kb.add(telebot.types.InlineKeyboardButton(button_text, url=url))
+                try:
+                    bot.send_message(f"@{admin}", text, reply_markup=kb)
+                except Exception as e:
+                    print("notify -> send to @username failed:", admin, e)
+        except Exception as e:
+            print("notify -> error for admin", admin, e)
+
 def notify_admins_topup(topup):
     text = (f"Новая заявка на пополнение\n"
             f"Пользователь: {topup['user'].get('username','-')} ({topup['user'].get('id','-')})\n"
             f"Сумма: {topup.get('amount',0)} ₽\n"
             f"Код: {topup.get('code','-')}\n"
             f"Создано: {topup.get('created_at','-')}")
-    for admin_id in ADMIN_USER_IDS:
-        try:
-            token = generate_admin_token(admin_id, "")  # token tied to admin id
-            url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
-            kb = telebot.types.InlineKeyboardMarkup()
-            kb.add(telebot.types.InlineKeyboardButton("Открыть панель — проверить пополнение", url=url))
-            bot.send_message(admin_id, text, reply_markup=kb)
-        except Exception as e:
-            print("notify_admins_topup -> send to id error:", admin_id, e)
-    for admin_username in ADMIN_USERNAMES:
-        if admin_username and admin_username in ADMIN_USER_IDS:
-            continue
-        try:
-            token = generate_admin_token("", admin_username)
-            url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
-            kb = telebot.types.InlineKeyboardMarkup()
-            kb.add(telebot.types.InlineKeyboardButton("Открыть панель — проверить пополнение", url=url))
-            bot.send_message(f"@{admin_username}", text, reply_markup=kb)
-        except Exception as e:
-            print("notify_admins_topup -> send to username error:", admin_username, e)
+    notify_ordinary_admins_text(text, button_text="Проверить пополнение")
 
 def notify_admins_withdraw(withdraw):
     text = (f"Новая заявка на вывод\n"
@@ -196,26 +201,64 @@ def notify_admins_withdraw(withdraw):
             f"Реквизиты: {withdraw.get('card','-')} / {withdraw.get('bank','-')}\n"
             f"ФИО: {withdraw.get('name','-')}\n"
             f"Создано: {withdraw.get('created_at','-')}")
-    for admin_id in ADMIN_USER_IDS:
-        try:
-            token = generate_admin_token(admin_id, "")
-            url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
-            kb = telebot.types.InlineKeyboardMarkup()
-            kb.add(telebot.types.InlineKeyboardButton("Открыть панель — обработать вывод", url=url))
-            bot.send_message(admin_id, text, reply_markup=kb)
-        except Exception as e:
-            print("notify_admins_withdraw -> send to id error:", admin_id, e)
-    for admin_username in ADMIN_USERNAMES:
-        if admin_username and admin_username in ADMIN_USER_IDS:
-            continue
-        try:
-            token = generate_admin_token("", admin_username)
-            url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
-            kb = telebot.types.InlineKeyboardMarkup()
-            kb.add(telebot.types.InlineKeyboardButton("Открыть панель — обработать вывод", url=url))
-            bot.send_message(f"@{admin_username}", text, reply_markup=kb)
-        except Exception as e:
-            print("notify_admins_withdraw -> send to username error:", admin_username, e)
+    notify_ordinary_admins_text(text, button_text="Проверить вывод")
+
+def notify_admins_work(work):
+    text = (f"Новая заявка на выполнение задания\n"
+            f"Пользователь: {work['user'].get('username','-')} ({work['user'].get('id','-')})\n"
+            f"Задание: {work.get('task_title','-')}\n"
+            f"Тип: {work.get('platform','-')} · Сумма: {work.get('amount',0)} ₽\n"
+            f"Создано: {work.get('created_at','-')}")
+    notify_ordinary_admins_text(text, button_text="Проверить выполнение")
+
+# ========== BOT COMMANDS: admin management ==========
+@bot.message_handler(commands=['addadmin'])
+def cmd_addadmin(message):
+    sender = message.from_user
+    uid = str(sender.id)
+    username = (sender.username or "").strip()
+    if not is_main_admin(uid) and not is_main_admin(username):
+        bot.send_message(message.chat.id, "Только главный админ может добавлять обычных админов.")
+        return
+    args = message.text.split()
+    if len(args) < 2:
+        bot.send_message(message.chat.id, "Использование: /addadmin <telegram_id_or_username_without_@>")
+        return
+    ident = args[1].strip().lstrip('@')
+    if add_ordinary_admin(ident):
+        bot.send_message(message.chat.id, f"Обычный админ {ident} добавлен.")
+    else:
+        bot.send_message(message.chat.id, f"{ident} уже в списке админов.")
+
+@bot.message_handler(commands=['removeadmin'])
+def cmd_removeadmin(message):
+    sender = message.from_user
+    uid = str(sender.id)
+    username = (sender.username or "").strip()
+    if not is_main_admin(uid) and not is_main_admin(username):
+        bot.send_message(message.chat.id, "Только главный админ может удалять обычных админов.")
+        return
+    args = message.text.split()
+    if len(args) < 2:
+        bot.send_message(message.chat.id, "Использование: /removeadmin <telegram_id_or_username_without_@>")
+        return
+    ident = args[1].strip().lstrip('@')
+    if remove_ordinary_admin(ident):
+        bot.send_message(message.chat.id, f"Обычный админ {ident} удалён.")
+    else:
+        bot.send_message(message.chat.id, f"{ident} не найден в списке админов.")
+
+@bot.message_handler(commands=['listadmins'])
+def cmd_listadmins(message):
+    sender = message.from_user
+    uid = str(sender.id)
+    if not is_main_admin(uid) and not is_main_admin((sender.username or "").strip()):
+        bot.send_message(message.chat.id, "Только главный админ может просматривать список админов.")
+        return
+    if not ordinary_admins:
+        bot.send_message(message.chat.id, "Список обычных админов пуст.")
+    else:
+        bot.send_message(message.chat.id, "Обычные админы:\n" + "\n".join(ordinary_admins))
 
 # ========== /mainadmin BOT COMMAND ==========
 @bot.message_handler(commands=['mainadmin'])
@@ -225,7 +268,7 @@ def mainadmin_command(message):
     username = (sender.username or "").strip()
     is_admin = (uid in ADMIN_USER_IDS) or (username in ADMIN_USERNAMES)
     if not is_admin:
-        bot.send_message(message.chat.id, "Доступ запрещён: эта команда только для администратора.")
+        bot.send_message(message.chat.id, "Доступ запрещён: эта команда только для главного админа.")
         return
     token = generate_admin_token(uid, username)
     url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
@@ -233,7 +276,7 @@ def mainadmin_command(message):
     kb.add(telebot.types.InlineKeyboardButton("Открыть админ-панель", url=url))
     bot.send_message(message.chat.id, "Откройте админ-панель (токен действует короткое время):", reply_markup=kb)
 
-# ========== WEBAPP DATA HANDLER ==========
+# ========== WEBAPP DATA HANDLER (requests from WebApp) ==========
 @bot.message_handler(content_types=['web_app_data'])
 def webapp_handler(message):
     try:
@@ -243,28 +286,96 @@ def webapp_handler(message):
         return
 
     user_id = message.from_user.id
+    uid_str = str(user_id)
     action = data.get("action")
 
-    if user_id not in users:
-        users[user_id] = {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": True}
+    # ensure user record exists
+    get_user_record(user_id)
 
-    # minimal amounts: topup >=100, withdraw >=250
-    if action == "get_tasks":
-        response = {
-            "tasks": [],
-            "user": {
-                "balance": users[user_id]["balance"],
-                "tasks_done": users[user_id]["tasks_done"],
-                "total_earned": users[user_id]["total_earned"]
-            },
-            "completed": []
+    # publish_task (создание задания работодателем)
+    if action == "publish_task":
+        # expected fields: title, link, type, budget
+        title = data.get("title", "")[:200]
+        link = data.get("link", "")[:1000]
+        ttype = data.get("type", "")
+        budget = int(data.get("budget", 0) or 0)
+        task = {
+            "id": f"task_{int(time.time()*1000)}",
+            "title": title,
+            "link": link,
+            "type": ttype,
+            "budget": budget,
+            "owner": {"id": uid_str, "username": (message.from_user.username or ""), "first_name": (message.from_user.first_name or "")},
+            "created_at": datetime.utcnow().isoformat() + "Z",
+            "status": "active"
         }
-        try:
-            bot.send_data(message.chat.id, json.dumps(response))
-        except Exception:
-            bot.send_message(message.chat.id, "Данные пользователя отправлены (fallback).")
+        append_json(TASKS_FILE, task)
+        bot.send_message(user_id, "Задание опубликовано!")
+        return
 
-    elif action == "request_topup":
+    # submit_work — исполнитель отправляет текст/ссылку о выполнении задания
+    if action == "submit_work":
+        task_id = data.get("task_id")
+        platform = data.get("platform")  # 'yandex' | 'google' | 'telegram'
+        review_text = data.get("text", "")
+        review_link = data.get("link", "")
+        task = None
+        tasks = load_json_safe(TASKS_FILE, [])
+        for t in tasks:
+            if t.get("id") == task_id and t.get("status") == "active":
+                task = t
+                break
+        if not task:
+            bot.send_message(user_id, "Задача не найдена или уже не активна.")
+            return
+
+        # rate limits
+        last = users[uid_str].get("last_submissions", {})
+        now_ts = int(time.time())
+        if platform == "yandex":
+            # 3 days = 3*24*3600
+            prev = int(last.get("yandex", 0) or 0)
+            if now_ts - prev < 3*24*3600:
+                bot.send_message(user_id, "Можно оставлять отзывы на Яндекс не чаще, чем раз в 3 дня.")
+                return
+        elif platform == "google":
+            prev = int(last.get("google", 0) or 0)
+            if now_ts - prev < 24*3600:
+                bot.send_message(user_id, "Можно оставлять Google отзывы не чаще, чем раз в 1 день.")
+                return
+        # telegram has no limit
+
+        # create work record
+        work = {
+            "id": f"WKR_{int(time.time()*1000)}",
+            "task_id": task_id,
+            "task_title": task.get("title"),
+            "platform": platform,
+            "user": {"id": uid_str, "username": (message.from_user.username or ""), "first_name": (message.from_user.first_name or "")},
+            "text": review_text,
+            "link": review_link,
+            "amount": task.get("budget", 0),
+            "status": "pending",
+            "created_at": datetime.utcnow().isoformat() + "Z"
+        }
+        append_json(WORKS_FILE, work)
+
+        # update last submission timestamp (freeze allowance)
+        if "last_submissions" not in users[uid_str]:
+            users[uid_str]["last_submissions"] = {}
+        users[uid_str]["last_submissions"][platform] = now_ts
+        save_users()
+
+        bot.send_message(user_id, "Заявка на проверку отправлена. Обычные админы проверят и примут/отклонят её.")
+        # notify only ordinary admins
+        try:
+            notify_admins_work(work)
+        except Exception as e:
+            print("notify_admins_work error:", e)
+        return
+
+    # topup/withdraw handled previously; keep those flows
+    if action == "request_topup":
         amount = int(data.get("amount", 0) or 0)
         code = data.get("code", "000000")
         if amount < 100:
@@ -272,7 +383,7 @@ def webapp_handler(message):
             return
         topup = {
             "id": f"T_{int(time.time()*1000)}",
-            "user": {"id": str(user_id), "username": sender_username_safe(message.from_user)},
+            "user": {"id": uid_str, "username": (message.from_user.username or "")},
             "amount": amount,
             "code": code,
             "phone": "+79600738559",
@@ -285,8 +396,9 @@ def webapp_handler(message):
             notify_admins_topup(topup)
         except Exception as e:
             print("notify_admins_topup error:", e)
+        return
 
-    elif action == "request_withdraw":
+    if action == "request_withdraw":
         amount = int(data.get("amount", 0) or 0)
         bank = (data.get("bank", "") or "").lower()
         if amount < 250:
@@ -298,7 +410,7 @@ def webapp_handler(message):
             return
         withdraw = {
             "id": f"W_{int(time.time()*1000)}",
-            "user": {"id": str(user_id), "username": sender_username_safe(message.from_user)},
+            "user": {"id": uid_str, "username": (message.from_user.username or "")},
             "amount": amount,
             "bank": bank,
             "name": data.get("name", ""),
@@ -308,7 +420,8 @@ def webapp_handler(message):
         }
         append_json(WITHDRAWS_FILE, withdraw)
         try:
-            users[user_id]["balance"] = max(0, users[user_id].get("balance", 0) - amount)
+            users[uid_str]["balance"] = max(0, users[uid_str].get("balance", 0) - amount)
+            save_users()
         except Exception:
             pass
         bot.send_message(user_id, f"Заявка на вывод {amount} ₽ принята! Ожидает обработки админом.")
@@ -316,12 +429,26 @@ def webapp_handler(message):
             notify_admins_withdraw(withdraw)
         except Exception as e:
             print("notify_admins_withdraw error:", e)
+        return
 
-    else:
-        bot.send_message(user_id, "Неизвестное действие из WebApp")
+    bot.send_message(user_id, "Неизвестное действие из WebApp")
 
 def sender_username_safe(from_user):
     return getattr(from_user, "username", "") or getattr(from_user, "first_name", "") or ""
+
+# ========== PUBLIC APIs ==========
+@app.route('/api/tasks_public', methods=['GET'])
+def api_tasks_public():
+    tasks = load_json_safe(TASKS_FILE, [])
+    # return only active tasks
+    active = [t for t in tasks if t.get("status") == "active"]
+    return jsonify(active)
+
+@app.route('/api/works_pending', methods=['GET'])
+def api_works_pending():
+    # optionally used by admin panel; restricted to admins in real world — here we return all for mainadmin flow
+    arr = load_json_safe(WORKS_FILE, [])
+    return jsonify(arr)
 
 # ========== ADMIN-PROTECTED ROUTES ==========
 def get_token_from_request(req):
@@ -329,7 +456,7 @@ def get_token_from_request(req):
     if t:
         return t
     auth = req.headers.get("Authorization", "") or req.headers.get("authorization", "")
-    if auth.lower().startswith("bearer "):
+    if auth and auth.lower().startswith("bearer "):
         return auth.split(" ", 1)[1].strip()
     return None
 
@@ -352,10 +479,9 @@ def serve_mainadmin():
     token = request.args.get("token")
     ok, _ = verify_admin_token(token) if token else (False, None)
     if not ok:
-        return "<h3>Доступ запрещён. Откройте панель только через телеграм-команду администратора.</h3>", 403
+        return "<h3>Доступ запрещён. Откройте панель только через телеграм-команду главного администратора.</h3>", 403
     return send_from_directory('public', 'mainadmin.html')
 
-# API endpoints for admin panel (protected)
 @app.route('/api/topups', methods=['GET'])
 @require_admin_token
 def api_topups():
@@ -371,7 +497,13 @@ def api_withdraws():
 @app.route('/api/tasks', methods=['GET'])
 @require_admin_token
 def api_tasks():
-    data = load_json_safe(os.path.join(DATA_DIR, "tasks.json"), [])
+    data = load_json_safe(TASKS_FILE, [])
+    return jsonify(data)
+
+@app.route('/api/works', methods=['GET'])
+@require_admin_token
+def api_works():
+    data = load_json_safe(WORKS_FILE, [])
     return jsonify(data)
 
 @app.route('/api/topups/<req_id>/approve', methods=['POST'])
@@ -386,11 +518,12 @@ def api_topup_approve(req_id):
             it["handled_by"] = "admin"
             it["handled_at"] = datetime.utcnow().isoformat() + "Z"
             uid = int(it["user"]["id"])
-            if uid not in users:
-                users[uid] = {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False}
-            users[uid]["balance"] = users[uid].get("balance", 0) + it.get("amount", 0)
-            with open(TOPUPS_FILE, "w", encoding="utf-8") as f:
-                json.dump(arr, f, ensure_ascii=False, indent=2)
+            uidk = str(uid)
+            if uidk not in users:
+                users[uidk] = {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}}
+            users[uidk]["balance"] = users[uidk].get("balance", 0) + it.get("amount", 0)
+            save_users()
+            save_json(TOPUPS_FILE, arr)
             return jsonify({"ok": True})
     return jsonify({"ok": False, "reason": "not_found"}), 404
 
@@ -410,11 +543,62 @@ def api_withdraw_reject(req_id):
             it["reject_reason"] = reason
             try:
                 uid = int(it["user"]["id"])
-                users[uid]["balance"] = users[uid].get("balance", 0) + it.get("amount", 0)
+                users[str(uid)]["balance"] = users[str(uid)].get("balance", 0) + it.get("amount", 0)
+                save_users()
             except Exception:
                 pass
-            with open(WITHDRAWS_FILE, "w", encoding="utf-8") as f:
-                json.dump(arr, f, ensure_ascii=False, indent=2)
+            save_json(WITHDRAWS_FILE, arr)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "not_found"}), 404
+
+# approve work (admin approves a performed job)
+@app.route('/api/works/<work_id>/approve', methods=['POST'])
+@require_admin_token
+def api_work_approve(work_id):
+    arr = load_json_safe(WORKS_FILE, [])
+    for it in arr:
+        if it.get("id") == work_id:
+            if it.get("status") == "paid":
+                return jsonify({"ok": False, "reason": "already_paid"}), 400
+            # mark paid
+            it["status"] = "paid"
+            it["handled_by"] = "admin"
+            it["handled_at"] = datetime.utcnow().isoformat() + "Z"
+            # credit user
+            uid = int(it["user"]["id"])
+            users.setdefault(str(uid), {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}})
+            users[str(uid)]["balance"] = users[str(uid)].get("balance", 0) + it.get("amount", 0)
+            users[str(uid)]["tasks_done"] = users[str(uid)].get("tasks_done", 0) + 1
+            users[str(uid)]["total_earned"] = users[str(uid)].get("total_earned", 0) + it.get("amount", 0)
+            save_users()
+            save_json(WORKS_FILE, arr)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "not_found"}), 404
+
+@app.route('/api/works/<work_id>/reject', methods=['POST'])
+@require_admin_token
+def api_work_reject(work_id):
+    payload = request.get_json() or {}
+    reason = payload.get("reason", "Отклонено администратором")
+    arr = load_json_safe(WORKS_FILE, [])
+    for it in arr:
+        if it.get("id") == work_id:
+            if it.get("status") in ("rejected", "paid"):
+                return jsonify({"ok": False, "reason": "already_handled"}), 400
+            it["status"] = "rejected"
+            it["handled_by"] = "admin"
+            it["handled_at"] = datetime.utcnow().isoformat() + "Z"
+            it["reject_reason"] = reason
+            # optionally: revert last_submissions allowance so user can retry sooner
+            try:
+                uid = int(it["user"]["id"])
+                # don't refund money because it wasn't paid; allow next attempt by clearing last_submissions for that platform
+                if "last_submissions" in users[str(uid)] and it.get("platform"):
+                    users[str(uid)]["last_submissions"].pop(it.get("platform"), None)
+                    save_users()
+            except Exception:
+                pass
+            save_json(WORKS_FILE, arr)
             return jsonify({"ok": True})
     return jsonify({"ok": False, "reason": "not_found"}), 404
 
