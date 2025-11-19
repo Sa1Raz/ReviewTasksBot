@@ -126,23 +126,51 @@
 
 <script>
   const tg = window.Telegram.WebApp;
-  tg.ready(); tg.expand();
-  const user = tg.initDataUnsafe.user || {};
+  tg.ready?.(); tg.expand?.();
+  const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
   const prices = { yandex: 100, google: 65, telegram: 10 };
   const minBudget = { yandex: 100, google: 65, telegram: 10 };
-  let userBalance = 0;
-  let budgetTimeout = null;
+
+  // --- Persisted balance & requests in localStorage (simple demo storage) ---
+  function getStoredBalance() {
+    return parseInt(localStorage.getItem('rc_balance') || '0', 10);
+  }
+  function setStoredBalance(v) {
+    localStorage.setItem('rc_balance', String(v));
+  }
+  function pushTopupRequest(req) {
+    const arr = JSON.parse(localStorage.getItem('rc_topups') || '[]');
+    arr.push(req);
+    localStorage.setItem('rc_topups', JSON.stringify(arr));
+  }
+  function pushWithdrawRequest(req) {
+    const arr = JSON.parse(localStorage.getItem('rc_withdraws') || '[]');
+    arr.push(req);
+    localStorage.setItem('rc_withdraws', JSON.stringify(arr));
+  }
+
+  let userBalance = getStoredBalance();
 
   // Профиль
   document.getElementById('user-name').innerText = user.first_name || 'Пользователь';
   document.getElementById('user-username').innerText = user.username ? '@' + user.username : '—';
   document.getElementById('user-avatar').src = user.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user.id || 'user');
-  document.getElementById('user-balance').innerText = userBalance.toLocaleString() + ' ₽';
-
-  function copy(text) { 
-    navigator.clipboard.writeText(text); 
-    tg.showAlert("Скопировано!"); 
+  function renderBalance() {
+    document.getElementById('user-balance').innerText = userBalance.toLocaleString('ru-RU') + ' ₽';
   }
+  renderBalance();
+
+  // expose copy globally so inline onclick in popup works
+  function copy(text) { 
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(()=> {
+        try { tg.showAlert?.("Скопировано!"); } catch(e){ alert("Скопировано!"); }
+      }).catch(()=> { try { tg.showAlert?.("Скопировано!"); } catch(e){ alert("Скопировано!"); } });
+    } else {
+      try { tg.showAlert?.("Скопировано!"); } catch(e){ alert("Скопировано!"); }
+    }
+  }
+  window.copy = copy;
 
   function validateLink() {
     const link = document.getElementById('task-link').value.trim();
@@ -169,7 +197,7 @@
     const rounded = count * prices[type];
     document.getElementById('task-budget').value = rounded;
     document.getElementById('budget-result').innerHTML = `
-      За <b style="color:#00ff88;font-size:32px;">${rounded.toLocaleString()} ₽</b><br>
+      За <b style="color:#00ff88;font-size:32px;">${rounded.toLocaleString('ru-RU')} ₽</b><br>
       → <b style="color:#ffd700;font-size:52px;">${count}</b> ${type==='telegram'?'подписок':'отзывов'}`;
   }
 
@@ -178,6 +206,7 @@
   }
 
   // Задержка 0.6 секунды
+  let budgetTimeout = null;
   document.getElementById('task-budget').addEventListener('input', () => {
     clearTimeout(budgetTimeout);
     budgetTimeout = setTimeout(updateBudget, 600);
@@ -208,61 +237,124 @@
   document.getElementById('publish-task').onclick = () => {
     if (!validateLink()) return;
     const budget = parseInt(document.getElementById('task-budget').value);
-    if (budget < 100) return tg.showAlert("Минимум 100 ₽");
-    tg.showAlert("Задание опубликовано!");
+    if (budget < 100) return tg.showAlert?.("Минимум 100 ₽");
+    tg.showAlert?.("Задание опубликовано!");
     document.getElementById('create-form').classList.remove('active');
   };
 
-  // ПОПОЛНЕНИЕ — 100% РАБОТАЕТ
+  // ----------------------- ПОПОЛНЕНИЕ -----------------------
   document.getElementById('topup-btn').addEventListener('click', () => {
     tg.showPopup({
       title: "Пополнение баланса",
-      message: `<div style="padding:30px;text-align:center;">
-        <input type="number" id="topupAmount" placeholder="от 100 ₽" style="width:100%;padding:20px;background:#000;border:3px solid #00ffff;border-radius:20px;color:white;font-size:18px;">
-        <button id="topupNext" style="margin-top:20px;width:100%;padding:20px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;font-size:19px;">ДАЛЕЕ</button>
+      message: `<div style="padding:20px;text-align:center;">
+        <input type="number" id="topupAmount" placeholder="от 100 ₽" style="width:100%;padding:16px;background:#000;border:3px solid #00ffff;border-radius:14px;color:white;font-size:16px;">
+        <button id="topupNext" style="margin-top:14px;width:100%;padding:14px;background:#00ff88;color:black;border:none;border-radius:12px;font-weight:900;font-size:15px;">ДАЛЕЕ</button>
       </div>`,
       buttons: [{type: "close"}]
     });
 
+    // attach click after popup rendered
     requestAnimationFrame(() => {
-      document.getElementById('topupNext').onclick = () => {
+      const next = document.getElementById('topupNext');
+      if (!next) return;
+      next.onclick = () => {
         const amount = parseInt(document.getElementById('topupAmount').value) || 0;
-        if (amount < 100) return tg.showAlert("Минимум 100 ₽");
+        if (amount < 100) return tg.showAlert?.("Минимум 100 ₽");
         const code = "RC" + Math.floor(1000 + Math.random() * 9000);
+        // show transfer details with COPY buttons and final "Отправить заявку"
         tg.showPopup({
           title: "Перевод",
-          message: `<div style="padding:30px;text-align:center;line-height:2;font-size:18px;">
-            Переведи <b style="color:#00ff88;font-size:36px;">${amount} ₽</b><br>
-            <div class="copy-block" onclick="copy('+79600738559')"><div class="copy-text">+7 960 073 85 59</div><div class="copy-hint">Нажми — скопируется</div></div>
-            <b>РАЯЗ Н.</b><br>
-            <span class="important">КОД: ${code}</span>
-            <div class="copy-block" onclick="copy('${code}')"><div class="copy-text">${code}</div></div>
-            <button onclick="tg.showAlert('Заявка принята! Деньги скоро придут')" style="margin-top:30px;width:100%;padding:22px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;">Я ПЕРЕВЁЛ</button>
+          message: `<div style="padding:18px;text-align:center;line-height:1.6;font-size:16px;">
+            Переведи <b style="color:#00ff88;font-size:28px;">${amount.toLocaleString('ru-RU')} ₽</b><br><br>
+            <div style="font-weight:900;margin-bottom:6px;">Номер получателя</div>
+            <div class="copy-block" id="copyPhone" onclick="copy('+79600738559')">
+              <div class="copy-text">+7 960 073 85 59</div>
+              <div class="copy-hint">Нажми — скопируется</div>
+            </div>
+            <div style="font-weight:900;margin-bottom:6px;">Получатель</div>
+            <div style="margin-bottom:10px;font-weight:700;">РАЯЗ Н.</div>
+            <div style="font-weight:900;margin-bottom:6px;">Код (обязательно в комментарии)</div>
+            <div class="copy-block" id="copyCode" onclick="copy('${code}')">
+              <div class="copy-text">${code}</div>
+              <div class="copy-hint">Нажми — скопируется</div>
+            </div>
+            <button id="topupSubmit" style="margin-top:16px;width:100%;padding:14px;background:#00cc66;color:black;border:none;border-radius:12px;font-weight:900;">ОТПРАВИТЬ ЗАЯВКУ</button>
           </div>`,
           buttons: [{type: "close"}]
+        });
+
+        // attach handler to final submit
+        requestAnimationFrame(() => {
+          const submit = document.getElementById('topupSubmit');
+          if (!submit) return;
+          submit.onclick = () => {
+            // Confirm action
+            const ok = confirm(`Точно отправить заявку на пополнение ${amount.toLocaleString('ru-RU')} ₽?`);
+            if (!ok) return;
+            // Create topup request (do NOT auto-credit because user transfers outside the app)
+            const req = { id: 'T' + Date.now(), amount, code, phone: '+79600738559', status: 'pending', created_at: new Date().toISOString() };
+            pushTopupRequest(req);
+            try { tg.showAlert?.("Заявка на пополнение отправлена! Деньги появятся после проверки."); } catch(e){ alert("Заявка на пополнение отправлена!"); }
+            // close popup if API supports
+            try { tg.closePopup?.(); } catch(e) {}
+          };
         });
       };
     });
   });
 
-  // ВЫВОД — 100% РАБОТАЕТ
+  // ----------------------- ВЫВОД -----------------------
   document.getElementById('withdraw-btn').addEventListener('click', () => {
     tg.showPopup({
       title: "Вывод средств",
-      message: `<div style="padding:30px;text-align:center;">
-        <p>Доступно: <b style="color:#00ff88;font-size:28px;">${userBalance} ₽</b></p>
-        <input type="number" id="withdrawAmount" placeholder="от 100 ₽" style="width:100%;padding:20px;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;font-size:18px;">
-        <button id="withdrawNext" style="margin-top:20px;width:100%;padding:20px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;">ДАЛЕЕ</button>
+      message: `<div style="padding:20px;text-align:center;">
+        <p>Доступно: <b style="color:#00ff88;font-size:24px;">${userBalance.toLocaleString('ru-RU')} ₽</b></p>
+        <input type="number" id="withdrawAmount" placeholder="от 100 ₽" style="width:100%;padding:16px;background:#000;border:3px solid #ff3366;border-radius:14px;color:white;font-size:16px;">
+        <button id="withdrawNext" style="margin-top:14px;width:100%;padding:14px;background:#ff3366;color:white;border:none;border-radius:12px;font-weight:900;font-size:15px;">ДАЛЕЕ</button>
       </div>`,
       buttons: [{type: "close"}]
     });
 
     requestAnimationFrame(() => {
-      document.getElementById('withdrawNext').onclick = () => {
+      const next = document.getElementById('withdrawNext');
+      if (!next) return;
+      next.onclick = () => {
         const sum = parseInt(document.getElementById('withdrawAmount').value) || 0;
-        if (sum < 100) return tg.showAlert("Минимум 100 ₽");
-        if (sum > userBalance) return tg.showAlert("Недостаточно средств");
-        tg.showAlert(`Заявка на вывод ${sum} ₽ отправлена!`);
+        if (sum < 100) return tg.showAlert?.("Минимум 100 ₽");
+        if (sum > userBalance) return tg.showAlert?.("Недостаточно средств");
+        // Show form for requisites
+        tg.showPopup({
+          title: "Реквизиты для вывода",
+          message: `<div style="padding:16px;text-align:center;font-size:15px;">
+            <input type="text" id="withdrawName" placeholder="ФИО получателя" style="width:100%;padding:12px;background:#000;border:2px solid #ff3366;border-radius:10px;color:white;margin-bottom:8px;">
+            <input type="text" id="withdrawCard" placeholder="Номер карты / счёт" style="width:100%;padding:12px;background:#000;border:2px solid #ff3366;border-radius:10px;color:white;margin-bottom:8px;">
+            <input type="text" id="withdrawBank" placeholder="Банк / Примечание" style="width:100%;padding:12px;background:#000;border:2px solid #ff3366;border-radius:10px;color:white;margin-bottom:8px;">
+            <button id="withdrawSubmit" style="margin-top:8px;width:100%;padding:12px;background:#ff3366;color:white;border:none;border-radius:10px;font-weight:900;">ОТПРАВИТЬ ЗАЯВКУ</button>
+          </div>`,
+          buttons: [{type: "close"}]
+        });
+
+        requestAnimationFrame(() => {
+          const submit = document.getElementById('withdrawSubmit');
+          if (!submit) return;
+          submit.onclick = () => {
+            const name = (document.getElementById('withdrawName') || {}).value || '';
+            const card = (document.getElementById('withdrawCard') || {}).value || '';
+            const bank = (document.getElementById('withdrawBank') || {}).value || '';
+            if (!name || !card) return tg.showAlert?.("Укажите ФИО и реквизиты (карта/счёт).");
+            const confirmText = `Точно вывести ${sum.toLocaleString('ru-RU')} ₽ на ${card}?`;
+            const ok = confirm(confirmText);
+            if (!ok) return;
+            // Deduct immediately (freeze funds) and store request
+            userBalance = Math.max(0, userBalance - sum);
+            setStoredBalance(userBalance);
+            renderBalance();
+            const req = { id: 'W' + Date.now(), amount: sum, name, card, bank, status: 'pending', created_at: new Date().toISOString() };
+            pushWithdrawRequest(req);
+            try { tg.showAlert?.(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`); } catch(e){ alert(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`); }
+            try { tg.closePopup?.(); } catch(e) {}
+          };
+        });
       };
     });
   });
