@@ -46,6 +46,11 @@
     .copy-hint{font-size:16px;color:var(--muted);margin-top:10px;}
     .important{color:var(--red);font-weight:900;font-size:20px;}
     .error{color:var(--red);font-size:14px;margin-top:5px;text-align:center;display:none;}
+    .small-list{background:rgba(0,0,0,0.5);padding:12px;border-radius:12px;margin:10px 0;font-size:14px;}
+    .link-muted{color:var(--muted);font-size:13px;}
+    .requests-list{margin-top:10px;}
+    .req-item{background:#051028;padding:12px;border-radius:10px;margin-bottom:8px;border:1px solid rgba(0,255,255,0.06);}
+    .muted{color:#88c0d0;font-size:13px;}
   </style>
 </head>
 <body>
@@ -117,6 +122,18 @@
 
   <button class="action-btn topup-btn" id="topup-btn">ПОПОЛНИТЬ БАЛАНС</button>
   <button class="action-btn withdraw-btn" id="withdraw-btn">ВЫВОД СРЕДСТВ</button>
+
+  <div class="small-list">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="muted">Мои заявки</div>
+      <div class="link-muted"><a id="open-admin" href="mainadmin.html" target="_blank" style="color:var(--neon);text-decoration:none;">Админ (только для вас)</a></div>
+    </div>
+
+    <div class="requests-list" id="my-requests">
+      <!-- will be filled by JS -->
+    </div>
+  </div>
+
 </div>
 
 <div class="bottom-nav">
@@ -125,52 +142,89 @@
 </div>
 
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.ready?.(); tg.expand?.();
-  const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  try { tg?.ready?.(); tg?.expand?.(); } catch(e) {}
+  const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : { id: 'guest_' + Math.floor(Math.random()*999999), username: 'guest' };
   const prices = { yandex: 100, google: 65, telegram: 10 };
   const minBudget = { yandex: 100, google: 65, telegram: 10 };
 
-  // --- Persisted balance & requests in localStorage (simple demo storage) ---
-  function getStoredBalance() {
-    return parseInt(localStorage.getItem('rc_balance') || '0', 10);
+  // ----------------- Storage helpers (per-user) -----------------
+  function storageGetJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; }
   }
-  function setStoredBalance(v) {
-    localStorage.setItem('rc_balance', String(v));
+  function storageSetJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+  // balances per user id
+  function getBalanceFor(userId) {
+    const map = storageGetJSON('rc_balances', {});
+    return parseInt(map[userId] || 0, 10);
   }
+  function setBalanceFor(userId, amount) {
+    const map = storageGetJSON('rc_balances', {});
+    map[userId] = Math.max(0, parseInt(amount || 0, 10));
+    storageSetJSON('rc_balances', map);
+  }
+
+  // array storages
   function pushTopupRequest(req) {
-    const arr = JSON.parse(localStorage.getItem('rc_topups') || '[]');
+    const arr = storageGetJSON('rc_topups', []);
     arr.push(req);
-    localStorage.setItem('rc_topups', JSON.stringify(arr));
+    storageSetJSON('rc_topups', arr);
   }
   function pushWithdrawRequest(req) {
-    const arr = JSON.parse(localStorage.getItem('rc_withdraws') || '[]');
+    const arr = storageGetJSON('rc_withdraws', []);
     arr.push(req);
-    localStorage.setItem('rc_withdraws', JSON.stringify(arr));
+    storageSetJSON('rc_withdraws', arr);
   }
+  function pushTask(task) {
+    const arr = storageGetJSON('rc_tasks', []);
+    arr.push(task);
+    storageSetJSON('rc_tasks', arr);
+  }
+  function updateTasks(arr) { storageSetJSON('rc_tasks', arr); }
+  function updateTopups(arr) { storageSetJSON('rc_topups', arr); }
+  function updateWithdraws(arr) { storageSetJSON('rc_withdraws', arr); }
 
-  let userBalance = getStoredBalance();
+  // ensure legacy single-balance key migrated to per-user
+  (function migrateLegacyBalance() {
+    const legacy = parseInt(localStorage.getItem('rc_balance') || '0', 10);
+    if (legacy > 0) {
+      const map = storageGetJSON('rc_balances', {});
+      const uid = user.id || 'guest';
+      if (!map[uid] || map[uid] === 0) {
+        map[uid] = legacy;
+        storageSetJSON('rc_balances', map);
+      }
+      localStorage.removeItem('rc_balance');
+    }
+  })();
 
-  // Профиль
+  // current user's balance
+  let userBalance = getBalanceFor(user.id || 'guest');
+
+  // --- Profile UI ---
   document.getElementById('user-name').innerText = user.first_name || 'Пользователь';
   document.getElementById('user-username').innerText = user.username ? '@' + user.username : '—';
   document.getElementById('user-avatar').src = user.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user.id || 'user');
+
   function renderBalance() {
+    userBalance = getBalanceFor(user.id || 'guest');
     document.getElementById('user-balance').innerText = userBalance.toLocaleString('ru-RU') + ' ₽';
   }
   renderBalance();
 
-  // expose copy globally so inline onclick in popup works
+  // expose copy to popup inline handlers
   function copy(text) { 
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(()=> {
-        try { tg.showAlert?.("Скопировано!"); } catch(e){ alert("Скопировано!"); }
-      }).catch(()=> { try { tg.showAlert?.("Скопировано!"); } catch(e){ alert("Скопировано!"); } });
+      navigator.clipboard.writeText(text).then(()=> { try { tg?.showAlert?.("Скопировано!"); } catch(e){} });
     } else {
-      try { tg.showAlert?.("Скопировано!"); } catch(e){ alert("Скопировано!"); }
+      try { tg?.showAlert?.("Скопировано!"); } catch(e){}
     }
   }
   window.copy = copy;
+
+  // --- Tasks creation & storage ---
+  function idPrefix(prefix) { return prefix + '_' + Date.now() + '_' + Math.floor(Math.random()*9999); }
 
   function validateLink() {
     const link = document.getElementById('task-link').value.trim();
@@ -205,7 +259,7 @@
     container.scrollTo({ left: el.offsetLeft - container.offsetWidth/2 + el.offsetWidth/2, behavior: 'smooth' });
   }
 
-  // Задержка 0.6 секунды
+  // events
   let budgetTimeout = null;
   document.getElementById('task-budget').addEventListener('input', () => {
     clearTimeout(budgetTimeout);
@@ -236,15 +290,33 @@
 
   document.getElementById('publish-task').onclick = () => {
     if (!validateLink()) return;
-    const budget = parseInt(document.getElementById('task-budget').value);
-    if (budget < 100) return tg.showAlert?.("Минимум 100 ₽");
-    tg.showAlert?.("Задание опубликовано!");
+    const budget = parseInt(document.getElementById('task-budget').value) || 0;
+    if (budget < 100) return tg?.showAlert?.("Минимум 100 ₽");
+    // create task and save to storage with owner info
+    const task = {
+      id: idPrefix('task'),
+      title: (document.getElementById('task-title').value || '').trim(),
+      link: (document.getElementById('task-link').value || '').trim(),
+      type: document.getElementById('task-type').value,
+      budget: budget,
+      owner: { id: user.id || 'guest', username: user.username || '', first_name: user.first_name || '' },
+      created_at: new Date().toISOString(),
+      status: 'active'
+    };
+    pushTask(task);
+    try { tg?.showAlert?.("Задание опубликовано!"); } catch(e) { alert("Задание опубликовано!"); }
     document.getElementById('create-form').classList.remove('active');
+    // reset form minimally
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-link').value = '';
+    document.getElementById('task-type').value = '';
+    document.getElementById('task-budget').value = '';
+    document.getElementById('budget-result').innerHTML = 'Выберите тип и бюджет';
   };
 
   // ----------------------- ПОПОЛНЕНИЕ -----------------------
   document.getElementById('topup-btn').addEventListener('click', () => {
-    tg.showPopup({
+    tg?.showPopup({
       title: "Пополнение баланса",
       message: `<div style="padding:20px;text-align:center;">
         <input type="number" id="topupAmount" placeholder="от 100 ₽" style="width:100%;padding:16px;background:#000;border:3px solid #00ffff;border-radius:14px;color:white;font-size:16px;">
@@ -253,16 +325,14 @@
       buttons: [{type: "close"}]
     });
 
-    // attach click after popup rendered
     requestAnimationFrame(() => {
       const next = document.getElementById('topupNext');
       if (!next) return;
       next.onclick = () => {
         const amount = parseInt(document.getElementById('topupAmount').value) || 0;
-        if (amount < 100) return tg.showAlert?.("Минимум 100 ₽");
+        if (amount < 100) return tg?.showAlert?.("Минимум 100 ₽");
         const code = "RC" + Math.floor(1000 + Math.random() * 9000);
-        // show transfer details with COPY buttons and final "Отправить заявку"
-        tg.showPopup({
+        tg?.showPopup({
           title: "Перевод",
           message: `<div style="padding:18px;text-align:center;line-height:1.6;font-size:16px;">
             Переведи <b style="color:#00ff88;font-size:28px;">${amount.toLocaleString('ru-RU')} ₽</b><br><br>
@@ -283,20 +353,25 @@
           buttons: [{type: "close"}]
         });
 
-        // attach handler to final submit
         requestAnimationFrame(() => {
           const submit = document.getElementById('topupSubmit');
           if (!submit) return;
           submit.onclick = () => {
-            // Confirm action
             const ok = confirm(`Точно отправить заявку на пополнение ${amount.toLocaleString('ru-RU')} ₽?`);
             if (!ok) return;
-            // Create topup request (do NOT auto-credit because user transfers outside the app)
-            const req = { id: 'T' + Date.now(), amount, code, phone: '+79600738559', status: 'pending', created_at: new Date().toISOString() };
+            const req = {
+              id: idPrefix('T'),
+              user: { id: user.id || 'guest', username: user.username || '', first_name: user.first_name || '' },
+              amount,
+              code,
+              phone: '+79600738559',
+              status: 'pending',
+              created_at: new Date().toISOString()
+            };
             pushTopupRequest(req);
-            try { tg.showAlert?.("Заявка на пополнение отправлена! Деньги появятся после проверки."); } catch(e){ alert("Заявка на пополнение отправлена!"); }
-            // close popup if API supports
-            try { tg.closePopup?.(); } catch(e) {}
+            try { tg?.showAlert?.("Заявка на пополнение отправлена! Ждёт проверки админа."); } catch(e) { alert("Заявка на пополнение отправлена!"); }
+            try { tg?.closePopup?.(); } catch(e){}
+            renderMyRequests();
           };
         });
       };
@@ -305,7 +380,7 @@
 
   // ----------------------- ВЫВОД -----------------------
   document.getElementById('withdraw-btn').addEventListener('click', () => {
-    tg.showPopup({
+    tg?.showPopup({
       title: "Вывод средств",
       message: `<div style="padding:20px;text-align:center;">
         <p>Доступно: <b style="color:#00ff88;font-size:24px;">${userBalance.toLocaleString('ru-RU')} ₽</b></p>
@@ -320,10 +395,9 @@
       if (!next) return;
       next.onclick = () => {
         const sum = parseInt(document.getElementById('withdrawAmount').value) || 0;
-        if (sum < 100) return tg.showAlert?.("Минимум 100 ₽");
-        if (sum > userBalance) return tg.showAlert?.("Недостаточно средств");
-        // Show form for requisites
-        tg.showPopup({
+        if (sum < 100) return tg?.showAlert?.("Минимум 100 ₽");
+        if (sum > getBalanceFor(user.id || 'guest')) return tg?.showAlert?.("Недостаточно средств");
+        tg?.showPopup({
           title: "Реквизиты для вывода",
           message: `<div style="padding:16px;text-align:center;font-size:15px;">
             <input type="text" id="withdrawName" placeholder="ФИО получателя" style="width:100%;padding:12px;background:#000;border:2px solid #ff3366;border-radius:10px;color:white;margin-bottom:8px;">
@@ -341,25 +415,69 @@
             const name = (document.getElementById('withdrawName') || {}).value || '';
             const card = (document.getElementById('withdrawCard') || {}).value || '';
             const bank = (document.getElementById('withdrawBank') || {}).value || '';
-            if (!name || !card) return tg.showAlert?.("Укажите ФИО и реквизиты (карта/счёт).");
+            if (!name || !card) return tg?.showAlert?.("Укажите ФИО и реквизиты (карта/счёт).");
             const confirmText = `Точно вывести ${sum.toLocaleString('ru-RU')} ₽ на ${card}?`;
             const ok = confirm(confirmText);
             if (!ok) return;
-            // Deduct immediately (freeze funds) and store request
-            userBalance = Math.max(0, userBalance - sum);
-            setStoredBalance(userBalance);
+            // freeze (deduct) funds now and create request
+            const current = getBalanceFor(user.id || 'guest');
+            setBalanceFor(user.id || 'guest', current - sum);
             renderBalance();
-            const req = { id: 'W' + Date.now(), amount: sum, name, card, bank, status: 'pending', created_at: new Date().toISOString() };
+            const req = {
+              id: idPrefix('W'),
+              user: { id: user.id || 'guest', username: user.username || '', first_name: user.first_name || '' },
+              amount: sum,
+              name,
+              card,
+              bank,
+              status: 'pending',
+              created_at: new Date().toISOString()
+            };
             pushWithdrawRequest(req);
-            try { tg.showAlert?.(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`); } catch(e){ alert(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`); }
-            try { tg.closePopup?.(); } catch(e) {}
+            try { tg?.showAlert?.(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`); } catch(e) { alert(`Заявка на вывод ${sum.toLocaleString('ru-RU')} ₽ отправлена!`); }
+            try { tg?.closePopup?.(); } catch(e){}
+            renderMyRequests();
           };
         });
       };
     });
   });
 
-  // Переключение страниц
+  // ---------------- My Requests (option 2 from previous message) ----------------
+  function renderMyRequests() {
+    const container = document.getElementById('my-requests');
+    const myId = user.id || 'guest';
+    const topups = storageGetJSON('rc_topups', []).filter(t => t.user && (t.user.id || '') === myId).reverse();
+    const withdraws = storageGetJSON('rc_withdraws', []).filter(w => w.user && (w.user.id || '') === myId).reverse();
+    container.innerHTML = '';
+    if (topups.length === 0 && withdraws.length === 0) {
+      container.innerHTML = `<div class="muted">Заявок нет</div>`;
+      return;
+    }
+    if (topups.length) {
+      container.appendChild(document.createElement('hr'));
+      const h = document.createElement('div'); h.className='muted'; h.textContent='Пополнения'; container.appendChild(h);
+      topups.forEach(t => {
+        const d = document.createElement('div'); d.className='req-item';
+        d.innerHTML = `<div><b>${t.amount.toLocaleString('ru-RU')} ₽</b> <span class="muted">· ${new Date(t.created_at).toLocaleString()}</span></div>
+          <div class="muted">Код: ${t.code} · Статус: ${t.status}</div>`;
+        container.appendChild(d);
+      });
+    }
+    if (withdraws.length) {
+      container.appendChild(document.createElement('hr'));
+      const h2 = document.createElement('div'); h2.className='muted'; h2.textContent='Выводы'; container.appendChild(h2);
+      withdraws.forEach(w => {
+        const d = document.createElement('div'); d.className='req-item';
+        d.innerHTML = `<div><b>${w.amount.toLocaleString('ru-RU')} ₽</b> <span class="muted">· ${new Date(w.created_at).toLocaleString()}</span></div>
+          <div class="muted">Реквизиты: ${w.card || '-'} · Статус: ${w.status}</div>`;
+        container.appendChild(d);
+      });
+    }
+  }
+  renderMyRequests();
+
+  // ---------------- Page switching ----------------
   document.querySelectorAll('.role-btn, .nav-btn').forEach(btn => {
     btn.onclick = () => {
       btn.parentElement.querySelectorAll('.active').forEach(e => e.classList.remove('active'));
@@ -374,6 +492,18 @@
       }
     };
   });
+
+  // Small UX: hide admin link if not admin
+  const openAdmin = document.getElementById('open-admin');
+  const ADMIN_USERNAMES = ['Sa1Raz']; // <-- список админов по username. Можете добавить другие.
+  if (!ADMIN_USERNAMES.includes((user.username || '').toString())) {
+    openAdmin.style.display = 'none';
+  }
+
+  // Expose some helpers for admin page running in same domain/local files
+  window._RC_helpers = {
+    storageGetJSON, storageSetJSON, getBalanceFor, setBalanceFor, idPrefix
+  };
 </script>
 </body>
 </html>
