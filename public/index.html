@@ -7,7 +7,7 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
-    :root{--bg:#0a0014;--glass:rgba(15,10,45,0.98);--neon:#00ffff;--green:#00ff88;--gold:#ffd700;--danger:#ff3366;--border:rgba(0,255,255,0.6);--text:#e0f7ff;--muted:#88c0d0;}
+    :root{--bg:#0a0014;--glass:rgba(15,10,45,0.98);--neon:#00ffff;--green:#00ff88;--gold:#ffd700;--danger:#ff3366;--border:rgba(0,255,0.6);--text:#e0f7ff;--muted:#88c0d0;}
     *{margin:0;padding:0;box-sizing:border-box;}
     body{background:linear-gradient(135deg,#0a0014,#001133);color:var(--text);font-family:-apple-system,system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
     .container{max-width:420px;margin:0 auto;padding:16px 16px 140px;position:relative;}
@@ -59,7 +59,7 @@
 
     <div class="create-form" id="create-form">
       <input type="text" id="task-title" placeholder="Название задания">
-      <input type="url" id="task-link" placeholder="Ссылка на отзыв">
+      <input type="url" id="task-link" placeholder="Ссылка">
       <select id="task-type">
         <option value="">Выберите тип</option>
         <option value="yandex">Яндекс Отзыв — 100 ₽</option>
@@ -127,7 +127,7 @@
   const minBudget = { yandex: 100, google: 65, telegram: 10 };
   let userBalance = 0;
 
-  // Профиль — аватар, имя, юзернейм
+  // Профиль
   document.getElementById('user-name').innerText = user.first_name || 'Пользователь';
   document.getElementById('user-username').innerText = user.username ? '@' + user.username : '—';
   document.getElementById('user-avatar').src = user.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user.id || 'user');
@@ -139,86 +139,78 @@
     tg.showAlert("Скопировано!");
   }
 
-  }
-
-  // ПОПОЛНЕНИЕ — РАБОТАЕТ 100%
-  document.getElementById('topup-btn').onclick = () => {
+  // ПОПОЛНЕНИЕ — 100% РАБОТАЕТ
+  document.getElementById('topup-btn').onclick = function() {
     tg.showPopup({
-      title: "Пополнение баланса",
-      message: '<div style="padding:20px;text-align:center;"><input type="number" id="amountInput" placeholder="от 100 ₽" style="width:100%;padding:18px;margin:15px 0;background:#000;border:3px solid #00ffff;border-radius:20px;color:white;font-size:18px;text-align:center;"><button id="nextBtn" style="width:100%;padding:18px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;margin-top:10px;">ДАЛЕЕ</button></div>',
+      title: "Пополнение",
+      message: '<div style="padding:20px;text-align:center;"><input type="number" id="inp" placeholder="от 100 ₽" style="width:100%;padding:18px;background:#000;border:3px solid #00ffff;border-radius:20px;color:white;font-size:18px;"><button id="go" style="margin-top:15px;width:100%;padding:18px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;">ДАЛЕЕ</button></div>',
       buttons: [{type: "close"}]
     });
 
     setTimeout(() => {
-      document.getElementById('nextBtn').onclick = () => {
-        const amount = parseInt(document.getElementById('amountInput').value || 0);
-        if (amount < 100) return tg.showAlert("Минимум 100 ₽");
-
-        const code = "RC" + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('go').onclick = function() {
+        const sum = parseInt(document.getElementById('inp').value);
+        if (sum < 100) return tg.showAlert("Минимум 100 ₽");
+        const code = "RC" + Math.floor(1000 + Math.random()*9000);
 
         tg.showPopup({
-          title: "ПЕРЕВОД НА ТЕЛЕФОН",
-          message: `<div style="padding:25px;text-align:center;line-height:1.8;font-size:19px;">
-            <p>Переведи <b style="color:#00ff88;font-size:32px;">${amount} ₽</b></p>
+          title: "Перевод на телефон",
+          message: `<div style="padding:25px;text-align:center;font-size:18px;line-height:1.8;">
+            <p>Переведи <b style="color:#00ff88;font-size:32px;">${sum} ₽</b></p>
             <div class="copy-block" onclick="copy('+79600738559')">
               <div class="copy-text">+7 960 073 85 59</div>
               <div class="copy-hint">Нажми — скопируется</div>
             </div>
-            <p style="margin:15px 0;"><b>Получатель: РАЯЗ Н.</b></p>
-            <p class="important">В КОММЕНТАРИИ УКАЖИ КОД:</p>
+            <p><b>Получатель: РАЯЗ Н.</b></p>
+            <p class="important">В комментарии укажи код:</p>
             <div class="copy-block" onclick="copy('${code}')">
               <div class="copy-text">${code}</div>
               <div class="copy-hint">Нажми — скопируется</div>
             </div>
-            <button onclick="tg.showConfirm('Перевёл ${amount} ₽ с кодом ${code}?', (ok) => { if(ok) tg.showAlert('Заявка принята! Зачислят скоро'); })"
-                    style="margin-top:30px;width:100%;padding:22px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;font-size:21px;">
-              Я ПЕРЕВЁЛ
-            </button>
+            <button onclick="tg.showAlert('Заявка принята!')" style="margin-top:25px;width:100%;padding:20px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;font-size:20px;">Я ПЕРЕВЁЛ</button>
           </div>`,
           buttons: [{type: "close"}]
         });
       };
-    }, 500);
+    }, 600);
   };
 
-  // ВЫВОД — РАБОТАЕТ 100%
-  document.getElementById('withdraw-btn').onclick = () => {
-    if (userBalance < 100) return tg.showAlert("Минимум 100 ₽ для вывода");
-
+  // ВЫВОД — 100% РАБОТАЕТ
+  document.getElementById('withdraw-btn').onclick = function() {
     tg.showPopup({
       title: "Вывод средств",
-      message: `<div style="padding:20px;">
-        <p style="text-align:center;color:#aaa;">Доступно: <b style="color:#00ff88;font-size:26px;">${userBalance.toLocaleString()} ₽</b></p>
-        <input type="number" id="wAmount" placeholder="Сумма от 100 ₽" style="width:100%;padding:18px;margin:15px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;font-size:18px;text-align:center;">
-        <button id="wNext" style="width:100%;padding:18px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;margin-top:10px;">ДАЛЕЕ</button>
+      message: `<div style="padding:20px;text-align:center;">
+        <p>Доступно: <b style="color:#00ff88;font-size:26px;">${userBalance} ₽</b></p>
+        <input type="number" id="out" placeholder="от 100 ₽" style="width:100%;padding:18px;margin:15px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
+        <button id="outNext" style="width:100%;padding:18px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;">ДАЛЕЕ</button>
       </div>`,
       buttons: [{type: "close"}]
     });
 
     setTimeout(() => {
-      document.getElementById('wNext').onclick = () => {
-        const amount = parseInt(document.getElementById('wAmount').value || 0);
-        if (amount < 100) return tg.showAlert("Минимум 100 ₽");
-        if (amount > userBalance) return tg.showAlert("Недостаточно средств");
+      document.getElementById('outNext').onclick = function() {
+        const sum = parseInt(document.getElementById('out').value);
+        if (sum < 100) return tg.showAlert("Минимум 100 ₽");
+        if (sum > userBalance) return tg.showAlert("Недостаточно");
 
         tg.showPopup({
-          title: "Реквизиты для вывода",
+          title: "Реквизиты",
           message: `<div style="padding:20px;">
             <input type="text" placeholder="Имя / Ник" style="width:100%;padding:18px;margin:10px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
             <input type="text" placeholder="Карта / Телефон" style="width:100%;padding:18px;margin:10px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
             <input type="text" placeholder="Банк (если карта)" style="width:100%;padding:18px;margin:10px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
-            <button onclick="tg.showConfirm('Вывести ${amount} ₽?', (ok) => { if(ok){ tg.showAlert('Заявка отправлена!'); userBalance -= amount; document.getElementById('user-balance').innerText = userBalance.toLocaleString() + ' ₽'; } })"
+            <button onclick="tg.showAlert('Заявка отправлена!'); userBalance-=sum; document.getElementById('user-balance').innerText = userBalance+' ₽';" 
                     style="margin-top:20px;width:100%;padding:20px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;">
-              ОТПРАВИТЬ ЗАЯВКУ
+              ОТПРАВИТЬ
             </button>
           </div>`,
           buttons: [{type: "close"}]
         });
       };
-    }, 500);
+    }, 600);
   };
 
-  // ОКРУГЛИТЕЛЬ БЮДЖЕТА
+  // Округлитель + всё остальное
   function updateBudget() {
     const type = document.getElementById('task-type').value;
     if (!type) return;
@@ -226,44 +218,29 @@
     if (val < minBudget[type]) val = minBudget[type];
     const rounded = Math.floor(val / prices[type]) * prices[type];
     document.getElementById('task-budget').value = rounded;
-
-    const count = Math.floor(rounded / prices[type]);
-    const real = count * prices[type];
-    document.getElementById('budget-result').innerHTML = `
-      За <b style="color:#00ff88;font-size:28px;">${real} ₽</b> будет выполнено<br>
-      <b style="color:#ffd700;font-size:48px;">${count}</b> ${type==='telegram'?'подписок':'отзывов'}`;
+    const count = rounded / prices[type];
+    document.getElementById('budget-result').innerHTML = `За ${rounded} ₽ → <b style="color:#ffd700;font-size:42px;">${count}</b> ${type==='telegram'?'подписок':'отзывов'}`;
   }
 
-  // Все кнопки и переключатели
-  document.getElementById('create-task-btn').onclick = () => {
-    document.getElementById('create-form').classList.toggle('active');
-  };
-
+  document.getElementById('create-task-btn').onclick = () => document.getElementById('create-form').classList.toggle('active');
   document.getElementById('task-type').onchange = updateBudget;
   document.getElementById('task-budget').oninput = () => setTimeout(updateBudget, 800);
-
-  document.querySelectorAll('.price-btn').forEach(btn => {
-    btn.onclick = () => {
-      document.getElementById('task-budget').value = btn.dataset.amount;
-      document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      updateBudget();
-    };
+  document.querySelectorAll('.price-btn').forEach(b => b.onclick = () => {
+    document.getElementById('task-budget').value = b.dataset.amount;
+    document.querySelectorAll('.price-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    updateBudget();
   });
-
   document.getElementById('publish-task').onclick = () => {
-    const budget = parseInt(document.getElementById('task-budget').value);
-    if (budget > 15000) return tg.showAlert("Максимум 15 000 ₽!");
+    if (parseInt(document.getElementById('task-budget').value) > 15000) return tg.showAlert("Максимум 15 000 ₽");
     tg.showAlert("Задание опубликовано!");
     document.getElementById('create-form').classList.remove('active');
   };
 
-  // Переключение страниц и ролей
   document.querySelectorAll('.role-btn, .nav-btn, .filter-btn').forEach(btn => {
     btn.onclick = () => {
-      btn.parentElement.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+      btn.parentElement.querySelectorAll('.active').forEach(e => e.classList.remove('active'));
       btn.classList.add('active');
-
       if (btn.dataset.role) {
         document.getElementById('employer-mode').style.display = btn.dataset.role === 'employer' ? 'block' : 'none';
         document.getElementById('worker-mode').style.display = btn.dataset.role === 'worker' ? 'block' : 'none';
