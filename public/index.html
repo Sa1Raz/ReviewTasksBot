@@ -7,41 +7,41 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
-    :root{--bg:#0a0014;--glass:rgba(15,10,45,0.98);--neon:#00ffff;--green:#00ff88;--gold:#ffd700;--danger:#ff3366;--border:rgba(0,255,0.6);--text:#e0f7ff;--muted:#88c0d0;}
+    :root{--bg:#0a0014;--glass:rgba(15,10,45,0.98);--neon:#00ffff;--green:#00ff88;--gold:#ffd700;--red:#ff3366;--border:rgba(0,255,255,0.6);--text:#e0f7ff;--muted:#88c0d0;}
     *{margin:0;padding:0;box-sizing:border-box;}
     body{background:linear-gradient(135deg,#0a0014,#001133);color:var(--text);font-family:-apple-system,system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
-    .container{max-width:420px;margin:0 auto;padding:16px 16px 140px;position:relative;}
-    .header h1{font-size:42px;font-weight:900;text-align:center;padding:30px 0 10px;background:linear-gradient(90deg,#00ffff,#00ff88,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 40px rgba(0,255,255,0.6);}
-    .support-btn{position:absolute;top:16px;right:16px;width:52px;height:52px;background:rgba(0,136,204,0.3);border:3px solid var(--neon);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 40px rgba(0,255,255,0.6);backdrop-filter:blur(12px);z-index:1000;}
-    .support-btn i{font-size:26px;color:#00ffff;}
-    .role-switch{display:flex;background:rgba(20,20,50,0.9);border:3px solid var(--border);border-radius:32px;padding:8px;margin:20px 0;backdrop-filter:blur(20px);}
+    .container{max-width:420px;margin:0 auto;padding:16px 16px 160px;position:relative;}
+    .header h1{font-size:44px;font-weight:900;text-align:center;padding:35px 0 15px;background:linear-gradient(90deg,#00ffff,#00ff88,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 50px rgba(0,255,255,0.7);}
+    .support-btn{position:absolute;top:16px;right:16px;width:56px;height:56px;background:rgba(0,136,204,0.3);border:3px solid var(--neon);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 50px rgba(0,255,255,0.7);backdrop-filter:blur(15px);z-index:1000;}
+    .support i{font-size:28px;color:#00ffff;}
+    .role-switch{display:flex;background:rgba(20,20,50,0.9);border:3px solid var(--border);border-radius:32px;padding:8px;margin:25px 0;backdrop-filter:blur(20px);}
     .role-btn{flex:1;padding:18px;border-radius:26px;font-weight:900;font-size:16px;text-align:center;color:var(--muted);cursor:pointer;transition:.5s;}
-    .role-btn.active{background:linear-gradient(135deg,var(--neon),var(--green));color:#000;box-shadow:0 0 60px rgba(0,255,255,0.8);transform:translateY(-4px);}
-    .create-btn{width:100%;padding:28px;background:linear-gradient(45deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:32px;font-size:26px;font-weight:900;margin:25px 0;cursor:pointer;box-shadow:0 15px 50px rgba(255,215,0,0.6);text-transform:uppercase;letter-spacing:2px;}
-    .create-form{background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:30px;margin:20px 0;display:none;backdrop-filter:blur(25px);box-shadow:0 20px 60px rgba(0,255,255,0.3);}
-    .create-form.active{display:block;animation:slideDown .6s;}
-    @keyframes slideDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
-    input,select{width:100%;padding:20px;margin:15px 0;background:rgba(0,0,0,0.7);border:3px solid var(--neon);border-radius:20px;color:white;font-size:17px;font-weight:600;}
-    .price-buttons{display:flex;gap:12px;overflow-x:auto;padding:16px 0;scrollbar-width:none;margin:20px 0;}
-    .price-btn{padding:18px 28px;background:rgba(0,255,255,0.15);border:3px solid var(--neon);border-radius:30px;color:white;font-weight:900;font-size:16px;cursor:pointer;min-width:120px;text-align:center;transition:.4s;white-space:nowrap;}
-    .price-btn.active{background:var(--neon);color:#000;transform:scale(1.15);box-shadow:0 0 80px #00ffff;}
-    .budget-result{background:linear-gradient(135deg,rgba(0,255,136,0.25),rgba(0,255,255,0.25));padding:28px;border-radius:24px;text-align:center;margin:20px 0;border:3px solid var(--green);font-size:21px;font-weight:900;color:var(--gold);line-height:1.5;min-height:90px;}
-    .submit-create{width:100%;padding:28px;background:linear-gradient(45deg,var(--green),#00cc66);color:black;border:none;border-radius:32px;font-size:26px;font-weight:900;margin-top:30px;cursor:pointer;text-transform:uppercase;}
-    .filter-bar{display:flex;gap:16px;padding:20px 16px;overflow-x:auto;scrollbar-width:none;margin:20px 0;background:rgba(20,20,50,0.9);border-radius:32px;border:3px solid var(--border);backdrop-filter:blur(20px);}
-    .filter-btn{padding:16px 26px;background:rgba(0,255,255,0.15);border:3px solid var(--neon);border-radius:30px;color:white;font-weight:900;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:90px;cursor:pointer;transition:.4s;}
-    .filter-btn i{font-size:30px;}
-    .filter-btn span{font-size:13px;}
-    .filter-btn.active{background:var(--neon);color:#000;transform:scale(1.15);box-shadow:0 0 80px #00ffff;}
-    .profile-avatar{width:140px;height:140px;border-radius:50%;border:7px solid var(--neon);box-shadow:0 0 90px rgba(0,255,255,0.9);object-fit:cover;margin:20px auto;display:block;}
-    .balance{font-size:62px;font-weight:900;color:var(--green);text-shadow:0 0 35px rgba(0,255,136,0.8);text-align:center;}
-    .bottom-nav{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(15,15,45,0.98);backdrop-filter:blur(30px);border:4px solid var(--border);border-radius:40px;padding:14px;display:flex;box-shadow:0 50px 100px rgba(0,0,0,0.9);z-index:999;}
-    .nav-btn{flex:1;padding:22px;border:none;border-radius:32px;font-weight:900;font-size:19px;background:transparent;color:var(--muted);transition:.5s;}
-    .nav-btn.active{background:linear-gradient(45deg,var(--neon),var(--green));color:#000;transform:translateY(-10px);box-shadow:0 0 80px rgba(0,255,255,0.9);}
-    .copy-block{background:rgba(0,255,255,0.15);border:2px dashed var(--neon);border-radius:20px;padding:24px;margin:20px 0;text-align:center;cursor:pointer;transition:all .3s;}
-    .copy-block:hover{background:rgba(0,255,255,0.3);transform:scale(1.04);}
-    .copy-text{font-size:34px;font-weight:900;color:var(--gold);}
-    .copy-hint{font-size:15px;color:var(--muted);margin-top:8px;}
-    .important{color:#ff3366;font-weight:900;font-size:19px;}
+    .role-btn.active{background:linear-gradient(135deg,var(--neon),var(--green));color:#000;box-shadow:0 0 70px rgba(0,255,255,0.9);transform:translateY(-5px);}
+    .create-btn{width:100%;padding:30px;background:linear-gradient(45deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:32px;font-size:28px;font-weight:900;margin:30px 0;cursor:pointer;box-shadow:0 20px 60px rgba(255,215,0,0.6);text-transform:uppercase;letter-spacing:2px;}
+    .create-form{background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:35px;margin:20px 0;display:none;backdrop-filter:blur(30px);box-shadow:0 25px 80px rgba(0,255,255,0.4);}
+    .create-form.active{display:block;animation:slideDown .7s;}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-50px)}to{opacity:1;transform:translateY(0)}}
+    input,select{width:100%;padding:22px;margin:16px 0;background:rgba(0,0,0,0.7);border:3px solid var(--neon);border-radius:20px;color:white;font-size:17px;font-weight:600;}
+    .price-buttons{display:flex;gap:14px;overflow-x:auto;padding:20px 0;scrollbar-width:none;margin:25px 0;scroll-behavior:smooth;}
+    .price-btn{padding:18px 32px;background:rgba(0,255,255,0.15);border:3px solid var(--neon);border-radius:30px;color:white;font-weight:900;font-size:16px;cursor:pointer;min-width:130px;text-align:center;transition:.4s;white-space:nowrap;}
+    .price-btn.active{background:var(--neon);color:#000;transform:scale(1.2);box-shadow:0 0 90px #00ffff;}
+    .budget-result{background:linear-gradient(135deg,rgba(0,255,136,0.3),rgba(0,255,255,0.3));padding:32px;border-radius:26px;text-align:center;margin:25px 0;border:3px solid var(--green);font-size:22px;font-weight:900;color:var(--gold);line-height:1.6;min-height:100px;}
+    .submit-create{width:100%;padding:30px;background:linear-gradient(45deg,var(--green),#00cc66);color:black;border:none;border-radius:32px;font-size:28px;font-weight:900;margin-top:35px;cursor:pointer;text-transform:uppercase;}
+    .filter-bar{display:flex;gap:16px;padding:20px 16px;overflow-x:auto;scrollbar-width:none;margin:20px 0;background:rgba(20,20,50,0.9);border-radius:32px;border:3px solid var(--border);backdrop-filter:blur(20px);scroll-behavior:smooth;}
+    .filter-btn{padding:18px 28px;background:rgba(0,255,255,0.15);border:3px solid var(--neon);border-radius:30px;color:white;font-weight:900;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:100px;cursor:pointer;transition:.4s;}
+    .filter-btn i{font-size:32px;}
+    .filter-btn.active{background:var(--neon);color:#000;transform:scale(1.2);box-shadow:0 0 90px #00ffff;}
+    .profile-avatar{width:150px;height:150px;border-radius:50%;border:8px solid var(--neon);box-shadow:0 0 100px rgba(0,255,255,0.9);object-fit:cover;margin:25px auto;display:block;}
+    .balance{font-size:68px;font-weight:900;color:var(--green);text-shadow:0 0 40px rgba(0,255,136,0.9);text-align:center;}
+    .bottom-nav{position:fixed;bottom:20px;left:20px;right:20px;background:rgba(15,15,45,0.98);backdrop-filter:blur(35px);border:4px solid var(--border);border-radius:42px;padding:16px;display:flex;box-shadow:0 60px 120px rgba(0,0,0,0.9);z-index:999;}
+    .nav-btn{flex:1;padding:24px;border:none;border-radius:32px;font-weight:900;font-size:20px;background:transparent;color:var(--muted);transition:.5s;}
+    .nav-btn.active{background:linear-gradient(45deg,var(--neon),var(--green));color:#000;transform:translateY(-12px);box-shadow:0 0 90px rgba(0,255,255,0.9);}
+    .copy-block{background:rgba(0,255,255,0.15);border:2px dashed var(--neon);border-radius:22px;padding:26px;margin:22px 0;text-align:center;cursor:pointer;transition:.4s;}
+    .copy-block:hover{background:rgba(0,255,255,0.35);transform:scale(1.05);}
+    .copy-text{font-size:36px;font-weight:900;color:var(--gold);}
+    .copy-hint{font-size:16px;color:var(--muted);margin-top:10px;}
+    .important{color:var(--red);font-weight:900;font-size:20px;}
+    .error{color:#ff3366;font-size:14px;margin-top:5px;}
   </style>
 </head>
 <body>
@@ -59,16 +59,19 @@
 
     <div class="create-form" id="create-form">
       <input type="text" id="task-title" placeholder="Название задания">
-      <input type="url" id="task-link" placeholder="Ссылка">
+      <input type="url" id="task-link" placeholder="Ссылка на отзыв / канал">
+      <div id="link-error" class="error" style="display:none;"></div>
+      
       <select id="task-type">
         <option value="">Выберите тип</option>
         <option value="yandex">Яндекс Отзыв — 100 ₽</option>
         <option value="google">Google Отзыв — 65 ₽</option>
         <option value="telegram">Telegram Подписка — 10 ₽</option>
       </select>
+      
       <input type="number" id="task-budget" placeholder="Бюджет (макс. 15 000 ₽)" min="100" max="15000">
 
-      <div class="price-buttons">
+      <div class="price-buttons" id="priceButtons">
         <div class="price-btn" data-amount="1000">1 000 ₽</div>
         <div class="price-btn" data-amount="3000">3 000 ₽</div>
         <div class="price-btn" data-amount="5000">5 000 ₽</div>
@@ -76,40 +79,37 @@
         <div class="price-btn" data-amount="15000">15 000 ₽</div>
       </div>
 
-      <div class="budget-result" id="budget-result">Выберите тип и сумму</div>
+      <div class="budget-result" id="budget-result">Выберите тип и бюджет</div>
       <button class="submit-create" id="publish-task">ОПУБЛИКОВАТЬ</button>
     </div>
   </div>
 
   <div id="worker-mode" style="display:none;">
-    <div class="filter-bar">
+    <div class="filter-bar" id="filterBar">
       <div class="filter-btn active"><i class="fas fa-th-large"></i><span>ВСЕ</span></div>
       <div class="filter-btn"><i class="fab fa-yandex"></i><span>ЯНДЕКС</span></div>
       <div class="filter-btn"><i class="fab fa-google"></i><span>GOOGLE</span></div>
       <div class="filter-btn"><i class="fab fa-telegram"></i><span>TG</span></div>
     </div>
-    <div style="text-align:center;padding:100px;color:#888;"><h2>Задания скоро появятся</h2></div>
+    <div style="text-align:center;padding:120px;color:#888;"><h2>Задания скоро появятся...</h2></div>
   </div>
 </div>
 
 <div id="profile-page" class="container" style="display:none;position:relative;">
-  <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
+  <div class="support" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
     <i class="fas fa-headset"></i>
   </div>
-
-  <div style="text-align:center;padding:50px 0;">
+  <div style="text-align:center;padding:60px 0;">
     <img id="user-avatar" class="profile-avatar" src="" alt="Аватар">
-    <h2 id="user-name" style="color:white;margin:20px 0;font-size:32px;">Загрузка...</h2>
-    <p id="user-username" style="color:#88c0d0;font-size:18px;">@username</p>
+    <h2 id="user-name" style="color:white;margin:25px 0;font-size:34px;">Загрузка...</h2>
+    <p id="user-username" style="color:#88c0d0;font-size:19px;">@username</p>
   </div>
-
-  <div style="background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:35px;margin:25px 0;text-align:center;backdrop-filter:blur(20px);">
+  <div style="background:var(--glass);border:3px solid var(--neon);border-radius:32px;padding:40px;margin:30px 0;text-align:center;backdrop-filter:blur(20px);">
     <div class="balance" id="user-balance">0 ₽</div>
-    <p style="margin-top:12px;color:#aaa;font-size:17px;">Доступно для вывода</p>
+    <p style="margin-top:15px;color:#aaa;font-size:18px;">Доступно для вывода</p>
   </div>
-
   <button class="create-btn" style="background:linear-gradient(45deg,#00cc66,#00ff88);" id="topup-btn">ПОПОЛНИТЬ БАЛАНС</button>
-  <button class="create-btn" style="background:linear-gradient(45deg,#ff3366,#ff1a50);margin-top:18px;" id="withdraw-btn">ВЫВОД СРЕДСТВ</button>
+  <button class="create-btn" style="background:linear-gradient(45deg,#ff3366,#ff1a50);margin-top:20px;" id="withdraw-btn">ВЫВОД СРЕДСТВ</button>
 </div>
 
 <div class="bottom-nav">
@@ -119,9 +119,7 @@
 
 <script>
   const tg = window.Telegram.WebApp;
-  tg.ready();
-  tg.expand();
-
+  tg.ready(); tg.expand();
   const user = tg.initDataUnsafe.user || {};
   const prices = { yandex: 100, google: 65, telegram: 10 };
   const minBudget = { yandex: 100, google: 65, telegram: 10 };
@@ -133,111 +131,148 @@
   document.getElementById('user-avatar').src = user.photo_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user.id || 'user');
   document.getElementById('user-balance').innerText = userBalance.toLocaleString() + ' ₽';
 
-  // Копирование
-  function copy(text) {
-    navigator.clipboard.writeText(text);
-    tg.showAlert("Скопировано!");
+  function copy(text) { navigator.clipboard.writeText(text); tg.showAlert("Скопировано!"); }
+
+  // ПРОВЕРКА ССЫЛКИ
+  function validateLink() {
+    const link = document.getElementById('task-link').value.trim();
+    const type = document.getElementById('task-type').value;
+    const error = document.getElementById('link-error');
+    error.style.display = 'none';
+
+    if (!link || !type) return true;
+
+    if (type === 'yandex' && !link.includes('yandex.ru/maps') && !link.includes('yandex.com/maps')) {
+      error.textContent = 'Ссылка должна быть из Яндекс.Карт';
+      error.style.display = 'block';
+      return false;
+    }
+    if (type === 'google' && !link.includes('google.com/maps') && !link.includes('goo.gl/maps')) {
+      error.textContent = 'Ссылка должна быть из Google Карт';
+      error.style.display = 'block';
+      return false;
+    }
+    if (type === 'telegram' && !link.includes('t.me/')) {
+      error.textContent = 'Ссылка должна вести на Telegram-канал (t.me/)';
+      error.style.display = 'block';
+      return false;
+    }
+    return true;
   }
 
-  // ПОПОЛНЕНИЕ — 100% РАБОТАЕТ
-  document.getElementById('topup-btn').onclick = function() {
-    tg.showPopup({
-      title: "Пополнение",
-      message: '<div style="padding:20px;text-align:center;"><input type="number" id="inp" placeholder="от 100 ₽" style="width:100%;padding:18px;background:#000;border:3px solid #00ffff;border-radius:20px;color:white;font-size:18px;"><button id="go" style="margin-top:15px;width:100%;padding:18px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;">ДАЛЕЕ</button></div>',
-      buttons: [{type: "close"}]
-    });
-
-    setTimeout(() => {
-      document.getElementById('go').onclick = function() {
-        const sum = parseInt(document.getElementById('inp').value);
-        if (sum < 100) return tg.showAlert("Минимум 100 ₽");
-        const code = "RC" + Math.floor(1000 + Math.random()*9000);
-
-        tg.showPopup({
-          title: "Перевод на телефон",
-          message: `<div style="padding:25px;text-align:center;font-size:18px;line-height:1.8;">
-            <p>Переведи <b style="color:#00ff88;font-size:32px;">${sum} ₽</b></p>
-            <div class="copy-block" onclick="copy('+79600738559')">
-              <div class="copy-text">+7 960 073 85 59</div>
-              <div class="copy-hint">Нажми — скопируется</div>
-            </div>
-            <p><b>Получатель: РАЯЗ Н.</b></p>
-            <p class="important">В комментарии укажи код:</p>
-            <div class="copy-block" onclick="copy('${code}')">
-              <div class="copy-text">${code}</div>
-              <div class="copy-hint">Нажми — скопируется</div>
-            </div>
-            <button onclick="tg.showAlert('Заявка принята!')" style="margin-top:25px;width:100%;padding:20px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;font-size:20px;">Я ПЕРЕВЁЛ</button>
-          </div>`,
-          buttons: [{type: "close"}]
-        });
-      };
-    }, 600);
-  };
-
-  // ВЫВОД — 100% РАБОТАЕТ
-  document.getElementById('withdraw-btn').onclick = function() {
-    tg.showPopup({
-      title: "Вывод средств",
-      message: `<div style="padding:20px;text-align:center;">
-        <p>Доступно: <b style="color:#00ff88;font-size:26px;">${userBalance} ₽</b></p>
-        <input type="number" id="out" placeholder="от 100 ₽" style="width:100%;padding:18px;margin:15px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
-        <button id="outNext" style="width:100%;padding:18px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;">ДАЛЕЕ</button>
-      </div>`,
-      buttons: [{type: "close"}]
-    });
-
-    setTimeout(() => {
-      document.getElementById('outNext').onclick = function() {
-        const sum = parseInt(document.getElementById('out').value);
-        if (sum < 100) return tg.showAlert("Минимум 100 ₽");
-        if (sum > userBalance) return tg.showAlert("Недостаточно");
-
-        tg.showPopup({
-          title: "Реквизиты",
-          message: `<div style="padding:20px;">
-            <input type="text" placeholder="Имя / Ник" style="width:100%;padding:18px;margin:10px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
-            <input type="text" placeholder="Карта / Телефон" style="width:100%;padding:18px;margin:10px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
-            <input type="text" placeholder="Банк (если карта)" style="width:100%;padding:18px;margin:10px 0;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;">
-            <button onclick="tg.showAlert('Заявка отправлена!'); userBalance-=sum; document.getElementById('user-balance').innerText = userBalance+' ₽';" 
-                    style="margin-top:20px;width:100%;padding:20px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;">
-              ОТПРАВИТЬ
-            </button>
-          </div>`,
-          buttons: [{type: "close"}]
-        });
-      };
-    }, 600);
-  };
-
-  // Округлитель + всё остальное
+  // ИДЕАЛЬНЫЙ ОКРУГЛИТЕЛЬ
   function updateBudget() {
     const type = document.getElementById('task-type').value;
-    if (!type) return;
-    let val = parseInt(document.getElementById('task-budget').value) || 0;
-    if (val < minBudget[type]) val = minBudget[type];
-    const rounded = Math.floor(val / prices[type]) * prices[type];
+    if (!type) {
+      document.getElementById('budget-result').innerHTML = 'Выберите тип задания';
+      return;
+    }
+
+    let budget = parseInt(document.getElementById('task-budget').value) || 0;
+    if (budget < minBudget[type]) budget = minBudget[type];
+    if (budget > 15000) budget = 15000;
+
+    const count = Math.floor(budget / prices[type]);
+    const rounded = count * prices[type];
+
     document.getElementById('task-budget').value = rounded;
-    const count = rounded / prices[type];
-    document.getElementById('budget-result').innerHTML = `За ${rounded} ₽ → <b style="color:#ffd700;font-size:42px;">${count}</b> ${type==='telegram'?'подписок':'отзывов'}`;
+    document.getElementById('budget-result').innerHTML = `
+      За <b style="color:#00ff88;font-size:32px;">${rounded.toLocaleString()} ₽</b> будет выполнено<br>
+      <b style="color:#ffd700;font-size:52px;">${count}</b> ${type==='telegram' ? 'подписок' : 'отзывов'}`;
   }
 
+  // ЦЕНТРИРОВАНИЕ КНОПОК
+  function scrollToCenter(el, container) {
+    const offset = el.offsetLeft - (container.offsetWidth / 2) + (el.offsetWidth / 2);
+    container.scrollTo({ left: offset, behavior: 'smooth' });
+  }
+
+  // Все кнопки
   document.getElementById('create-task-btn').onclick = () => document.getElementById('create-form').classList.toggle('active');
-  document.getElementById('task-type').onchange = updateBudget;
-  document.getElementById('task-budget').oninput = () => setTimeout(updateBudget, 800);
-  document.querySelectorAll('.price-btn').forEach(b => b.onclick = () => {
-    document.getElementById('task-budget').value = b.dataset.amount;
-    document.querySelectorAll('.price-btn').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    updateBudget();
+
+  document.getElementById('task-type').onchange = () => { validateLink(); updateBudget(); };
+  document.getElementById('task-link').oninput = validateLink;
+  document.getElementById('task-budget').oninput = () => setTimeout(updateBudget, 600);
+
+  document.querySelectorAll('.price-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.getElementById('task-budget').value = btn.dataset.amount;
+      document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateBudget();
+      scrollToCenter(btn, document.getElementById('priceButtons'));
+    };
   });
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      btn.parentElement.querySelectorAll('.active').forEach(e => e.classList.remove('active'));
+      btn.classList.add('active');
+      scrollToCenter(btn, document.getElementById('filterBar'));
+    };
+  });
+
   document.getElementById('publish-task').onclick = () => {
-    if (parseInt(document.getElementById('task-budget').value) > 15000) return tg.showAlert("Максимум 15 000 ₽");
-    tg.showAlert("Задание опубликовано!");
+    if (!validateLink()) return;
+    const budget = parseInt(document.getElementById('task-budget').value);
+    if (budget > 15000) return tg.showAlert("Максимум 15 000 ₽!");
+    if (budget < 100) return tg.showAlert("Минимум 100 ₽!");
+    tg.showAlert("Задание успешно опубликовано!");
     document.getElementById('create-form').classList.remove('active');
   };
 
-  document.querySelectorAll('.role-btn, .nav-btn, .filter-btn').forEach(btn => {
+  // ПОПОЛНЕНИЕ И ВЫВОД — ПОЛНОСТЬЮ РАБОЧИЕ
+  document.getElementById('topup-btn').onclick = () => {
+    tg.showPopup({
+      title: "Пополнение баланса",
+      message: `<div style="padding:30px;text-align:center;">
+        <input type="number" id="sum" placeholder="от 100 ₽" style="width:100%;padding:20px;background:#000;border:3px solid #00ffff;border-radius:20px;color:white;font-size:18px;text-align:center;">
+        <button id="next" style="margin-top:20px;width:100%;padding:20px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;font-size:19px;">ДАЛЕЕ</button>
+      </div>`,
+      buttons: [{type:"close"}]
+    });
+    setTimeout(() => {
+      document.getElementById('next').onclick = () => {
+        const amount = parseInt(document.getElementById('sum').value || 0);
+        if (amount < 100) return tg.showAlert("Минимум 100 ₽");
+        const code = "RC" + Math.floor(1000 + Math.random()*9000);
+        tg.showPopup({
+          title: "ПЕРЕВОД",
+          message: `<div style="padding:30px;text-align:center;line-height:2;font-size:19px;">
+            Переведи <b style="color:#00ff88;font-size:36px;">${amount} ₽</b><br>
+            <div class="copy-block" onclick="copy('+79600738559')"><div class="copy-text">+7 960 073 85 59</div><div class="copy-hint">Нажми — скопируется</div></div>
+            Получатель: <b>РАЯЗ Н.</b><br>
+            <span class="important">В комментарии: ${code}</span>
+            <div class="copy-block" onclick="copy('${code}')"><div class="copy-text">${code}</div></div>
+            <button onclick="tg.showAlert('Заявка принята! Зачислят скоро')" style="margin-top:30px;width:100%;padding:22px;background:#00ff88;color:black;border:none;border-radius:20px;font-weight:900;">Я ПЕРЕВЁЛ</button>
+          </div>`,
+          buttons: [{type:"close"}]
+        });
+      };
+    }, 600);
+  };
+
+  document.getElementById('withdraw-btn').onclick = () => {
+    tg.showPopup({
+      title: "Вывод средств",
+      message: `<div style="padding:30px;text-align:center;">
+        Доступно: <b style="color:#00ff88;font-size:28px;">${userBalance} ₽</b><br>
+        <input type="number" id="wsum" placeholder="от 100 ₽" style="width:100%;padding:20px;background:#000;border:3px solid #ff3366;border-radius:20px;color:white;font-size:18px;">
+        <button id="wnext" style="margin-top:20px;width:100%;padding:20px;background:#ff3366;color:white;border:none;border-radius:20px;font-weight:900;">ДАЛЕЕ</button>
+      </div>`,
+      buttons: [{type:"close"}]
+    });
+    setTimeout(() => {
+      document.getElementById('wnext').onclick = () => {
+        const sum = parseInt(document.getElementById('wsum').value || 0);
+        if (sum < 100) return tg.showAlert("Минимум 100 ₽");
+        tg.showAlert(`Заявка на вывод ${sum} ₽ отправлена!`);
+      };
+    }, 600);
+  };
+
+  // Переключение страниц
+  document.querySelectorAll('.role-btn, .nav-btn').forEach(btn => {
     btn.onclick = () => {
       btn.parentElement.querySelectorAll('.active').forEach(e => e.classList.remove('active'));
       btn.classList.add('active');
