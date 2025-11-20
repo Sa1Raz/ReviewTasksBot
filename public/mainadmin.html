@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ReviewCash — Admin</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <style>
   body{background:#041226;color:#e6fbff;font-family:Inter,system-ui,-apple-system;margin:0;padding:18px;}
@@ -86,42 +87,32 @@
 
 <script>
 (async function(){
-  // utils
   function qs(name){ const params=new URLSearchParams(location.search); return params.get(name); }
-  function el(id){return document.getElementById(id)}
-  function authHeaders(token){ return { 'Authorization': 'Bearer ' + token, 'Accept':'application/json', 'Content-Type':'application/json' }; }
+  function el(id){ return document.getElementById(id); }
+  function authHeaders(token){ return token ? { 'Authorization': 'Bearer ' + token } : {}; }
   function fmtDate(s){ try{ return new Date(s).toLocaleString(); }catch(e){return s} }
+  function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
   const token = qs('token') || '';
   if(!token){ document.body.innerHTML = '<div style="padding:24px;color:#ff8b8b">Токен не найден. Открывайте панель через бота (/mainadmin).</div>'; return; }
 
-  // convenience fetch wrapper
-  async function api(path, opts={}){
-    const url = path.startsWith('/')? path : ('/' + path);
+  async function api(path, opts={}) {
+    const url = path.startsWith('/') ? path : ('/' + path);
     opts.headers = Object.assign({}, opts.headers || {}, authHeaders(token));
     const res = await fetch(url, opts);
-    if(res.status === 401) { alert('Token invalid or expired'); }
     return res;
   }
 
-  // whoami
-  try {
-    const who = await api('/whoami'); // try existing endpoint if present
-    if(who.ok){
-      const j = await who.json();
-      el('whoami').innerText = `${j.admin?.username || j.admin?.uid || 'admin' }`;
-      // if backend returns a role flag, use it; otherwise we'll request protected endpoints to deduce
-      if(j.admin?.is_main) el('mainAdminPanel').classList.remove('hidden');
-    } else {
-      // if /whoami absent, use /api/topups to check token validity and then call /api/tasks etc.
-      el('whoami').innerText = 'admin';
-    }
-  } catch(err){
-    console.warn('whoami missing',err);
-    el('whoami').innerText = 'admin';
-  }
+  // socket
+  const socket = io({ auth: { token: token }, transports: ['websocket'] });
+  socket.on('connect', ()=> console.log('socket connected', socket.id));
+  socket.on('connect_error', (err)=> console.error('socket error', err));
+  socket.on('new_topup', ()=> loadTopups());
+  socket.on('new_withdraw', ()=> loadWithdraws());
+  socket.on('new_work', ()=> loadWorks());
+  socket.on('task_deleted', ()=> loadTasks());
 
-  // Helpers to render tables
+  // render helpers
   function buildTable(headers, rows){
     let html = '<table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
     if(!rows || rows.length===0) html += '<tr><td colspan="'+headers.length+'" class="small">Пусто</td></tr>';
@@ -136,7 +127,6 @@
     return html;
   }
 
-  // TOPUPS
   async function loadTopups(q=''){
     const res = await api('/api/topups');
     if(!res.ok){ el('topupsTable').innerHTML = '<div class="small">Ошибка загрузки</div>'; return; }
@@ -147,19 +137,17 @@
       const actions = `<button class="btn btn-approve" data-id="${t.id}" data-type="topup">Подтвердить</button>
                        <button class="btn btn-reject" data-id="${t.id}" data-type="topup">Отклонить</button>
                        <button class="btn btn-delete" data-id="${t.id}" data-type="topup">Подробнее</button>`;
-      return [escapeHtml(t.user?.username||t.user?.first_name||t.user?.id||'-') + `<div class="small">${t.user?.id||''}</div>`, 
+      return [escapeHtml(t.user?.username||t.user?.first_name||t.user?.id||'-') + `<div class="small">${t.user?.id||''}</div>`,
               (t.amount||0) + ' ₽',
               escapeHtml(t.code||''),
               escapeHtml(t.status||''),
-              fmtDate(t.created_at||t.createdAt||''),
+              fmtDate(t.created_at||''),
               actions];
     });
     el('topupsTable').innerHTML = buildTable(['Пользователь','Сумма','Код','Статус','Создано','Действия'], rows);
-    // wire buttons
     el('topupsTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
   }
 
-  // WITHDRAWS
   async function loadWithdraws(q=''){
     const res = await api('/api/withdraws');
     if(!res.ok){ el('withdrawsTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
@@ -181,7 +169,6 @@
     el('withdrawsTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
   }
 
-  // WORKS (tasks submissions)
   async function loadWorks(q=''){
     const res = await api('/api/works');
     if(!res.ok){ el('worksTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
@@ -204,7 +191,6 @@
     el('worksTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
   }
 
-  // TASKS
   async function loadTasks(q=''){
     const res = await api('/api/tasks');
     if(!res.ok){ el('tasksTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
@@ -220,7 +206,6 @@
     el('tasksTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
   }
 
-  // generic action handler
   async function onAdminAction(ev){
     const btn = ev.currentTarget;
     const id = btn.dataset.id;
@@ -228,8 +213,7 @@
     if(type === 'topup' && btn.classList.contains('btn-approve')){
       if(!confirm('Подтвердить зачисление?')) return;
       const res = await api(`/api/topups/${encodeURIComponent(id)}/approve`, { method:'POST' });
-      if(res.ok){ showAlert('Подтверждено'); loadTopups(); }
-      else showAlert('Ошибка');
+      if(res.ok){ showAlert('Подтверждено'); loadTopups(); } else showAlert('Ошибка');
     } else if(type === 'topup' && btn.classList.contains('btn-reject')){
       const reason = prompt('Причина отказа:','Не могу подтвердить платёж');
       if(reason===null) return;
@@ -259,7 +243,6 @@
       const res = await api(`/api/tasks/${encodeURIComponent(id)}/delete`, { method:'POST', body: JSON.stringify({ reason }) });
       if(res.ok){ showAlert('Задание помечено как удалённое'); loadTasks(); } else showAlert('Ошибка');
     } else if(type === 'task-detail' || type === 'topup' || type === 'withdraw'){
-      // show details
       const path = type === 'task-detail' ? `/api/tasks` : (type==='topup' ? `/api/topups` : `/api/withdraws`);
       const res = await api(path);
       if(!res.ok){ showAlert('Ошибка загрузки деталей'); return; }
@@ -270,7 +253,11 @@
     }
   }
 
-  // admin list management (main admin only)
+  el('refreshTopups').addEventListener('click', ()=> loadTopups(el('searchTopups').value.trim()));
+  el('refreshWithdraws').addEventListener('click', ()=> loadWithdraws(el('searchWithdraws').value.trim()));
+  el('refreshWorks').addEventListener('click', ()=> loadWorks(el('searchWorks').value.trim()));
+  el('refreshTasks').addEventListener('click', ()=> loadTasks(el('searchTasks').value.trim()));
+
   el('addAdminBtn').addEventListener('click', async ()=> {
     const ident = el('newAdminInput').value.trim(); if(!ident) return alert('Введите id или username');
     const res = await api('/api/admins', { method:'POST', body: JSON.stringify({ identifier: ident }) });
@@ -288,18 +275,36 @@
     }));
   }
 
-  // bind refresh inputs
-  el('refreshTopups').addEventListener('click', ()=> loadTopups(el('searchTopups').value.trim()));
-  el('refreshWithdraws').addEventListener('click', ()=> loadWithdraws(el('searchWithdraws').value.trim()));
-  el('refreshWorks').addEventListener('click', ()=> loadWorks(el('searchWorks').value.trim()));
-  el('refreshTasks').addEventListener('click', ()=> loadTasks(el('searchTasks').value.trim()));
-
-  // initial loads
   await Promise.all([ loadTopups(), loadWithdraws(), loadWorks(), loadTasks() ]);
 
-  // expose helper escapeHtml to this scope (used in template)
-  function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+  // whoami
+  try {
+    const who = await api('/whoami');
+    if(who.ok){
+      const j = await who.json();
+      el('whoami').innerText = `${j.admin?.username || j.admin?.uid || 'admin' }`;
+      if(j.admin?.is_main) el('mainAdminPanel').classList.remove('hidden');
+    } else {
+      el('whoami').innerText = 'admin';
+    }
+  } catch(e){
+    console.warn('whoami missing',e);
+    el('whoami').innerText = 'admin';
+  }
 
+  function showAlert(text){ alert(text); }
+  function showPopup(opts){
+    const overlay = document.createElement('div'); overlay.style.position='fixed'; overlay.style.inset='0'; overlay.style.background='rgba(0,0,0,0.6)'; overlay.style.display='flex'; overlay.style.alignItems='center'; overlay.style.justifyContent='center'; overlay.style.zIndex=9999;
+    const html = `<div style="width:92%;max-width:540px;background:#071426;padding:14px;border-radius:10px;color:#fff"><div style="font-weight:900;margin-bottom:8px">${opts.title||''}</div><div>${opts.message||''}</div><div style="text-align:right;margin-top:12px">${(opts.buttons||[]).map((b,i)=>`<button data-idx="${i}" style="margin-left:8px;padding:8px;border-radius:8px;background:${b.type==='close'?'#444':'#00aaee'};color:#fff;border:none">${b.text||'OK'}</button>`).join('')}</div></div>`;
+    overlay.innerHTML = html; document.body.appendChild(overlay);
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+    overlay.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', ev => {
+      const idx = +btn.dataset.idx; const b = (opts.buttons||[])[idx];
+      if(b && typeof b.onClick === 'function') b.onClick();
+      if(b && b.type === 'close') overlay.remove();
+    }));
+    return { close: ()=> overlay.remove() };
+  }
 })();
 </script>
 </body>
