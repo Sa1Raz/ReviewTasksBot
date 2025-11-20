@@ -1,3 +1,10 @@
+import os
+import time
+import json
+import threading
+from datetime import datetime, timedelta
+
+# --- Dependency guard for PyJWT ---
 try:
     import jwt
 except ImportError:
@@ -7,14 +14,14 @@ except ImportError:
         "or add 'PyJWT==2.8.0' to requirements.txt and redeploy."
     )
 
+# Flask and Telegram
 from flask import Flask, request, send_from_directory, jsonify, abort
 import telebot
-import threading
-import time
-import os
-import json
-from datetime import datetime, timedelta
-from urllib.parse import quote_plus
+
+# Socket.IO (eventlet)
+import eventlet
+eventlet.monkey_patch()
+from flask_socketio import SocketIO, join_room, leave_room
 
 # ========== CONFIG ==========
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")
@@ -61,6 +68,13 @@ def append_json(path, obj):
 # ========== BOT & FLASK ==========
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__, static_folder='public')
+
+# SocketIO init (optionally with Redis)
+REDIS_URL = os.environ.get("REDIS_URL")
+if REDIS_URL:
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", message_queue=REDIS_URL)
+else:
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 # load persisted users and admins
 users = load_json_safe(USERS_FILE, {})  # keyed by numeric id as string
@@ -163,19 +177,86 @@ def verify_admin_token(token):
             return True, payload
         if username and username in ADMIN_USERNAMES:
             return True, payload
-        # allow ordinary admins if their id/username matches payload? for mainadmin we restrict to main admins only
         return False, None
     except jwt.ExpiredSignatureError:
         return False, "expired"
     except Exception as e:
         return False, None
 
-# ========== NOTIFY ORDINARY ADMINS (only ordinary admins are notified) ==========
+# ========== SOCKET.IO CONNECT/DISCONNECT ==========
+@socketio.on('connect')
+def _on_connect(auth):
+    try:
+        token = None
+        if isinstance(auth, dict):
+            token = auth.get('token')
+        if not token:
+            # allow readonly connection
+            return
+        ok, payload = verify_admin_token(token)
+        if not ok:
+            return False
+        uid = str(payload.get('uid') or '')
+        username = str(payload.get('username') or '')
+        if uid in ADMIN_USER_IDS or username in ADMIN_USERNAMES:
+            join_room('admins_main')
+        if uid and uid in ordinary_admins:
+            join_room('admins_ordinary')
+        if username and username in ordinary_admins:
+            join_room('admins_ordinary')
+        if uid:
+            join_room(f'user:{uid}')
+        if username:
+            join_room(f'user_name:{username}')
+    except Exception as e:
+        print("socket connect error:", e)
+        return False
+
+@socketio.on('disconnect')
+def _on_disconnect():
+    pass
+
+# ========== SOCKET NOTIFY HELPERS ==========
+def notify_new_topup(topup):
+    try:
+        socketio.emit('new_topup', topup, room='admins_ordinary')
+        uid = topup.get('user', {}).get('id')
+        if uid:
+            socketio.emit('new_topup_user', topup, room=f'user:{uid}')
+    except Exception as e:
+        print("notify_new_topup error", e)
+
+def notify_update_topup(topup):
+    try:
+        socketio.emit('update_topup', topup, room='admins_ordinary')
+        uid = topup.get('user', {}).get('id')
+        if uid:
+            socketio.emit('update_topup_user', topup, room=f'user:{uid}')
+    except Exception as e:
+        print("notify_update_topup error", e)
+
+def notify_new_withdraw(withdraw):
+    try:
+        socketio.emit('new_withdraw', withdraw, room='admins_ordinary')
+        uid = withdraw.get('user', {}).get('id')
+        if uid:
+            socketio.emit('new_withdraw_user', withdraw, room=f'user:{uid}')
+    except Exception as e:
+        print("notify_new_withdraw error", e)
+
+def notify_new_work(work):
+    try:
+        socketio.emit('new_work', work, room='admins_ordinary')
+        uid = work.get('user', {}).get('id')
+        if uid:
+            socketio.emit('new_work_user', work, room=f'user:{uid}')
+    except Exception as e:
+        print("notify_new_work error", e)
+
+# ========== NOTIFY ORDINARY ADMINS (text via bot) ==========
 def notify_ordinary_admins_text(text, button_text="Открыть панель"):
-    # send a short-lived mainadmin-token for convenience to each ordinary admin
     for admin in ordinary_admins:
         try:
-            # if looks like numeric id
             if admin.isdigit():
                 token = generate_admin_token(admin, "")
                 url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
@@ -220,6 +301,8 @@ def notify_admins_work(work):
     notify_ordinary_admins_text(text, button_text="Проверить выполнение")
 
 # ========== BOT COMMANDS: admin management ==========
+from urllib.parse import quote_plus
+
 @bot.message_handler(commands=['addadmin'])
 def cmd_addadmin(message):
     sender = message.from_user
@@ -274,8 +357,8 @@ def mainadmin_command(message):
     sender = message.from_user
     uid = str(sender.id)
     username = (sender.username or "").strip()
-    is_admin = (uid in ADMIN_USER_IDS) or (username in ADMIN_USERNAMES)
-    if not is_admin:
+    is_admin_flag = (uid in ADMIN_USER_IDS) or (username in ADMIN_USERNAMES)
+    if not is_admin_flag:
         bot.send_message(message.chat.id, "Доступ запрещён: эта команда только для главного админа.")
         return
     token = generate_admin_token(uid, username)
@@ -302,7 +385,6 @@ def webapp_handler(message):
 
     # publish_task (создание задания работодателем)
     if action == "publish_task":
-        # expected fields: title, link, type, budget
         title = data.get("title", "")[:200]
         link = data.get("link", "")[:1000]
         ttype = data.get("type", "")
@@ -319,6 +401,11 @@ def webapp_handler(message):
         }
         append_json(TASKS_FILE, task)
         bot.send_message(user_id, "Задание опубликовано!")
+        # notify optionally main admins via socket
+        try:
+            socketio.emit('new_task', task, room='admins_main')
+        except Exception:
+            pass
         return
 
     # submit_work — исполнитель отправляет текст/ссылку о выполнении задания
@@ -341,7 +428,6 @@ def webapp_handler(message):
         last = users[uid_str].get("last_submissions", {})
         now_ts = int(time.time())
         if platform == "yandex":
-            # 3 days = 3*24*3600
             prev = int(last.get("yandex", 0) or 0)
             if now_ts - prev < 3*24*3600:
                 bot.send_message(user_id, "Можно оставлять отзывы на Яндекс не чаще, чем раз в 3 дня.")
@@ -351,9 +437,7 @@ def webapp_handler(message):
             if now_ts - prev < 24*3600:
                 bot.send_message(user_id, "Можно оставлять Google отзывы не чаще, чем раз в 1 день.")
                 return
-        # telegram has no limit
 
-        # create work record
         work = {
             "id": f"WKR_{int(time.time()*1000)}",
             "task_id": task_id,
@@ -375,11 +459,14 @@ def webapp_handler(message):
         save_users()
 
         bot.send_message(user_id, "Заявка на проверку отправлена. Обычные админы проверят и примут/отклонят её.")
-        # notify only ordinary admins
         try:
             notify_admins_work(work)
         except Exception as e:
             print("notify_admins_work error:", e)
+        try:
+            notify_new_work(work)
+        except Exception:
+            pass
         return
 
     # topup/withdraw handled previously; keep those flows
@@ -404,6 +491,10 @@ def webapp_handler(message):
             notify_admins_topup(topup)
         except Exception as e:
             print("notify_admins_topup error:", e)
+        try:
+            notify_new_topup(topup)
+        except Exception:
+            pass
         return
 
     if action == "request_withdraw":
@@ -437,6 +528,10 @@ def webapp_handler(message):
             notify_admins_withdraw(withdraw)
         except Exception as e:
             print("notify_admins_withdraw error:", e)
+        try:
+            notify_new_withdraw(withdraw)
+        except Exception:
+            pass
         return
 
     bot.send_message(user_id, "Неизвестное действие из WebApp")
@@ -448,13 +543,11 @@ def sender_username_safe(from_user):
 @app.route('/api/tasks_public', methods=['GET'])
 def api_tasks_public():
     tasks = load_json_safe(TASKS_FILE, [])
-    # return only active tasks
     active = [t for t in tasks if t.get("status") == "active"]
     return jsonify(active)
 
 @app.route('/api/works_pending', methods=['GET'])
 def api_works_pending():
-    # optionally used by admin panel; restricted to admins in real world — here we return all for mainadmin flow
     arr = load_json_safe(WORKS_FILE, [])
     return jsonify(arr)
 
@@ -514,6 +607,30 @@ def api_works():
     data = load_json_safe(WORKS_FILE, [])
     return jsonify(data)
 
+@app.route('/api/admins', methods=['GET'])
+@require_admin_token
+def api_admins_list():
+    # return ordinary admins list
+    return jsonify(ordinary_admins)
+
+@app.route('/api/admins', methods=['POST'])
+@require_admin_token
+def api_admins_add():
+    payload = request.get_json() or {}
+    ident = str(payload.get('identifier', '')).strip()
+    if not ident:
+        return jsonify({"ok": False, "reason": "missing_identifier"}), 400
+    if add_ordinary_admin(ident):
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "exists"}), 400
+
+@app.route('/api/admins/<ident>', methods=['DELETE'])
+@require_admin_token
+def api_admins_remove(ident):
+    if remove_ordinary_admin(ident):
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "not_found"}), 404
+
 @app.route('/api/topups/<req_id>/approve', methods=['POST'])
 @require_admin_token
 def api_topup_approve(req_id):
@@ -527,11 +644,50 @@ def api_topup_approve(req_id):
             it["handled_at"] = datetime.utcnow().isoformat() + "Z"
             uid = int(it["user"]["id"])
             uidk = str(uid)
-            if uidk not in users:
-                users[uidk] = {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}}
+            users.setdefault(uidk, {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}})
             users[uidk]["balance"] = users[uidk].get("balance", 0) + it.get("amount", 0)
             save_users()
             save_json(TOPUPS_FILE, arr)
+            # notify via socket
+            notify_update_topup(it)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "not_found"}), 404
+
+@app.route('/api/topups/<req_id>/reject', methods=['POST'])
+@require_admin_token
+def api_topup_reject(req_id):
+    payload = request.get_json() or {}
+    reason = payload.get("reason", "Отклонено администратором")
+    arr = load_json_safe(TOPUPS_FILE, [])
+    for it in arr:
+        if it.get("id") == req_id:
+            if it.get("status") in ("rejected", "approved"):
+                return jsonify({"ok": False, "reason": "already_handled"}), 400
+            it["status"] = "rejected"
+            it["handled_by"] = "admin"
+            it["handled_at"] = datetime.utcnow().isoformat() + "Z"
+            it["reject_reason"] = reason
+            save_json(TOPUPS_FILE, arr)
+            notify_update_topup(it)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "not_found"}), 404
+
+@app.route('/api/withdraws/<req_id>/approve', methods=['POST'])
+@require_admin_token
+def api_withdraw_approve(req_id):
+    arr = load_json_safe(WITHDRAWS_FILE, [])
+    for it in arr:
+        if it.get("id") == req_id:
+            if it.get("status") == "paid":
+                return jsonify({"ok": False, "reason": "already_paid"}), 400
+            it["status"] = "paid"
+            it["handled_by"] = "admin"
+            it["handled_at"] = datetime.utcnow().isoformat() + "Z"
+            uid = int(it["user"]["id"])
+            users.setdefault(str(uid), {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}})
+            # in a real flow, here admin would transfer money externally, we mark as paid
+            save_json(WITHDRAWS_FILE, arr)
+            notify_new_withdraw(it)
             return jsonify({"ok": True})
     return jsonify({"ok": False, "reason": "not_found"}), 404
 
@@ -556,10 +712,10 @@ def api_withdraw_reject(req_id):
             except Exception:
                 pass
             save_json(WITHDRAWS_FILE, arr)
+            notify_new_withdraw(it)
             return jsonify({"ok": True})
     return jsonify({"ok": False, "reason": "not_found"}), 404
 
-# approve work (admin approves a performed job)
 @app.route('/api/works/<work_id>/approve', methods=['POST'])
 @require_admin_token
 def api_work_approve(work_id):
@@ -568,18 +724,17 @@ def api_work_approve(work_id):
         if it.get("id") == work_id:
             if it.get("status") == "paid":
                 return jsonify({"ok": False, "reason": "already_paid"}), 400
-            # mark paid
             it["status"] = "paid"
             it["handled_by"] = "admin"
             it["handled_at"] = datetime.utcnow().isoformat() + "Z"
-            # credit user
             uid = int(it["user"]["id"])
             users.setdefault(str(uid), {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}})
             users[str(uid)]["balance"] = users[str(uid)].get("balance", 0) + it.get("amount", 0)
             users[str(uid)]["tasks_done"] = users[str(uid)].get("tasks_done", 0) + 1
-            users[str(uid)]["total_earned"] = users[str(uid)]["total_earned"] + it.get("amount", 0)
+            users[str(uid)]["total_earned"] = users[str(uid)].get("total_earned", 0) + it.get("amount", 0)
             save_users()
             save_json(WORKS_FILE, arr)
+            notify_new_work(it)
             return jsonify({"ok": True})
     return jsonify({"ok": False, "reason": "not_found"}), 404
 
@@ -597,18 +752,51 @@ def api_work_reject(work_id):
             it["handled_by"] = "admin"
             it["handled_at"] = datetime.utcnow().isoformat() + "Z"
             it["reject_reason"] = reason
-            # optionally: revert last_submissions allowance so user can retry sooner
             try:
                 uid = int(it["user"]["id"])
-                # don't refund money because it wasn't paid; allow next attempt by clearing last_submissions for that platform
                 if "last_submissions" in users[str(uid)] and it.get("platform"):
                     users[str(uid)]["last_submissions"].pop(it.get("platform"), None)
                     save_users()
             except Exception:
                 pass
             save_json(WORKS_FILE, arr)
+            notify_new_work(it)
             return jsonify({"ok": True})
     return jsonify({"ok": False, "reason": "not_found"}), 404
+
+@app.route('/api/tasks/<task_id>/delete', methods=['POST'])
+@require_admin_token
+def api_task_delete(task_id):
+    payload = request.get_json() or {}
+    reason = payload.get("reason", "")
+    arr = load_json_safe(TASKS_FILE, [])
+    for t in arr:
+        if t.get("id") == task_id:
+            t["status"] = "deleted"
+            t["deleted_by"] = "admin"
+            t["deleted_at"] = datetime.utcnow().isoformat() + "Z"
+            t["delete_reason"] = reason
+            save_json(TASKS_FILE, arr)
+            # notify admins/tasks
+            try:
+                socketio.emit('task_deleted', t, room='admins_main')
+            except Exception:
+                pass
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "reason": "not_found"}), 404
+
+@app.route('/whoami', methods=['GET'])
+@require_admin_token
+def api_whoami():
+    token = get_token_from_request(request)
+    ok, payload = verify_admin_token(token)
+    if not ok:
+        return jsonify({"ok": False}), 403
+    # indicate main admin if uid/username in main lists
+    uid = str(payload.get('uid', ''))
+    username = payload.get('username', '')
+    is_main = (uid in ADMIN_USER_IDS) or (username in ADMIN_USERNAMES)
+    return jsonify({"ok": True, "admin": {"uid": uid, "username": username, "is_main": is_main}})
 
 # ========== RUN & WEBHOOK SETUP ==========
 def setup_webhook():
@@ -626,4 +814,5 @@ def setup_webhook():
 if __name__ == '__main__':
     threading.Thread(target=setup_webhook, daemon=True).start()
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    # run via socketio for eventlet support
+    socketio.run(app, host='0.0.0.0', port=port)
