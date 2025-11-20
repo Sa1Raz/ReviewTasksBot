@@ -1,310 +1,263 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ReviewCash — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <style>
-  body{background:#041226;color:#e6fbff;font-family:Inter,system-ui,-apple-system;margin:0;padding:18px;}
-  .wrap{max-width:1100px;margin:0 auto;}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  h1{color:#00ffcc;margin:0;font-size:20px}
-  .muted{color:#88c0d0;font-size:13px}
-  .row{display:flex;gap:12px;align-items:center}
-  .panel{background:linear-gradient(180deg,#071223,#08162b);padding:14px;border-radius:10px;border:1px solid rgba(0,255,255,0.04);margin-bottom:12px}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
-  .btn{padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:800}
-  .btn-approve{background:#0fd580;color:#002}
-  .btn-reject{background:#ff5a7a;color:#fff}
-  .btn-delete{background:#ff8b4d;color:#000}
-  .input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#071826;color:#fff}
-  .admin-controls{display:flex;gap:8px;align-items:center}
-  .note{font-size:13px;color:#a8e6dd}
-  .small{font-size:13px;color:#88c0d0}
-  .hidden{display:none}
-  .flexcol{display:flex;flex-direction:column;gap:8px}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:#061026;color:#eaf7fb;padding:18px}
+  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:18px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(90deg,#00f0ff,#00ff9d);display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800}
+  h1{margin:0;font-size:18px}
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.04)}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:14px}
+  th{color:#9fb6c6}
+  .actions button{margin-right:6px;padding:6px 8px;border-radius:8px;border:none;cursor:pointer}
+  .approve{background:#00ff9d;color:#012226}
+  .reject{background:#ff6b80;color:#fff}
+  .muted{color:#9fb6c6;font-size:13px}
+  .search{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb}
+  .flex-row{display:flex;gap:8px;align-items:center}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;visibility:hidden;opacity:0;transition:all .16s}
+  .modal-backdrop.show{visibility:visible;opacity:1}
+  .modal{background:#071426;border-radius:10px;padding:14px;width:520px;border:1px solid rgba(255,255,255,0.04)}
+  textarea{width:100%;min-height:100px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb}
+  .btn{padding:8px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--muted)}
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>ReviewCash — Панель администратора</h1>
-      <div class="row">
-        <div id="whoami" class="muted">loading...</div>
-      </div>
+      <div class="mark">RC</div>
+      <div><h1>Админ-панель — ReviewCash</h1><div class="muted">События в реальном времени</div></div>
+      <div style="margin-left:auto" id="whoamiInfo" class="muted"></div>
     </header>
 
-    <div id="main" class="flexcol">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div><b>Заявки на пополнение</b> <span class="small" id="topups-count"></span></div>
-          <div class="row"><input id="searchTopups" class="input" placeholder="Поиск по коду/пользователю" /><button id="refreshTopups" class="btn">Обновить</button></div>
+    <main>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="flex-row" style="justify-content:space-between">
+          <div><strong>Заявки на пополнение</strong></div>
+          <div class="flex-row"><input id="topupSearch" class="search" placeholder="Поиск..." /></div>
         </div>
-        <div id="topupsTable"></div>
+        <div style="margin-top:10px;overflow:auto;max-height:260px">
+          <table id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:12px">
+        <div class="flex-row" style="justify-content:space-between">
+          <div><strong>Заявки на вывод</strong></div>
+        </div>
+        <div style="margin-top:10px;overflow:auto;max-height:260px">
+          <table id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
       </div>
 
       <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div><b>Заявки на вывод</b> <span class="small" id="withdraws-count"></span></div>
-          <div class="row"><input id="searchWithdraws" class="input" placeholder="Поиск по пользователю/карте" /><button id="refreshWithdraws" class="btn">Обновить</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Работы (pending)</strong></div>
+          <div class="muted">Обновляется по socket</div>
         </div>
-        <div id="withdrawsTable"></div>
+        <div style="margin-top:10px;overflow:auto;max-height:260px">
+          <table id="worksTable"><thead><tr><th>ID</th><th>Задание</th><th>Пользователь</th><th>Сумма</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </main>
+
+    <aside>
+      <div class="panel" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>Статистика</strong></div>
+          <div class="muted">Live</div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="muted">Всего топапов: <span id="statTopups">0</span></div>
+          <div class="muted" style="margin-top:6px">Всего выводов: <span id="statWithdraws">0</span></div>
+          <div class="muted" style="margin-top:6px">Работ в ожидании: <span id="statWorks">0</span></div>
+        </div>
       </div>
 
       <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div><b>Выполненные задания (заявки на проверку)</b> <span class="small" id="works-count"></span></div>
-          <div class="row"><input id="searchWorks" class="input" placeholder="Поиск по задаче/юзеру" /><button id="refreshWorks" class="btn">Обновить</button></div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><strong>Действия</strong></div>
         </div>
-        <div id="worksTable"></div>
-      </div>
-
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div><b>Задания пользователей</b> <span class="small" id="tasks-count"></span></div>
-          <div class="row"><input id="searchTasks" class="input" placeholder="Поиск по названию/типу" /><button id="refreshTasks" class="btn">Обновить</button></div>
+        <div style="margin-top:10px">
+          <div class="muted">Токен: <span id="tokenShort" style="word-break:break-all"></span></div>
+          <button id="reloadBtn" class="btn" style="margin-top:10px;padding:8px;border-radius:8px">Перезагрузить</button>
         </div>
-        <div id="tasksTable"></div>
       </div>
+    </aside>
+  </div>
 
-      <div id="mainAdminPanel" class="panel hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div><b>Главный админ — управление</b></div>
-          <div class="admin-controls">
-            <input id="newAdminInput" class="input" placeholder="Добавить обычного админа (id или username)" />
-            <button id="addAdminBtn" class="btn">Добавить</button>
-            <button id="listAdminsBtn" class="btn">Список админов</button>
-          </div>
-        </div>
-        <div id="adminsList" class="small"></div>
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <h3 id="confirmTitle">Подтвердите действие</h3>
+      <div class="muted" id="confirmDesc">Вы уверены?</div>
+      <div style="margin-top:12px">
+        <textarea id="confirmReason" placeholder="Причина (опционально)"></textarea>
       </div>
-
+      <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
+        <button id="confirmCancel" class="btn">Отмена</button>
+        <button id="confirmApprove" class="approve">Подтвердить</button>
+      </div>
     </div>
   </div>
 
 <script>
-(async function(){
-  function qs(name){ const params=new URLSearchParams(location.search); return params.get(name); }
-  function el(id){ return document.getElementById(id); }
-  function authHeaders(token){ return token ? { 'Authorization': 'Bearer ' + token } : {}; }
-  function fmtDate(s){ try{ return new Date(s).toLocaleString(); }catch(e){return s} }
-  function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
-
+(function(){
+  function qs(name){ return new URLSearchParams(location.search).get(name); }
   const token = qs('token') || '';
-  if(!token){ document.body.innerHTML = '<div style="padding:24px;color:#ff8b8b">Токен не найден. Открывайте панель через бота (/mainadmin).</div>'; return; }
+  document.getElementById('tokenShort').textContent = token ? token.slice(0,24) + '...' : 'нет';
 
-  async function api(path, opts={}) {
-    const url = path.startsWith('/') ? path : ('/' + path);
-    opts.headers = Object.assign({}, opts.headers || {}, authHeaders(token));
-    const res = await fetch(url, opts);
-    return res;
-  }
-
-  // socket
-  const socket = io({ auth: { token: token }, transports: ['websocket'] });
-  socket.on('connect', ()=> console.log('socket connected', socket.id));
-  socket.on('connect_error', (err)=> console.error('socket error', err));
-  socket.on('new_topup', ()=> loadTopups());
-  socket.on('new_withdraw', ()=> loadWithdraws());
-  socket.on('new_work', ()=> loadWorks());
-  socket.on('task_deleted', ()=> loadTasks());
-
-  // render helpers
-  function buildTable(headers, rows){
-    let html = '<table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
-    if(!rows || rows.length===0) html += '<tr><td colspan="'+headers.length+'" class="small">Пусто</td></tr>';
-    else {
-      rows.forEach(r => {
-        html += '<tr>';
-        r.forEach(cell => html += `<td>${cell}</td>`);
-        html += '</tr>';
-      });
-    }
-    html += '</tbody></table>';
-    return html;
-  }
-
-  async function loadTopups(q=''){
-    const res = await api('/api/topups');
-    if(!res.ok){ el('topupsTable').innerHTML = '<div class="small">Ошибка загрузки</div>'; return; }
-    const data = await res.json();
-    const filtered = q ? data.filter(t => (t.code||'').toLowerCase().includes(q.toLowerCase()) || (t.user?.username||'').toLowerCase().includes(q.toLowerCase())) : data;
-    el('topups-count').innerText = `(${filtered.length})`;
-    const rows = filtered.map(t => {
-      const actions = `<button class="btn btn-approve" data-id="${t.id}" data-type="topup">Подтвердить</button>
-                       <button class="btn btn-reject" data-id="${t.id}" data-type="topup">Отклонить</button>
-                       <button class="btn btn-delete" data-id="${t.id}" data-type="topup">Подробнее</button>`;
-      return [escapeHtml(t.user?.username||t.user?.first_name||t.user?.id||'-') + `<div class="small">${t.user?.id||''}</div>`,
-              (t.amount||0) + ' ₽',
-              escapeHtml(t.code||''),
-              escapeHtml(t.status||''),
-              fmtDate(t.created_at||''),
-              actions];
-    });
-    el('topupsTable').innerHTML = buildTable(['Пользователь','Сумма','Код','Статус','Создано','Действия'], rows);
-    el('topupsTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
-  }
-
-  async function loadWithdraws(q=''){
-    const res = await api('/api/withdraws');
-    if(!res.ok){ el('withdrawsTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
-    const data = await res.json();
-    const filtered = q ? data.filter(w => (w.card||'').toLowerCase().includes(q.toLowerCase()) || (w.user?.username||'').toLowerCase().includes(q.toLowerCase())) : data;
-    el('withdraws-count').innerText = `(${filtered.length})`;
-    const rows = filtered.map(w => {
-      const actions = `<button class="btn btn-approve" data-id="${w.id}" data-type="withdraw">Выплатить</button>
-                       <button class="btn btn-reject" data-id="${w.id}" data-type="withdraw">Отклонить</button>
-                       <button class="btn btn-delete" data-id="${w.id}" data-type="withdraw">Подробнее</button>`;
-      return [escapeHtml(w.user?.username||w.user?.first_name||w.user?.id||'-'),
-              (w.amount||0)+' ₽',
-              escapeHtml(w.card||w.bank||''),
-              escapeHtml(w.status||''),
-              fmtDate(w.created_at||''),
-              actions];
-    });
-    el('withdrawsTable').innerHTML = buildTable(['Пользователь','Сумма','Реквизиты','Статус','Создано','Действия'], rows);
-    el('withdrawsTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
-  }
-
-  async function loadWorks(q=''){
-    const res = await api('/api/works');
-    if(!res.ok){ el('worksTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
-    const data = await res.json();
-    const filtered = q ? data.filter(w => (w.task_title||'').toLowerCase().includes(q.toLowerCase()) || (w.user?.username||'').toLowerCase().includes(q.toLowerCase())) : data;
-    el('works-count').innerText = `(${filtered.length})`;
-    const rows = filtered.map(w => {
-      const actions = `<button class="btn btn-approve" data-id="${w.id}" data-type="work">Принять</button>
-                       <button class="btn btn-reject" data-id="${w.id}" data-type="work">Отклонить</button>
-                       <button class="btn btn-delete" data-id="${w.id}" data-type="work">Подробнее</button>`;
-      const linkHtml = w.link ? `<div class="small"><a href="${escapeHtml(w.link)}" target="_blank">ссылка</a></div>` : '';
-      return [escapeHtml(w.user?.username||w.user?.first_name||w.user?.id||'-'),
-              escapeHtml(w.task_title||'-') + linkHtml,
-              (w.amount||0)+' ₽',
-              escapeHtml(w.status||''),
-              fmtDate(w.created_at||''),
-              actions];
-    });
-    el('worksTable').innerHTML = buildTable(['Пользователь','Задание','Сумма','Статус','Создано','Действия'], rows);
-    el('worksTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
-  }
-
-  async function loadTasks(q=''){
-    const res = await api('/api/tasks');
-    if(!res.ok){ el('tasksTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
-    const data = await res.json();
-    const filtered = q ? data.filter(t => (t.title||'').toLowerCase().includes(q.toLowerCase()) || (t.type||'').toLowerCase().includes(q.toLowerCase())) : data;
-    el('tasks-count').innerText = `(${filtered.length})`;
-    const rows = filtered.map(t => {
-      const actions = `<button class="btn btn-delete" data-id="${t.id}" data-type="task-delete">Удалить</button>
-                       <button class="btn" data-id="${t.id}" data-type="task-detail">Подробнее</button>`;
-      return [escapeHtml(t.title||'-'), escapeHtml(t.type||''), (t.budget||0)+' ₽', escapeHtml(t.owner?.username||t.owner?.first_name||'-'), fmtDate(t.created_at||''), actions];
-    });
-    el('tasksTable').innerHTML = buildTable(['Название','Тип','Бюджет','Владелец','Создано','Действия'], rows);
-    el('tasksTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
-  }
-
-  async function onAdminAction(ev){
-    const btn = ev.currentTarget;
-    const id = btn.dataset.id;
-    const type = btn.dataset.type;
-    if(type === 'topup' && btn.classList.contains('btn-approve')){
-      if(!confirm('Подтвердить зачисление?')) return;
-      const res = await api(`/api/topups/${encodeURIComponent(id)}/approve`, { method:'POST' });
-      if(res.ok){ showAlert('Подтверждено'); loadTopups(); } else showAlert('Ошибка');
-    } else if(type === 'topup' && btn.classList.contains('btn-reject')){
-      const reason = prompt('Причина отказа:','Не могу подтвердить платёж');
-      if(reason===null) return;
-      const res = await api(`/api/topups/${encodeURIComponent(id)}/reject`, { method:'POST', body: JSON.stringify({ reason }) });
-      if(res.ok){ showAlert('Отклонено'); loadTopups(); } else showAlert('Ошибка');
-    } else if(type === 'withdraw' && btn.classList.contains('btn-approve')){
-      if(!confirm('Отметить как выплаченное?')) return;
-      const res = await api(`/api/withdraws/${encodeURIComponent(id)}/approve`, { method:'POST' });
-      if(res.ok){ showAlert('Отмечено как выплачено'); loadWithdraws(); } else showAlert('Ошибка');
-    } else if(type === 'withdraw' && btn.classList.contains('btn-reject')){
-      const reason = prompt('Причина отказа:','Неверные реквизиты');
-      if(reason===null) return;
-      const res = await api(`/api/withdraws/${encodeURIComponent(id)}/reject`, { method:'POST', body: JSON.stringify({ reason }) });
-      if(res.ok){ showAlert('Отклонено и средства возвращены'); loadWithdraws(); } else showAlert('Ошибка');
-    } else if(type === 'work' && btn.classList.contains('btn-approve')){
-      if(!confirm('Подтвердить выполнение и выплатить?')) return;
-      const res = await api(`/api/works/${encodeURIComponent(id)}/approve`, { method:'POST' });
-      if(res.ok){ showAlert('Выплата выполнена'); loadWorks(); } else showAlert('Ошибка');
-    } else if(type === 'work' && btn.classList.contains('btn-reject')){
-      const reason = prompt('Причина отказа:','Не соответствует требованиям');
-      if(reason===null) return;
-      const res = await api(`/api/works/${encodeURIComponent(id)}/reject`, { method:'POST', body: JSON.stringify({ reason }) });
-      if(res.ok){ showAlert('Отклонено'); loadWorks(); } else showAlert('Ошибка');
-    } else if(type === 'task-delete'){
-      const reason = prompt('Причина удаления задания (будет записана):','Нарушение правил');
-      if(reason===null) return;
-      const res = await api(`/api/tasks/${encodeURIComponent(id)}/delete`, { method:'POST', body: JSON.stringify({ reason }) });
-      if(res.ok){ showAlert('Задание помечено как удалённое'); loadTasks(); } else showAlert('Ошибка');
-    } else if(type === 'task-detail' || type === 'topup' || type === 'withdraw'){
-      const path = type === 'task-detail' ? `/api/tasks` : (type==='topup' ? `/api/topups` : `/api/withdraws`);
-      const res = await api(path);
-      if(!res.ok){ showAlert('Ошибка загрузки деталей'); return; }
-      const arr = await res.json();
-      const item = arr.find(x=>x.id === id);
-      if(!item){ showAlert('Не найдено'); return; }
-      showPopup({ title: 'Детали', message: `<pre style="white-space:pre-wrap;color:#fff">${escapeHtml(JSON.stringify(item,null,2))}</pre>`, buttons:[{type:'close', text:'Закрыть'}] });
-    }
-  }
-
-  el('refreshTopups').addEventListener('click', ()=> loadTopups(el('searchTopups').value.trim()));
-  el('refreshWithdraws').addEventListener('click', ()=> loadWithdraws(el('searchWithdraws').value.trim()));
-  el('refreshWorks').addEventListener('click', ()=> loadWorks(el('searchWorks').value.trim()));
-  el('refreshTasks').addEventListener('click', ()=> loadTasks(el('searchTasks').value.trim()));
-
-  el('addAdminBtn').addEventListener('click', async ()=> {
-    const ident = el('newAdminInput').value.trim(); if(!ident) return alert('Введите id или username');
-    const res = await api('/api/admins', { method:'POST', body: JSON.stringify({ identifier: ident }) });
-    if(res.ok){ showAlert('Добавлен'); listAdmins(); el('newAdminInput').value=''; } else { showAlert('Ошибка'); }
-  });
-  el('listAdminsBtn').addEventListener('click', listAdmins);
-  async function listAdmins(){
-    const res = await api('/api/admins'); if(!res.ok){ el('adminsList').innerText = 'Ошибка'; return; }
-    const arr = await res.json(); el('adminsList').innerHTML = '<div class="small">Обычные админы:</div><ul>' + arr.map(a=>`<li>${escapeHtml(a)} <button data-id="${escapeHtml(a)}" class="btn" style="margin-left:8px">Удалить</button></li>`).join('') + '</ul>';
-    el('adminsList').querySelectorAll('button').forEach(b => b.addEventListener('click', async ev => {
-      const id = ev.currentTarget.dataset.id;
-      if(!confirm('Удалить admin '+id+'?')) return;
-      const r = await api('/api/admins/' + encodeURIComponent(id), { method:'DELETE' });
-      if(r.ok){ showAlert('Удалён'); listAdmins(); } else showAlert('Ошибка');
-    }));
-  }
-
-  await Promise.all([ loadTopups(), loadWithdraws(), loadWorks(), loadTasks() ]);
-
-  // whoami
+  let socket = null;
   try {
-    const who = await api('/whoami');
-    if(who.ok){
-      const j = await who.json();
-      el('whoami').innerText = `${j.admin?.username || j.admin?.uid || 'admin' }`;
-      if(j.admin?.is_main) el('mainAdminPanel').classList.remove('hidden');
-    } else {
-      el('whoami').innerText = 'admin';
+    socket = io({ auth: { token }, transports: ['websocket'] });
+    socket.on('connect', ()=> console.log('admin socket', socket.id));
+    socket.on('new_topup', d => { loadTopups(); });
+    socket.on('update_topup', d => { loadTopups(); });
+    socket.on('new_withdraw', d => { loadWithdraws(); });
+    socket.on('new_work', d => { loadWorks(); });
+    socket.on('user_balance_changed', d => { /* optionally refresh UI or show toast */ });
+  } catch(e){ console.warn('socket fail', e); }
+
+  const topupsTable = document.querySelector('#topupsTable tbody');
+  const withdrawsTable = document.querySelector('#withdrawsTable tbody');
+  const worksTable = document.querySelector('#worksTable tbody');
+
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmTitle = document.getElementById('confirmTitle');
+  const confirmDesc = document.getElementById('confirmDesc');
+  const confirmReason = document.getElementById('confirmReason');
+  const confirmApprove = document.getElementById('confirmApprove');
+  const confirmCancel = document.getElementById('confirmCancel');
+
+  let pendingConfirmAction = null;
+
+  function showConfirm(title, desc, action){
+    confirmTitle.textContent = title;
+    confirmDesc.textContent = desc || '';
+    confirmReason.value = '';
+    pendingConfirmAction = action;
+    confirmModal.classList.add('show'); confirmModal.setAttribute('aria-hidden','false');
+  }
+  function hideConfirm(){ confirmModal.classList.remove('show'); confirmModal.setAttribute('aria-hidden','true'); pendingConfirmAction = null; }
+
+  confirmCancel.addEventListener('click', hideConfirm);
+  confirmApprove.addEventListener('click', async ()=>{
+    if (!pendingConfirmAction) { hideConfirm(); return; }
+    const reason = confirmReason.value.trim();
+    try {
+      await pendingConfirmAction({ reason });
+      hideConfirm();
+      await Promise.all([loadTopups(), loadWithdraws(), loadWorks()]);
+    } catch(e) {
+      alert('Ошибка: ' + e);
     }
-  } catch(e){
-    console.warn('whoami missing',e);
-    el('whoami').innerText = 'admin';
+  });
+
+  async function apiGet(path){ const res = await fetch(path + (path.includes('?')? '&':'?') + 'token=' + encodeURIComponent(token)); if (!res.ok) throw await res.text(); return res.json(); }
+  async function apiPost(path, body){ const res = await fetch(path + '?token=' + encodeURIComponent(token), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})}); if (!res.ok) throw await res.text(); return res.json(); }
+
+  async function loadTopups(){
+    try {
+      const data = await apiGet('/api/topups');
+      topupsTable.innerHTML = '';
+      data.forEach(t=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id}</td><td>${t.amount||0} ₽</td><td>${t.status||''}</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        if (t.status === 'pending') {
+          const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Одобрить';
+          aBtn.onclick = ()=> showConfirm('Подтвердить пополнение','Одобрить заявку ' + t.id + '?', async ({reason})=> {
+            await apiPost(`/api/topups/${encodeURIComponent(t.id)}/approve`, {});
+          });
+          const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
+          rBtn.onclick = ()=> showConfirm('Отклонить пополнение','Укажите причину отклонения', async ({reason})=> {
+            await apiPost(`/api/topups/${encodeURIComponent(t.id)}/reject`, { reason: reason || 'Отклонено админом' });
+          });
+          actions.appendChild(aBtn); actions.appendChild(rBtn);
+        } else {
+          actions.textContent = '-';
+        }
+        topupsTable.appendChild(tr);
+      });
+      document.getElementById('statTopups').textContent = data.length;
+    } catch(e){ console.error(e); topupsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
   }
 
-  function showAlert(text){ alert(text); }
-  function showPopup(opts){
-    const overlay = document.createElement('div'); overlay.style.position='fixed'; overlay.style.inset='0'; overlay.style.background='rgba(0,0,0,0.6)'; overlay.style.display='flex'; overlay.style.alignItems='center'; overlay.style.justifyContent='center'; overlay.style.zIndex=9999;
-    const html = `<div style="width:92%;max-width:540px;background:#071426;padding:14px;border-radius:10px;color:#fff"><div style="font-weight:900;margin-bottom:8px">${opts.title||''}</div><div>${opts.message||''}</div><div style="text-align:right;margin-top:12px">${(opts.buttons||[]).map((b,i)=>`<button data-idx="${i}" style="margin-left:8px;padding:8px;border-radius:8px;background:${b.type==='close'?'#444':'#00aaee'};color:#fff;border:none">${b.text||'OK'}</button>`).join('')}</div></div>`;
-    overlay.innerHTML = html; document.body.appendChild(overlay);
-    overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
-    overlay.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', ev => {
-      const idx = +btn.dataset.idx; const b = (opts.buttons||[])[idx];
-      if(b && typeof b.onClick === 'function') b.onClick();
-      if(b && b.type === 'close') overlay.remove();
-    }));
-    return { close: ()=> overlay.remove() };
+  async function loadWithdraws(){
+    try {
+      const data = await apiGet('/api/withdraws');
+      withdrawsTable.innerHTML = '';
+      data.forEach(t=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id}</td><td>${t.amount||0} ₽</td><td>${(t.card||'') + ' / ' + (t.bank||'')}</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        if (t.status === 'pending') {
+          const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Выплатить';
+          aBtn.onclick = ()=> showConfirm('Подтвердить выплату','Отметить как выплаченную: ' + t.id, async ({reason})=> {
+            await apiPost(`/api/withdraws/${encodeURIComponent(t.id)}/approve`, {});
+          });
+          const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
+          rBtn.onclick = ()=> showConfirm('Отклонить вывод','Укажите причину отклонения', async ({reason})=> {
+            await apiPost(`/api/withdraws/${encodeURIComponent(t.id)}/reject`, { reason: reason || 'Отклонено админом' });
+          });
+          actions.appendChild(aBtn); actions.appendChild(rBtn);
+        } else {
+          actions.textContent = '-';
+        }
+        withdrawsTable.appendChild(tr);
+      });
+      document.getElementById('statWithdraws').textContent = data.length;
+    } catch(e){ console.error(e); withdrawsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
   }
+
+  async function loadWorks(){
+    try {
+      const data = await apiGet('/api/works');
+      worksTable.innerHTML = '';
+      data.forEach(w=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${w.id}</td><td>${w.task_title||w.task_id}</td><td>${w.user.username||w.user.id}</td><td>${w.amount||0} ₽</td><td class="actions"></td>`;
+        const actions = tr.querySelector('.actions');
+        if (w.status === 'pending') {
+          const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Принять';
+          aBtn.onclick = ()=> showConfirm('Принять работу','Подтвердить выплату исполнителю?', async ({reason})=> {
+            await apiPost(`/api/works/${encodeURIComponent(w.id)}/approve`, {});
+          });
+          const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
+          rBtn.onclick = ()=> showConfirm('Отклонить работу','Укажите причину отклонения', async ({reason})=> {
+            await apiPost(`/api/works/${encodeURIComponent(w.id)}/reject`, { reason: reason || 'Отклонено админом' });
+          });
+          actions.appendChild(aBtn); actions.appendChild(rBtn);
+        } else {
+          actions.textContent = w.status || '-';
+        }
+        worksTable.appendChild(tr);
+      });
+      document.getElementById('statWorks').textContent = data.length;
+    } catch(e){ console.error(e); worksTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
+  }
+
+  document.getElementById('reloadBtn').addEventListener('click', ()=> Promise.all([loadTopups(), loadWithdraws(), loadWorks()]));
+  (async function(){ 
+    if (!token) { document.getElementById('whoamiInfo').textContent = 'Токен не передан'; }
+    else {
+      try {
+        const who = await (await fetch('/whoami?token=' + encodeURIComponent(token))).json();
+        if (who && who.ok && who.admin) {
+          document.getElementById('whoamiInfo').textContent = who.admin.username ? (who.admin.username + (who.admin.is_main? ' (главный)': '')) : who.admin.uid;
+        }
+      } catch(e){}
+    }
+    await Promise.all([loadTopups(), loadWithdraws(), loadWorks()]);
+  })();
+
 })();
 </script>
 </body>
