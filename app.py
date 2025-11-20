@@ -1,10 +1,18 @@
+try:
+    import jwt
+except ImportError:
+    raise RuntimeError(
+        "Python package 'PyJWT' is not installed. "
+        "Install it with: pip install PyJWT "
+        "or add 'PyJWT==2.8.0' to requirements.txt and redeploy."
+    )
+
 from flask import Flask, request, send_from_directory, jsonify, abort
 import telebot
 import threading
 import time
 import os
 import json
-import jwt
 from datetime import datetime, timedelta
 from urllib.parse import quote_plus
 
@@ -569,7 +577,7 @@ def api_work_approve(work_id):
             users.setdefault(str(uid), {"balance": 0, "tasks_done": 0, "total_earned": 0, "subscribed": False, "last_submissions": {}})
             users[str(uid)]["balance"] = users[str(uid)].get("balance", 0) + it.get("amount", 0)
             users[str(uid)]["tasks_done"] = users[str(uid)].get("tasks_done", 0) + 1
-            users[str(uid)]["total_earned"] = users[str(uid)].get("total_earned", 0) + it.get("amount", 0)
+            users[str(uid)]["total_earned"] = users[str(uid)]["total_earned"] + it.get("amount", 0)
             save_users()
             save_json(WORKS_FILE, arr)
             return jsonify({"ok": True})
