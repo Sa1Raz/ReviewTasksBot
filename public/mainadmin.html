@@ -1,307 +1,306 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ReviewCash — Admin</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <style>
-    body{background:#060617;color:#e6fbff;font-family:Inter,system-ui,-apple-system;min-height:100vh;padding:20px;}
-    .card{background:linear-gradient(180deg,#071023,#0c1330);padding:16px;border-radius:12px;border:1px solid rgba(0,255,255,0.06);margin-bottom:16px;}
-    h1{font-size:20px;margin-bottom:12px;color:#00ffcc;}
-    table{width:100%;border-collapse:collapse;font-size:14px;}
-    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
-    .btn{padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:700;}
-    .btn-approve{background:#00cc66;color:#001;}
-    .btn-reject{background:#ff3366;color:#fff;}
-    .btn-detail{background:transparent;color:#88c0d0;border:1px solid rgba(255,255,255,0.04);}
-    .small{font-size:12px;color:#a8dfe0;}
-    .muted{color:#88c0d0;font-size:13px;}
-    .danger{color:#ff8aa0;}
-    .top {display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;}
-    .search{width:60%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#061020;color:#fff;}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReviewCash — Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<style>
+  body{background:#041226;color:#e6fbff;font-family:Inter,system-ui,-apple-system;margin:0;padding:18px;}
+  .wrap{max-width:1100px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  h1{color:#00ffcc;margin:0;font-size:20px}
+  .muted{color:#88c0d0;font-size:13px}
+  .row{display:flex;gap:12px;align-items:center}
+  .panel{background:linear-gradient(180deg,#071223,#08162b);padding:14px;border-radius:10px;border:1px solid rgba(0,255,255,0.04);margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+  .btn{padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:800}
+  .btn-approve{background:#0fd580;color:#002}
+  .btn-reject{background:#ff5a7a;color:#fff}
+  .btn-delete{background:#ff8b4d;color:#000}
+  .input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#071826;color:#fff}
+  .admin-controls{display:flex;gap:8px;align-items:center}
+  .note{font-size:13px;color:#a8e6dd}
+  .small{font-size:13px;color:#88c0d0}
+  .hidden{display:none}
+  .flexcol{display:flex;flex-direction:column;gap:8px}
+</style>
 </head>
 <body>
-  <div class="card top">
-    <div>
-      <h1>Панель администратора — ReviewCash</h1>
-      <div class="muted" id="admin-user">Загрузка профиля...</div>
+  <div class="wrap">
+    <header>
+      <h1>ReviewCash — Панель администратора</h1>
+      <div class="row">
+        <div id="whoami" class="muted">loading...</div>
+      </div>
+    </header>
+
+    <div id="main" class="flexcol">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><b>Заявки на пополнение</b> <span class="small" id="topups-count"></span></div>
+          <div class="row"><input id="searchTopups" class="input" placeholder="Поиск по коду/пользователю" /><button id="refreshTopups" class="btn">Обновить</button></div>
+        </div>
+        <div id="topupsTable"></div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><b>Заявки на вывод</b> <span class="small" id="withdraws-count"></span></div>
+          <div class="row"><input id="searchWithdraws" class="input" placeholder="Поиск по пользователю/карте" /><button id="refreshWithdraws" class="btn">Обновить</button></div>
+        </div>
+        <div id="withdrawsTable"></div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><b>Выполненные задания (заявки на проверку)</b> <span class="small" id="works-count"></span></div>
+          <div class="row"><input id="searchWorks" class="input" placeholder="Поиск по задаче/юзеру" /><button id="refreshWorks" class="btn">Обновить</button></div>
+        </div>
+        <div id="worksTable"></div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><b>Задания пользователей</b> <span class="small" id="tasks-count"></span></div>
+          <div class="row"><input id="searchTasks" class="input" placeholder="Поиск по названию/типу" /><button id="refreshTasks" class="btn">Обновить</button></div>
+        </div>
+        <div id="tasksTable"></div>
+      </div>
+
+      <div id="mainAdminPanel" class="panel hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><b>Главный админ — управление</b></div>
+          <div class="admin-controls">
+            <input id="newAdminInput" class="input" placeholder="Добавить обычного админа (id или username)" />
+            <button id="addAdminBtn" class="btn">Добавить</button>
+            <button id="listAdminsBtn" class="btn">Список админов</button>
+          </div>
+        </div>
+        <div id="adminsList" class="small"></div>
+      </div>
+
     </div>
-    <div>
-      <input class="search" id="searchInput" placeholder="Поиск по пользователю / коду / id">
-    </div>
   </div>
 
-  <div class="card" id="topupsCard">
-    <h2 style="margin:0 0 10px 0;color:#ffd700;">Заявки на пополнение</h2>
-    <div id="topupsList" class="muted">Загрузка...</div>
-  </div>
+<script>
+(async function(){
+  // utils
+  function qs(name){ const params=new URLSearchParams(location.search); return params.get(name); }
+  function el(id){return document.getElementById(id)}
+  function authHeaders(token){ return { 'Authorization': 'Bearer ' + token, 'Accept':'application/json', 'Content-Type':'application/json' }; }
+  function fmtDate(s){ try{ return new Date(s).toLocaleString(); }catch(e){return s} }
 
-  <div class="card" id="withdrawsCard">
-    <h2 style="margin:0 0 10px 0;color:#00ff88;">Заявки на вывод</h2>
-    <div id="withdrawsList" class="muted">Загрузка...</div>
-  </div>
+  const token = qs('token') || '';
+  if(!token){ document.body.innerHTML = '<div style="padding:24px;color:#ff8b8b">Токен не найден. Открывайте панель через бота (/mainadmin).</div>'; return; }
 
-  <div class="card" id="tasksCard">
-    <h2 style="margin:0 0 10px 0;color:#00ffff;">Задания пользователей</h2>
-    <div id="tasksList" class="muted">Загрузка...</div>
-  </div>
+  // convenience fetch wrapper
+  async function api(path, opts={}){
+    const url = path.startsWith('/')? path : ('/' + path);
+    opts.headers = Object.assign({}, opts.headers || {}, authHeaders(token));
+    const res = await fetch(url, opts);
+    if(res.status === 401) { alert('Token invalid or expired'); }
+    return res;
+  }
 
-  <script>
-    // admin auth by Telegram username — page intended to be opened from WebApp (same origin).
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    try { tg?.ready?.(); } catch(e) {}
-    const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : { username: null, id: null, first_name: null };
-
-    // adjust this list to allowed admin usernames
-    const ADMIN_USERNAMES = ['Sa1Raz'];
-
-    // If run as a static file without WebApp, allow if query ?admin=1 maybe — but we strictly check username if available.
-    const isAdmin = (user.username && ADMIN_USERNAMES.includes(user.username)) || location.search.includes('admin=1');
-
-    const adminUserEl = document.getElementById('admin-user');
-    if (!isAdmin) {
-      adminUserEl.innerHTML = '<span class="danger">Доступ запрещён. Только админ может просматривать эту страницу.</span>';
-      // show limited info but prevent actions
+  // whoami
+  try {
+    const who = await api('/whoami'); // try existing endpoint if present
+    if(who.ok){
+      const j = await who.json();
+      el('whoami').innerText = `${j.admin?.username || j.admin?.uid || 'admin' }`;
+      // if backend returns a role flag, use it; otherwise we'll request protected endpoints to deduce
+      if(j.admin?.is_main) el('mainAdminPanel').classList.remove('hidden');
     } else {
-      adminUserEl.innerText = `Вход как: ${user.username || user.first_name} (${user.id || 'no-id'})`;
+      // if /whoami absent, use /api/topups to check token validity and then call /api/tasks etc.
+      el('whoami').innerText = 'admin';
     }
+  } catch(err){
+    console.warn('whoami missing',err);
+    el('whoami').innerText = 'admin';
+  }
 
-    // reuse helpers defined in index page if opened from same origin; otherwise recreate small localStorage helpers
-    function storageGetJSON(key, fallback) {
-      try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; }
-    }
-    function storageSetJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
-
-    function getBalanceFor(userId) {
-      const map = storageGetJSON('rc_balances', {});
-      return parseInt(map[userId] || 0, 10);
-    }
-    function setBalanceFor(userId, amount) {
-      const map = storageGetJSON('rc_balances', {});
-      map[userId] = Math.max(0, parseInt(amount || 0, 10));
-      storageSetJSON('rc_balances', map);
-    }
-
-    function reloadAll() {
-      renderTopups();
-      renderWithdraws();
-      renderTasks();
-    }
-
-    // ========== TOPUPS ===========
-    function renderTopups(filter) {
-      const arr = storageGetJSON('rc_topups', []).slice().reverse();
-      const container = document.getElementById('topupsList');
-      const q = (filter || '').toLowerCase().trim();
-      if (arr.length === 0) {
-        container.innerHTML = '<div class="muted">Нет заявок</div>'; return;
-      }
-      let html = '<table><thead><tr><th>Пользователь</th><th>Сумма</th><th>Код</th><th>Статус</th><th>Действия</th></tr></thead><tbody>';
-      arr.forEach(t => {
-        if (q && !(String(t.code||'')+String(t.id||'')+String(t.user?.username||'')+String(t.user?.id||'')).toLowerCase().includes(q)) return;
-        html += `<tr>
-          <td>${escapeHTML(t.user?.username || t.user?.first_name || '—')}<br><span class="small">${escapeHTML(t.user?.id||'')}</span></td>
-          <td>${(t.amount||0).toLocaleString('ru-RU')} ₽</td>
-          <td><b>${escapeHTML(t.code||'')}</b></td>
-          <td>${escapeHTML(t.status||'')}</td>
-          <td>
-            ${isAdmin ? `<button class="btn btn-approve" onclick="approveTopup('${t.id}')">Подтвердить</button>
-            <button class="btn btn-reject" onclick="rejectTopup('${t.id}')">Отклонить</button>` : ''}
-            <button class="btn btn-detail" onclick="showTopupDetail('${t.id}')">Подробнее</button>
-          </td>
-        </tr>`;
+  // Helpers to render tables
+  function buildTable(headers, rows){
+    let html = '<table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+    if(!rows || rows.length===0) html += '<tr><td colspan="'+headers.length+'" class="small">Пусто</td></tr>';
+    else {
+      rows.forEach(r => {
+        html += '<tr>';
+        r.forEach(cell => html += `<td>${cell}</td>`);
+        html += '</tr>';
       });
-      html += '</tbody></table>';
-      container.innerHTML = html;
     }
+    html += '</tbody></table>';
+    return html;
+  }
 
-    function approveTopup(id) {
-      if (!isAdmin) return alert('Доступ запрещён');
-      const arr = storageGetJSON('rc_topups', []);
-      const idx = arr.findIndex(x => x.id === id);
-      if (idx === -1) return alert('Заявка не найдена');
-      const t = arr[idx];
-      if (t.status === 'approved') return alert('Уже подтверждена');
-      // approve and credit user's balance
-      const userId = t.user?.id || 'guest';
-      const prev = getBalanceFor(userId);
-      setBalanceFor(userId, prev + (t.amount || 0));
-      arr[idx].status = 'approved';
-      arr[idx].handled_by = user.username || 'admin';
-      arr[idx].handled_at = new Date().toISOString();
-      storageSetJSON('rc_topups', arr);
-      alert(`Пополнение ${t.amount} ₽ подтверждено и зачислено пользователю ${t.user?.username || t.user?.first_name}`);
-      reloadAll();
-    }
-
-    function rejectTopup(id) {
-      if (!isAdmin) return alert('Доступ запрещён');
-      const reason = prompt('Причина отказа (будет записана в заявку):', 'Не могу подтвердить платёж');
-      if (reason === null) return;
-      const arr = storageGetJSON('rc_topups', []);
-      const idx = arr.findIndex(x => x.id === id);
-      if (idx === -1) return alert('Заявка не найдена');
-      arr[idx].status = 'rejected';
-      arr[idx].handled_by = user.username || 'admin';
-      arr[idx].handled_at = new Date().toISOString();
-      arr[idx].reject_reason = reason;
-      storageSetJSON('rc_topups', arr);
-      alert('Заявка отклонена');
-      reloadAll();
-    }
-
-    function showTopupDetail(id) {
-      const arr = storageGetJSON('rc_topups', []);
-      const t = arr.find(x => x.id === id);
-      if (!t) return alert('Не найдено');
-      alert(JSON.stringify(t, null, 2));
-    }
-
-    // ========== WITHDRAWS ===========
-    function renderWithdraws(filter) {
-      const arr = storageGetJSON('rc_withdraws', []).slice().reverse();
-      const container = document.getElementById('withdrawsList');
-      const q = (filter || '').toLowerCase().trim();
-      if (arr.length === 0) {
-        container.innerHTML = '<div class="muted">Нет заявок</div>'; return;
-      }
-      let html = '<table><thead><tr><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Статус</th><th>Действия</th></tr></thead><tbody>';
-      arr.forEach(w => {
-        if (q && !(String(w.id||'')+String(w.user?.username||'')+String(w.user?.id||'')+String(w.card||'')).toLowerCase().includes(q)) return;
-        html += `<tr>
-          <td>${escapeHTML(w.user?.username || w.user?.first_name || '—')}<br><span class="small">${escapeHTML(w.user?.id||'')}</span></td>
-          <td>${(w.amount||0).toLocaleString('ru-RU')} ₽</td>
-          <td>${escapeHTML(w.card||'')}<br><span class="muted">${escapeHTML(w.bank||'')}</span></td>
-          <td>${escapeHTML(w.status||'')}</td>
-          <td>
-            ${isAdmin ? `<button class="btn btn-approve" onclick="approveWithdraw('${w.id}')">Выплатить</button>
-            <button class="btn btn-reject" onclick="rejectWithdraw('${w.id}')">Отклонить</button>` : ''}
-            <button class="btn btn-detail" onclick="showWithdrawDetail('${w.id}')">Подробнее</button>
-          </td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
-    }
-
-    function approveWithdraw(id) {
-      if (!isAdmin) return alert('Доступ запрещён');
-      const arr = storageGetJSON('rc_withdraws', []);
-      const idx = arr.findIndex(x => x.id === id);
-      if (idx === -1) return alert('Заявка не найдена');
-      const w = arr[idx];
-      if (w.status === 'paid') return alert('Уже оплачено');
-      // Admin confirms transfer done manually
-      const ok = confirm(`Подтвердить выплату ${w.amount} ₽ пользователю ${w.user?.username || w.user?.first_name}?`);
-      if (!ok) return;
-      arr[idx].status = 'paid';
-      arr[idx].handled_by = user.username || 'admin';
-      arr[idx].handled_at = new Date().toISOString();
-      storageSetJSON('rc_withdraws', arr);
-      alert('Отмечено как выплачено');
-      reloadAll();
-    }
-
-    function rejectWithdraw(id) {
-      if (!isAdmin) return alert('Доступ запрещён');
-      const reason = prompt('Причина отказа (будет записана в заявку):', 'Неверные реквизиты');
-      if (reason === null) return;
-      const arr = storageGetJSON('rc_withdraws', []);
-      const idx = arr.findIndex(x => x.id === id);
-      if (idx === -1) return alert('Заявка не найдена');
-      const w = arr[idx];
-      // refund user by adding back amount
-      const userId = w.user?.id || 'guest';
-      const prev = getBalanceFor(userId);
-      setBalanceFor(userId, prev + (w.amount || 0));
-      arr[idx].status = 'rejected';
-      arr[idx].handled_by = user.username || 'admin';
-      arr[idx].handled_at = new Date().toISOString();
-      arr[idx].reject_reason = reason;
-      storageSetJSON('rc_withdraws', arr);
-      alert('Заявка отклонена и средства возвращены пользователю');
-      reloadAll();
-    }
-
-    function showWithdrawDetail(id) {
-      const arr = storageGetJSON('rc_withdraws', []);
-      const w = arr.find(x => x.id === id);
-      if (!w) return alert('Не найдено');
-      alert(JSON.stringify(w, null, 2));
-    }
-
-    // ========== TASKS ===========
-    function renderTasks(filter) {
-      const arr = storageGetJSON('rc_tasks', []).slice().reverse();
-      const container = document.getElementById('tasksList');
-      const q = (filter || '').toLowerCase().trim();
-      if (arr.length === 0) {
-        container.innerHTML = '<div class="muted">Нет заданий</div>'; return;
-      }
-      let html = '<table><thead><tr><th>Название</th><th>Тип/Бюджет</th><th>Пользователь</th><th>Статус</th><th>Действия</th></tr></thead><tbody>';
-      arr.forEach(t => {
-        if (q && !(String(t.id||'')+String(t.title||'')+String(t.owner?.username||'')).toLowerCase().includes(q)) return;
-        html += `<tr>
-          <td>${escapeHTML(t.title||'—')}<br><span class="small link-muted">${escapeHTML(t.link||'')}</span></td>
-          <td>${escapeHTML(t.type||'')} / ${(t.budget||0).toLocaleString('ru-RU')} ₽</td>
-          <td>${escapeHTML(t.owner?.username || t.owner?.first_name || '—')}<br><span class="small">${escapeHTML(t.owner?.id||'')}</span></td>
-          <td>${escapeHTML(t.status||'')}</td>
-          <td>
-            ${isAdmin ? `<button class="btn btn-reject" onclick="deleteTask('${t.id}')">Удалить</button>` : ''}
-            <button class="btn btn-detail" onclick="showTaskDetail('${t.id}')">Подробнее</button>
-          </td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
-    }
-
-    function deleteTask(id) {
-      if (!isAdmin) return alert('Доступ запрещён');
-      const reason = prompt('Причина удаления задания (будет видна владельцу):', 'Неактуально / Нарушение правил');
-      if (reason === null) return;
-      const arr = storageGetJSON('rc_tasks', []);
-      const idx = arr.findIndex(x => x.id === id);
-      if (idx === -1) return alert('Задание не найдено');
-      // mark deleted and store reason
-      arr[idx].status = 'deleted';
-      arr[idx].deleted = {
-        by: user.username || 'admin',
-        reason: reason,
-        at: new Date().toISOString()
-      };
-      storageSetJSON('rc_tasks', arr);
-      alert('Задание удалено (помечено как deleted)');
-      reloadAll();
-    }
-
-    function showTaskDetail(id) {
-      const arr = storageGetJSON('rc_tasks', []);
-      const t = arr.find(x => x.id === id);
-      if (!t) return alert('Не найдено');
-      alert(JSON.stringify(t, null, 2));
-    }
-
-    // helpers
-    function escapeHTML(s) { if (!s && s !== 0) return ''; return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; }); }
-
-    // search
-    const searchInput = document.getElementById('searchInput');
-    let searchTimeout;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        const q = searchInput.value.trim();
-        renderTopups(q);
-        renderWithdraws(q);
-        renderTasks(q);
-      }, 300);
+  // TOPUPS
+  async function loadTopups(q=''){
+    const res = await api('/api/topups');
+    if(!res.ok){ el('topupsTable').innerHTML = '<div class="small">Ошибка загрузки</div>'; return; }
+    const data = await res.json();
+    const filtered = q ? data.filter(t => (t.code||'').toLowerCase().includes(q.toLowerCase()) || (t.user?.username||'').toLowerCase().includes(q.toLowerCase())) : data;
+    el('topups-count').innerText = `(${filtered.length})`;
+    const rows = filtered.map(t => {
+      const actions = `<button class="btn btn-approve" data-id="${t.id}" data-type="topup">Подтвердить</button>
+                       <button class="btn btn-reject" data-id="${t.id}" data-type="topup">Отклонить</button>
+                       <button class="btn btn-delete" data-id="${t.id}" data-type="topup">Подробнее</button>`;
+      return [escapeHtml(t.user?.username||t.user?.first_name||t.user?.id||'-') + `<div class="small">${t.user?.id||''}</div>`, 
+              (t.amount||0) + ' ₽',
+              escapeHtml(t.code||''),
+              escapeHtml(t.status||''),
+              fmtDate(t.created_at||t.createdAt||''),
+              actions];
     });
+    el('topupsTable').innerHTML = buildTable(['Пользователь','Сумма','Код','Статус','Создано','Действия'], rows);
+    // wire buttons
+    el('topupsTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
+  }
 
-    // initial load
-    reloadAll();
-  </script>
+  // WITHDRAWS
+  async function loadWithdraws(q=''){
+    const res = await api('/api/withdraws');
+    if(!res.ok){ el('withdrawsTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
+    const data = await res.json();
+    const filtered = q ? data.filter(w => (w.card||'').toLowerCase().includes(q.toLowerCase()) || (w.user?.username||'').toLowerCase().includes(q.toLowerCase())) : data;
+    el('withdraws-count').innerText = `(${filtered.length})`;
+    const rows = filtered.map(w => {
+      const actions = `<button class="btn btn-approve" data-id="${w.id}" data-type="withdraw">Выплатить</button>
+                       <button class="btn btn-reject" data-id="${w.id}" data-type="withdraw">Отклонить</button>
+                       <button class="btn btn-delete" data-id="${w.id}" data-type="withdraw">Подробнее</button>`;
+      return [escapeHtml(w.user?.username||w.user?.first_name||w.user?.id||'-'),
+              (w.amount||0)+' ₽',
+              escapeHtml(w.card||w.bank||''),
+              escapeHtml(w.status||''),
+              fmtDate(w.created_at||''),
+              actions];
+    });
+    el('withdrawsTable').innerHTML = buildTable(['Пользователь','Сумма','Реквизиты','Статус','Создано','Действия'], rows);
+    el('withdrawsTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
+  }
+
+  // WORKS (tasks submissions)
+  async function loadWorks(q=''){
+    const res = await api('/api/works');
+    if(!res.ok){ el('worksTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
+    const data = await res.json();
+    const filtered = q ? data.filter(w => (w.task_title||'').toLowerCase().includes(q.toLowerCase()) || (w.user?.username||'').toLowerCase().includes(q.toLowerCase())) : data;
+    el('works-count').innerText = `(${filtered.length})`;
+    const rows = filtered.map(w => {
+      const actions = `<button class="btn btn-approve" data-id="${w.id}" data-type="work">Принять</button>
+                       <button class="btn btn-reject" data-id="${w.id}" data-type="work">Отклонить</button>
+                       <button class="btn btn-delete" data-id="${w.id}" data-type="work">Подробнее</button>`;
+      const linkHtml = w.link ? `<div class="small"><a href="${escapeHtml(w.link)}" target="_blank">ссылка</a></div>` : '';
+      return [escapeHtml(w.user?.username||w.user?.first_name||w.user?.id||'-'),
+              escapeHtml(w.task_title||'-') + linkHtml,
+              (w.amount||0)+' ₽',
+              escapeHtml(w.status||''),
+              fmtDate(w.created_at||''),
+              actions];
+    });
+    el('worksTable').innerHTML = buildTable(['Пользователь','Задание','Сумма','Статус','Создано','Действия'], rows);
+    el('worksTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
+  }
+
+  // TASKS
+  async function loadTasks(q=''){
+    const res = await api('/api/tasks');
+    if(!res.ok){ el('tasksTable').innerHTML = '<div class="small">Ошибка</div>'; return; }
+    const data = await res.json();
+    const filtered = q ? data.filter(t => (t.title||'').toLowerCase().includes(q.toLowerCase()) || (t.type||'').toLowerCase().includes(q.toLowerCase())) : data;
+    el('tasks-count').innerText = `(${filtered.length})`;
+    const rows = filtered.map(t => {
+      const actions = `<button class="btn btn-delete" data-id="${t.id}" data-type="task-delete">Удалить</button>
+                       <button class="btn" data-id="${t.id}" data-type="task-detail">Подробнее</button>`;
+      return [escapeHtml(t.title||'-'), escapeHtml(t.type||''), (t.budget||0)+' ₽', escapeHtml(t.owner?.username||t.owner?.first_name||'-'), fmtDate(t.created_at||''), actions];
+    });
+    el('tasksTable').innerHTML = buildTable(['Название','Тип','Бюджет','Владелец','Создано','Действия'], rows);
+    el('tasksTable').querySelectorAll('button').forEach(b => b.addEventListener('click', onAdminAction));
+  }
+
+  // generic action handler
+  async function onAdminAction(ev){
+    const btn = ev.currentTarget;
+    const id = btn.dataset.id;
+    const type = btn.dataset.type;
+    if(type === 'topup' && btn.classList.contains('btn-approve')){
+      if(!confirm('Подтвердить зачисление?')) return;
+      const res = await api(`/api/topups/${encodeURIComponent(id)}/approve`, { method:'POST' });
+      if(res.ok){ showAlert('Подтверждено'); loadTopups(); }
+      else showAlert('Ошибка');
+    } else if(type === 'topup' && btn.classList.contains('btn-reject')){
+      const reason = prompt('Причина отказа:','Не могу подтвердить платёж');
+      if(reason===null) return;
+      const res = await api(`/api/topups/${encodeURIComponent(id)}/reject`, { method:'POST', body: JSON.stringify({ reason }) });
+      if(res.ok){ showAlert('Отклонено'); loadTopups(); } else showAlert('Ошибка');
+    } else if(type === 'withdraw' && btn.classList.contains('btn-approve')){
+      if(!confirm('Отметить как выплаченное?')) return;
+      const res = await api(`/api/withdraws/${encodeURIComponent(id)}/approve`, { method:'POST' });
+      if(res.ok){ showAlert('Отмечено как выплачено'); loadWithdraws(); } else showAlert('Ошибка');
+    } else if(type === 'withdraw' && btn.classList.contains('btn-reject')){
+      const reason = prompt('Причина отказа:','Неверные реквизиты');
+      if(reason===null) return;
+      const res = await api(`/api/withdraws/${encodeURIComponent(id)}/reject`, { method:'POST', body: JSON.stringify({ reason }) });
+      if(res.ok){ showAlert('Отклонено и средства возвращены'); loadWithdraws(); } else showAlert('Ошибка');
+    } else if(type === 'work' && btn.classList.contains('btn-approve')){
+      if(!confirm('Подтвердить выполнение и выплатить?')) return;
+      const res = await api(`/api/works/${encodeURIComponent(id)}/approve`, { method:'POST' });
+      if(res.ok){ showAlert('Выплата выполнена'); loadWorks(); } else showAlert('Ошибка');
+    } else if(type === 'work' && btn.classList.contains('btn-reject')){
+      const reason = prompt('Причина отказа:','Не соответствует требованиям');
+      if(reason===null) return;
+      const res = await api(`/api/works/${encodeURIComponent(id)}/reject`, { method:'POST', body: JSON.stringify({ reason }) });
+      if(res.ok){ showAlert('Отклонено'); loadWorks(); } else showAlert('Ошибка');
+    } else if(type === 'task-delete'){
+      const reason = prompt('Причина удаления задания (будет записана):','Нарушение правил');
+      if(reason===null) return;
+      const res = await api(`/api/tasks/${encodeURIComponent(id)}/delete`, { method:'POST', body: JSON.stringify({ reason }) });
+      if(res.ok){ showAlert('Задание помечено как удалённое'); loadTasks(); } else showAlert('Ошибка');
+    } else if(type === 'task-detail' || type === 'topup' || type === 'withdraw'){
+      // show details
+      const path = type === 'task-detail' ? `/api/tasks` : (type==='topup' ? `/api/topups` : `/api/withdraws`);
+      const res = await api(path);
+      if(!res.ok){ showAlert('Ошибка загрузки деталей'); return; }
+      const arr = await res.json();
+      const item = arr.find(x=>x.id === id);
+      if(!item){ showAlert('Не найдено'); return; }
+      showPopup({ title: 'Детали', message: `<pre style="white-space:pre-wrap;color:#fff">${escapeHtml(JSON.stringify(item,null,2))}</pre>`, buttons:[{type:'close', text:'Закрыть'}] });
+    }
+  }
+
+  // admin list management (main admin only)
+  el('addAdminBtn').addEventListener('click', async ()=> {
+    const ident = el('newAdminInput').value.trim(); if(!ident) return alert('Введите id или username');
+    const res = await api('/api/admins', { method:'POST', body: JSON.stringify({ identifier: ident }) });
+    if(res.ok){ showAlert('Добавлен'); listAdmins(); el('newAdminInput').value=''; } else { showAlert('Ошибка'); }
+  });
+  el('listAdminsBtn').addEventListener('click', listAdmins);
+  async function listAdmins(){
+    const res = await api('/api/admins'); if(!res.ok){ el('adminsList').innerText = 'Ошибка'; return; }
+    const arr = await res.json(); el('adminsList').innerHTML = '<div class="small">Обычные админы:</div><ul>' + arr.map(a=>`<li>${escapeHtml(a)} <button data-id="${escapeHtml(a)}" class="btn" style="margin-left:8px">Удалить</button></li>`).join('') + '</ul>';
+    el('adminsList').querySelectorAll('button').forEach(b => b.addEventListener('click', async ev => {
+      const id = ev.currentTarget.dataset.id;
+      if(!confirm('Удалить admin '+id+'?')) return;
+      const r = await api('/api/admins/' + encodeURIComponent(id), { method:'DELETE' });
+      if(r.ok){ showAlert('Удалён'); listAdmins(); } else showAlert('Ошибка');
+    }));
+  }
+
+  // bind refresh inputs
+  el('refreshTopups').addEventListener('click', ()=> loadTopups(el('searchTopups').value.trim()));
+  el('refreshWithdraws').addEventListener('click', ()=> loadWithdraws(el('searchWithdraws').value.trim()));
+  el('refreshWorks').addEventListener('click', ()=> loadWorks(el('searchWorks').value.trim()));
+  el('refreshTasks').addEventListener('click', ()=> loadTasks(el('searchTasks').value.trim()));
+
+  // initial loads
+  await Promise.all([ loadTopups(), loadWithdraws(), loadWorks(), loadTasks() ]);
+
+  // expose helper escapeHtml to this scope (used in template)
+  function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+})();
+</script>
 </body>
 </html>
