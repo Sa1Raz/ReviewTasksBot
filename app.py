@@ -40,8 +40,8 @@ eventlet.monkey_patch()
 from flask_socketio import SocketIO, join_room, leave_room
 
 # ========== CONFIG ==========
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")  # prefer set in env, empty string by default
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://example.com")  # change to your public URL
+BOT_TOKEN = os.environ.get("8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU", "")  # prefer set in env, empty string by default
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://web-production-398fb.up.railway.app/")  # change to your public URL
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 
 ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "").split(",") if s.strip()]
