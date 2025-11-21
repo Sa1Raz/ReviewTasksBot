@@ -115,6 +115,12 @@
   /* Toast */
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:#05202a;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 12px 30px rgba(2,16,32,0.6);color:#eaf7fb;z-index:3000;display:none}
 
+  /* History panel styles */
+  .history-panel{margin-top:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);max-height:220px;overflow:auto}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .btn-mini{padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,#00f0ff,#00ff9d);color:#012226;border:none;cursor:pointer}
+  .pager{display:flex;justify-content:center;margin-top:8px;color:#9fb6c6}
+
   /* Responsive */
   @media (max-width:980px){
     .container{grid-template-columns:1fr; padding:14px}
@@ -200,7 +206,25 @@
 
       <div class="panel">
         <strong>История действий</strong>
-        <div id="activity" style="margin-top:10px;color:var(--muted);max-height:200px;overflow:auto;padding-right:6px"></div>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Просмотр операций пользователя (пополнения, выводы, работы)</div>
+
+        <div style="margin-top:10px" id="historyControls" class="controls">
+          <select id="historyFilter">
+            <option value="">Все</option>
+            <option value="topup">Пополнения</option>
+            <option value="withdraw">Выводы</option>
+            <option value="work">Работы</option>
+          </select>
+          <div style="flex:1"></div>
+          <input id="uidManual" placeholder="UID (если нет WebApp)" style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb"/>
+          <button id="uidLoadBtn" class="btn-mini">Загрузить</button>
+        </div>
+
+        <div id="historyList" class="history-panel">
+          <div style="color:var(--muted)">Нет записей</div>
+        </div>
+
+        <div class="pager" id="historyPager">Страница 1</div>
       </div>
     </aside>
   </div>
@@ -268,7 +292,9 @@ function addActivity(text){
   renderActivities();
 }
 function renderActivities(){
-  activityEl.innerHTML = activities.slice(0,40).map(a=>`<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02)"><small style="color:var(--muted)">${a.t}</small><div style="margin-top:6px">${a.text}</div></div>`).join('');
+  const el = document.getElementById('activity');
+  if (!el) return;
+  el.innerHTML = activities.slice(0,40).map(a=>`<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02)"><small style="color:var(--muted)">${a.t}</small><div style="margin-top:6px">${a.text}</div></div>`).join('');
 }
 
 /* Load tasks from server */
@@ -394,6 +420,73 @@ if(token){
     sock.on('disconnect', ()=> addActivity('Socket disconnected'));
   } catch(e){ console.warn('socket error', e) }
 }
+
+/* ================= history integration ================= */
+let rc_history_page = 1;
+let rc_history_page_size = 6;
+let rc_history_uid = null;
+
+async function rc_loadHistory(){
+  if(!rc_history_uid) { document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">UID не указан</div>'; return; }
+  const type = document.getElementById('historyFilter').value;
+  const res = await fetch(`/api/user_history?uid=${encodeURIComponent(rc_history_uid)}&page=${rc_history_page}&page_size=${rc_history_page_size}&type=${type}`);
+  let j;
+  try { j = await res.json(); } catch(e){ document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">Ошибка сервера</div>'; return; }
+  if(!j.ok) { document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">Ошибка: ' + (j.reason||'') + '</div>'; return; }
+  renderHistoryList(j.items);
+  document.getElementById('historyPager').textContent = `Страница ${j.page} / ${Math.max(1, Math.ceil((j.total||0)/ (j.page_size||rc_history_page_size)))}`;
+}
+
+function renderHistoryList(arr){
+  const el = document.getElementById('historyList'); el.innerHTML='';
+  if(!arr || arr.length===0) { el.innerHTML = '<div style="color:var(--muted)">Нет записей</div>'; return; }
+  arr.forEach(it=>{
+    const div = document.createElement('div');
+    div.style.display='flex';
+    div.style.justifyContent='space-between';
+    div.style.padding='8px 0';
+    div.style.borderBottom='1px dashed rgba(255,255,255,0.02)';
+    const left = document.createElement('div');
+    left.innerHTML = `<div style="font-weight:700">${(it.type||'').toUpperCase()} — ${it.id||''}</div><div style="color:var(--muted);font-size:13px">${it.summary||''}</div>`;
+    const right = document.createElement('div');
+    right.style.textAlign='right';
+    right.innerHTML = `<div style="font-weight:800">${it.amount? (it.amount + ' ₽') : ''}</div><div style="color:var(--muted);font-size:13px">${it.created_at||''}</div>`;
+    div.appendChild(left); div.appendChild(right);
+    el.appendChild(div);
+  });
+}
+
+// Controls
+document.getElementById('uidLoadBtn').onclick = ()=> {
+  const v = document.getElementById('uidManual').value.trim();
+  if(!v) return alert('Введите UID');
+  rc_history_uid = v;
+  rc_history_page = 1;
+  document.getElementById('uidManual').value = v;
+  rc_loadHistory();
+};
+document.getElementById('historyFilter').onchange = ()=> { rc_history_page = 1; rc_loadHistory(); };
+
+// pager by clicking pager
+document.getElementById('historyPager').addEventListener('click', ()=>{
+  rc_history_page++;
+  rc_loadHistory();
+});
+
+// Try to pick UID from Telegram WebApp initData
+document.addEventListener('DOMContentLoaded', ()=>{
+  try {
+    if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user){
+      const u = Telegram.WebApp.initDataUnsafe.user;
+      rc_history_uid = u.id;
+      document.getElementById('fullname').textContent = (u.first_name || 'Пользователь');
+      document.getElementById('handle').textContent = 'UID: ' + u.id;
+      rc_history_page = 1;
+      rc_loadHistory();
+    }
+  } catch(e){}
+});
+/* ================= end history integration ================= */
 
 /* Buttons */
 document.getElementById('refreshBtn').onclick = ()=> { loadTasks(); showToast('Обновление...') }
