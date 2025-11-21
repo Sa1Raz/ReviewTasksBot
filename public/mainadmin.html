@@ -1,213 +1,257 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ReviewCash — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://unpkg.com/lottie-web@5.8.1/build/player/lottie.min.js"></script>
 <style>
-  body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,#050017,#02101b);color:#eaf7fb;padding:18px}
-  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:18px}
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
-  th{color:#9fb6c6}
-  .btn{padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
-  .approve{background:#00ff9d;color:#012226}
-  .reject{background:#ff6b80;color:white}
-  .small{font-size:13px;color:#9fb6c6}
-  .admins-list{display:flex;flex-direction:column;gap:8px}
-  .admin-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02)}
-  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999}
-  .modal .box{background:#041726;padding:16px;border-radius:10px;width:640px;max-width:95%}
-  textarea,input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf7fb}
+  :root{
+    --bg1:#071a2b; --bg2:#031024;
+    --card:#072033; --muted:#9fb6c6; --accent:#00f0ff; --accent2:#00ff9d; --glass:rgba(255,255,255,0.04);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf7fb;padding:22px}
+  .container{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:18px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#012226}
+  h1{margin:0;font-size:20px}
+  .sub{color:var(--muted);font-size:13px}
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.012),transparent);border-radius:var(--radius);padding:14px;border:1px solid var(--glass);box-shadow:0 16px 50px rgba(0,0,0,0.6)}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  table{width:100%;border-collapse:collapse;color:#eaf7fb}
+  th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+  th{color:var(--muted);font-weight:600}
+  .actions button{margin-right:6px;padding:8px;border-radius:10px;border:none;cursor:pointer}
+  .btn-approve{background:linear-gradient(90deg,var(--accent2),#8cffb2);color:#012226}
+  .btn-reject{background:linear-gradient(90deg,#ff6b80,#ff8fa2);color:#fff}
+  .admins-list{display:flex;flex-direction:column;gap:10px}
+  .admin-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02)}
+  .muted{color:var(--muted)}
+  .topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .search{padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf7fb}
+  .lottie-small{width:80px;height:80px}
+  .refresh{padding:8px 12px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#012226;cursor:pointer}
+  .stat-num{font-weight:800;font-size:18px;color:var(--accent)}
+  .center{display:flex;align-items:center;justify-content:center}
+  @media(max-width:980px){ .container{grid-template-columns:1fr;padding:12px} .topbar-actions{display:none} }
 </style>
 </head>
 <body>
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-    <div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(90deg,#00f0ff,#00ff9d);display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900">RC</div>
+  <header>
+    <div class="logo">RC</div>
     <div>
-      <h2 style="margin:0">Админ-панель</h2>
-      <div class="small">Живые события и управление</div>
+      <h1>Админ-панель ReviewCash</h1>
+      <div class="sub">Живые события, управления выплатами и поддержкой</div>
     </div>
-    <div style="margin-left:auto" id="whoami" class="small">Token: <span id="tokshort">—</span></div>
-  </div>
+    <div class="topbar-actions">
+      <button id="reloadAll" class="refresh">Обновить</button>
+    </div>
+  </header>
 
-  <div class="wrap">
+  <div class="container">
     <main>
-      <div class="panel" style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Пополнения</strong>
-          <div><input id="searchTopup" placeholder="Поиск..." style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb" /></div>
-        </div>
-        <div style="margin-top:10px;max-height:260px;overflow:auto">
-          <table id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Выводы</strong>
-          <div class="small">Проверяйте аккуратно</div>
-        </div>
-        <div style="margin-top:10px;max-height:260px;overflow:auto">
-          <table id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Действия</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-
       <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Поддержка</strong>
+        <div style="display:flex;align-items:center;gap:12px;justify-content:space-between">
+          <div>
+            <strong>Заявки & Работы</strong>
+            <div class="muted" style="font-size:13px">Управление пополнениями, выводами и работами</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="globalSearch" class="search" placeholder="Поиск по ID или пользователю" />
+          </div>
         </div>
-        <div style="margin-top:10px;max-height:360px;overflow:auto">
-          <table id="supportsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сообщение</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+
+        <div style="margin-top:12px">
+          <div style="display:flex;gap:12px;margin-bottom:12px">
+            <div style="flex:1" class="panel" id="topupsPanel">
+              <div style="display:flex;justify-content:space-between;align-items:center"><strong>Пополнения</strong><div class="muted">Всего: <span id="statTopups">0</span></div></div>
+              <div style="margin-top:10px;max-height:240px;overflow:auto"><table id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <div style="width:380px" class="panel" id="withdrawsPanel">
+              <div style="display:flex;justify-content:space-between;align-items:center"><strong>Выводы</strong><div class="muted">Всего: <span id="statWithdraws">0</span></div></div>
+              <div style="margin-top:10px;max-height:240px;overflow:auto"><table id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Действия</th></tr></thead><tbody></tbody></table></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>Support</strong>
+              <div class="muted">Ответы и закрытия</div>
+            </div>
+            <div style="margin-top:10px;max-height:360px;overflow:auto"><table id="supportsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сообщение</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table></div>
+          </div>
         </div>
       </div>
     </main>
 
     <aside>
-      <div class="panel" style="margin-bottom:12px">
-        <strong>Статистика</strong>
-        <div class="small" style="margin-top:8px">Топапов: <span id="statTopups">0</span></div>
-        <div class="small" style="margin-top:6px">Выводов: <span id="statWithdraws">0</span></div>
-        <div class="small" style="margin-top:6px">Support: <span id="statSupports">0</span></div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center"><strong>Статистика</strong><div class="muted">Live</div></div>
+        <div style="margin-top:12px">
+          <div class="muted">Топапов: <span id="statTopups2" class="stat-num">0</span></div>
+          <div class="muted" style="margin-top:6px">Выводов: <span id="statWithdraws2" class="stat-num">0</span></div>
+          <div class="muted" style="margin-top:6px">Support: <span id="statSupports2" class="stat-num">0</span></div>
+        </div>
       </div>
 
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Админы</strong>
-          <div class="small">Кто и сколько support обработал</div>
+      <div class="panel" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><strong>Админы</strong><div class="muted">Кто и сколько support обработал</div></div>
+        <div style="margin-top:10px" id="adminsPanel" class="admins-list center">
+          <div id="admLoading" class="center">
+            <div id="admLottie" style="width:100px;height:100px"></div>
+            <div class="muted">Загрузка админов...</div>
+          </div>
         </div>
-        <div id="adminsPanel" style="margin-top:10px" class="admins-list">Загрузка...</div>
       </div>
     </aside>
   </div>
 
   <!-- Reply modal -->
-  <div id="replyModal" class="modal">
-    <div class="box">
+  <div id="replyModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999">
+    <div style="background:#041726;padding:16px;border-radius:12px;width:720px;max-width:94%;border:1px solid rgba(255,255,255,0.04)">
       <h3 id="replyTitle">Ответ пользователю</h3>
-      <div class="small" id="replyOrig"></div>
-      <textarea id="replyText" placeholder="Текст ответа"></textarea>
-      <div style="margin-top:10px;text-align:right">
-        <button id="replySend" class="btn approve">Отправить</button>
-        <button id="replyClose" class="btn reject">Отмена</button>
+      <div id="replyOrig" class="muted" style="margin-bottom:8px"></div>
+      <textarea id="replyText" style="width:100%;min-height:120px;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb"></textarea>
+      <div style="margin-top:12px;text-align:right">
+        <button id="replySend" class="refresh">Отправить</button>
+        <button id="replyClose" class="btn-reject">Отмена</button>
       </div>
     </div>
   </div>
 
 <script>
+try { lottie.loadAnimation({ container: document.getElementById('admLottie'), renderer: 'svg', loop: true, autoplay: true, path: 'https://assets2.lottiefiles.com/packages/lf20_j2ka0eac.json' }); } catch(e){}
+
 function qs(name){ return new URLSearchParams(location.search).get(name); }
 const token = qs('token') || '';
-document.getElementById('tokshort').textContent = token ? token.slice(0,28)+'...' : 'нет';
+document.addEventListener('DOMContentLoaded', ()=> {
+  if(!token){ alert('Admin token not provided in URL (token=...). Получите его через бота /mainadmin.'); }
+  loadAll();
+  // socket.io connect
+  if(token){
+    try {
+      const sock = io({ auth: { token }, transports: ['websocket'] });
+      sock.on('connect', ()=> console.log('socket connected', sock.id));
+      sock.on('new_topup', ()=> loadTopups());
+      sock.on('new_withdraw', ()=> loadWithdraws());
+      sock.on('new_support', ()=> loadSupports());
+      sock.on('admins_updated', ()=> loadAdmins());
+    } catch(e){ console.warn('socket error', e); }
+  }
+});
 
-async function safeFetch(path, opts={}) {
-  const url = path + (path.includes('?')? '&':'?') + 'token=' + encodeURIComponent(token);
-  const res = await fetch(url, opts);
-  if(!res.ok) throw await res.text();
-  return await res.json();
-}
+async function apiGet(path){ const res = await fetch(path + (path.includes('?')? '&':'?') + 'token=' + encodeURIComponent(token)); if(!res.ok) throw await res.text(); return res.json(); }
+async function apiPost(path, body){ const res = await fetch(path + '?token=' + encodeURIComponent(token), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})}); if(!res.ok) throw await res.text(); return res.json(); }
 
-/* Load topups, withdraws, supports, admins */
 async function loadTopups(){
   try {
-    const data = await safeFetch('/api/topups');
+    const data = await apiGet('/api/topups');
     const tbody = document.querySelector('#topupsTable tbody'); tbody.innerHTML='';
     data.forEach(t=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id||'—'}</td><td>${t.amount||0} ₽</td><td>${t.status||''}</td><td></td>`;
       const actions = tr.querySelector('td:last-child');
       if(t.status === 'pending'){
-        const ok = document.createElement('button'); ok.className='btn approve'; ok.textContent='Одобрить';
-        ok.onclick = async ()=> { await safeFetch(`/api/topups/${encodeURIComponent(t.id)}/approve`, { method:'POST' }); loadTopups(); loadAdmins(); };
-        const rej = document.createElement('button'); rej.className='btn reject'; rej.textContent='Отклонить';
-        rej.onclick = async ()=> { await safeFetch(`/api/topups/${encodeURIComponent(t.id)}/reject`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason:'Отклонено'})}); loadTopups(); };
+        const ok = document.createElement('button'); ok.className='btn-approve'; ok.textContent='Одобрить';
+        ok.onclick = async ()=> { await apiPost(`/api/topups/${encodeURIComponent(t.id)}/approve`); loadAll(); };
+        const rej = document.createElement('button'); rej.className='btn-reject'; rej.textContent='Отклонить';
+        rej.onclick = async ()=> { await apiPost(`/api/topups/${encodeURIComponent(t.id)}/reject`, { reason: 'Отклонено' }); loadAll(); };
         actions.appendChild(ok); actions.appendChild(rej);
-      } else { actions.textContent='—' }
+      } else { actions.textContent='—'; }
       tbody.appendChild(tr);
     });
     document.getElementById('statTopups').textContent = data.length;
-  } catch(e){ console.error(e); }
+    document.getElementById('statTopups2').textContent = data.length;
+  } catch(e){ console.error('loadTopups', e); }
 }
 
 async function loadWithdraws(){
   try {
-    const data = await safeFetch('/api/withdraws');
+    const data = await apiGet('/api/withdraws');
     const tbody = document.querySelector('#withdrawsTable tbody'); tbody.innerHTML='';
     data.forEach(w=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${w.id}</td><td>${w.user.username||w.user.id||'—'}</td><td>${w.amount||0} ₽</td><td>${w.name||''} / ${w.bank||''}</td><td></td>`;
       const actions = tr.querySelector('td:last-child');
       if(w.status === 'pending'){
-        const ok = document.createElement('button'); ok.className='btn approve'; ok.textContent='Выплатить';
-        ok.onclick = async ()=> { await safeFetch(`/api/withdraws/${encodeURIComponent(w.id)}/approve`, { method:'POST' }); loadWithdraws(); loadAdmins(); };
-        const rej = document.createElement('button'); rej.className='btn reject'; rej.textContent='Отклонить';
-        rej.onclick = async ()=> { await safeFetch(`/api/withdraws/${encodeURIComponent(w.id)}/reject`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason:'Отклонено'})}); loadWithdraws(); loadAdmins(); };
+        const ok = document.createElement('button'); ok.className='btn-approve'; ok.textContent='Выплатить';
+        ok.onclick = async ()=> { await apiPost(`/api/withdraws/${encodeURIComponent(w.id)}/approve`); loadAll(); };
+        const rej = document.createElement('button'); rej.className='btn-reject'; rej.textContent='Отклонить';
+        rej.onclick = async ()=> { await apiPost(`/api/withdraws/${encodeURIComponent(w.id)}/reject`, { reason: 'Отклонено' }); loadAll(); };
         actions.appendChild(ok); actions.appendChild(rej);
-      } else actions.textContent='—';
+      } else { actions.textContent='—'; }
       tbody.appendChild(tr);
     });
     document.getElementById('statWithdraws').textContent = data.length;
-  } catch(e){ console.error(e); }
+    document.getElementById('statWithdraws2').textContent = data.length;
+  } catch(e){ console.error('loadWithdraws', e); }
 }
+
+let currentReplyId = null;
+function openReplyModal(id, message){
+  currentReplyId = id;
+  document.getElementById('replyOrig').textContent = message;
+  document.getElementById('replyText').value = '';
+  document.getElementById('replyModal').style.display = 'flex';
+}
+document.getElementById('replyClose').addEventListener('click', ()=> document.getElementById('replyModal').style.display='none');
+document.getElementById('replySend').addEventListener('click', async ()=>{
+  const txt = document.getElementById('replyText').value.trim();
+  if(!txt) return alert('Введите текст');
+  try {
+    await apiPost(`/api/supports/${encodeURIComponent(currentReplyId)}/reply`, { message: txt });
+    alert('Ответ отправлен');
+    document.getElementById('replyModal').style.display='none';
+    loadAll();
+  } catch(e){ alert('Ошибка отправки: ' + e); }
+});
 
 async function loadSupports(){
   try {
-    const data = await safeFetch('/api/supports');
+    const data = await apiGet('/api/supports');
     const tbody = document.querySelector('#supportsTable tbody'); tbody.innerHTML='';
     data.forEach(s=>{
       const tr = document.createElement('tr');
-      const short = (s.message||'').slice(0,120) + ((s.message||'').length>120?'…':'');
+      const short = (s.message||'').slice(0,140) + ((s.message||'').length>140?'…':'');
       tr.innerHTML = `<td>${s.id}</td><td>${s.user.username||s.user.id||'—'}</td><td title="${s.message||''}">${short}</td><td>${s.status||''}</td><td></td>`;
       const actions = tr.querySelector('td:last-child');
-      const rep = document.createElement('button'); rep.className='btn approve'; rep.textContent='Ответить';
-      rep.onclick = ()=> openReply(s.id, s.message || '');
-      const closeBtn = document.createElement('button'); closeBtn.className='btn reject'; closeBtn.textContent='Закрыть';
-      closeBtn.onclick = async ()=> { await safeFetch(`/api/supports/${encodeURIComponent(s.id)}/resolve`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({reason:'Закрыто админом'})}); loadSupports(); loadAdmins(); };
+      const rep = document.createElement('button'); rep.className='btn-approve'; rep.textContent='Ответить';
+      rep.onclick = ()=> openReplyModal(s.id, s.message || '');
+      const closeBtn = document.createElement('button'); closeBtn.className='btn-reject'; closeBtn.textContent='Закрыть';
+      closeBtn.onclick = async ()=> { await apiPost(`/api/supports/${encodeURIComponent(s.id)}/resolve`, { reason: 'Закрыто админом' }); loadAll(); };
       actions.appendChild(rep); actions.appendChild(closeBtn);
       tbody.appendChild(tr);
     });
-    document.getElementById('statSupports').textContent = data.length;
-  } catch(e){ console.error(e); }
+    document.getElementById('statSupports2').textContent = data.length;
+  } catch(e){ console.error('loadSupports', e); }
 }
 
 async function loadAdmins(){
   try {
-    const res = await safeFetch('/api/admins');
-    if(!res.ok) throw 'no';
+    const res = await apiGet('/api/admins');
+    if(!res || !res.ok) throw 'no data';
     const arr = res.admins || [];
-    const panel = document.getElementById('adminsPanel'); panel.innerHTML='';
+    const panel = document.getElementById('adminsPanel'); panel.innerHTML = '';
+    if(arr.length === 0){ panel.innerHTML = '<div class="muted">Нет админов</div>'; return; }
     arr.forEach(a=>{
-      const div = document.createElement('div'); div.className='admin-row';
-      div.innerHTML = `<div><strong>${a.id_or_username}</strong><div class="small">${a.is_main? 'Главный':'Обычный'}</div></div><div style="text-align:right"><div style="font-weight:800">${a.supports_handled||0}</div><div class="small">support обработано</div></div>`;
+      const div = document.createElement('div'); div.className = 'admin-item';
+      div.innerHTML = `<div><strong>${a.id_or_username}</strong><div class="muted">${a.is_main ? 'Главный' : 'Обычный'}</div></div><div style="text-align:right"><div style="font-weight:800">${a.supports_handled||0}</div><div class="muted">support обработано</div></div>`;
       panel.appendChild(div);
     });
-  } catch(e){ console.error(e); document.getElementById('adminsPanel').innerHTML = '<div class="small">Ошибка</div>'; }
+  } catch(e){ console.error('loadAdmins', e); document.getElementById('adminsPanel').innerHTML='<div class="muted">Ошибка загрузки</div>'; }
 }
 
-/* Reply modal */
-function openReply(id, orig){
-  document.getElementById('replyModal').style.display='flex';
-  document.getElementById('replyOrig').textContent = orig;
-  document.getElementById('replyText').value = '';
-  window._replyTarget = id;
-}
-document.getElementById('replyClose').onclick = ()=> document.getElementById('replyModal').style.display='none';
-document.getElementById('replySend').onclick = async ()=>{
-  const txt = document.getElementById('replyText').value.trim();
-  if(!txt) { alert('Введите ответ'); return; }
+async function loadAll(){
   try {
-    await safeFetch(`/api/supports/${encodeURIComponent(window._replyTarget)}/reply`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message: txt})});
-    alert('Ответ отправлен');
-    document.getElementById('replyModal').style.display='none';
-    loadSupports(); loadAdmins();
-  } catch(e){ alert('Ошибка'); }
-};
+    await Promise.all([loadTopups(), loadWithdraws(), loadSupports(), loadAdmins()]);
+  } catch(e){ console.warn('loadAll error', e); }
+}
 
-/* Initial load */
-(async function(){ await Promise.all([loadTopups(), loadWithdraws(), loadSupports(), loadAdmins()]); })();
-
+document.getElementById('reloadAll').addEventListener('click', loadAll);
 </script>
 </body>
 </html>
