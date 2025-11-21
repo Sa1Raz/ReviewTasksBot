@@ -1,7 +1,4 @@
-// socket-client.js
-// Include this file in public/mainadmin.html and optionally in public/index.html
-// Requires: <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
+// Simple socket client to include in admin/index pages
 (function(){
   function qs(name){ return new URLSearchParams(location.search).get(name); }
   const token = qs('token') || '';
@@ -17,6 +14,5 @@
   socket.on('new_topup_user', (data) => { alert('Заявка на пополнение принята'); });
   socket.on('new_work_user', (data) => { alert('Ваша заявка принята на проверку'); });
   socket.on('disconnect', (reason) => console.log('socket disconnected', reason));
-
   window.__RC_SOCKET = socket;
 })();
