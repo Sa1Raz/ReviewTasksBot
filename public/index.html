@@ -1,527 +1,263 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash — красивая версия</title>
-
-<!-- Fonts & Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<!-- Lottie for entrance animation -->
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ReviewCash — Профиль и задания</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lottie-web@5.8.1/build/player/lottie.min.js"></script>
-<!-- Socket.IO (if enabled on backend) -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
 <style>
-  :root{
-    --bg-1: #031025;
-    --bg-2: #0b2030;
-    --glass: rgba(255,255,255,0.06);
-    --accentA: #00f0ff;
-    --accentB: #00ff9d;
-    --muted: #9fb6c6;
-    --gold: #ffd166;
-    --card-shadow: 0 10px 30px rgba(4,19,30,0.6);
-    --glass-border: rgba(255,255,255,0.06);
-    --radius: 14px;
-  }
-
+  :root{--bg1:#031025;--bg2:#072233;--accentA:#00f0ff;--accentB:#00ff9d;--muted:#9fb6c6;--gold:#ffd166}
   *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    background: radial-gradient(1200px 600px at 10% 10%, rgba(0,240,255,0.04), transparent),
-                linear-gradient(180deg, var(--bg-1), var(--bg-2));
-    color:#eaf7fb;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-    overflow-x:hidden;
-  }
-
-  /* Layout */
-  .container{max-width:1200px;margin:28px auto;padding:24px;display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
-  .shell{background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border-radius:var(--radius); padding:18px; box-shadow: var(--card-shadow); border:1px solid var(--glass-border);}
-
-  header.app-header{display:flex;gap:16px;align-items:center;margin-bottom:12px}
-  .logo{
-    width:68px;height:68px;border-radius:14px;background:linear-gradient(135deg,var(--accentA),var(--accentB));
-    display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800;font-family:Poppins,Inter;font-size:20px;box-shadow:0 18px 50px rgba(0,240,255,0.06);
-  }
-  .title{display:flex;flex-direction:column}
-  .title h1{margin:0;font-size:20px;font-weight:800}
-  .title p{margin:0;color:var(--muted);font-size:13px}
-
-  /* Animated hero */
-  .hero{
-    display:flex;gap:16px;align-items:center;padding:16px;border-radius:12px;background:linear-gradient(90deg, rgba(0,255,160,0.03), transparent);
-    border:1px solid rgba(255,255,255,0.02);
-  }
-  #lottie {width:140px;height:140px;flex:0 0 140px}
-
-  /* Tabs */
-  .tabs{display:flex;gap:10px;margin-top:14px}
-  .tab{padding:8px 12px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted)}
-  .tab.active{background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;font-weight:700;border:none;box-shadow:0 12px 35px rgba(0,240,255,0.06)}
-
-  /* Tasks grid */
-  .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
-  .task{
-    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
-    border-radius:12px;padding:14px;border:1px solid var(--glass-border);transition:transform .22s cubic-bezier(.2,.9,.2,1), box-shadow .22s;
-    cursor:pointer;overflow:hidden;position:relative;
-  }
-  .task:hover{transform:translateY(-10px);box-shadow:0 30px 60px rgba(0,0,0,0.6)}
-  .task .meta{display:flex;align-items:center;gap:12px}
-  .task .badge{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:8px;font-size:13px;color:var(--muted)}
-  .task .title{font-weight:700;margin-top:8px}
-
-  /* Right column */
-  .right-col{display:flex;flex-direction:column;gap:14px}
-  .panel{padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid var(--glass-border)}
-
-  .profile{
-    display:flex;gap:12px;align-items:center;
-  }
-  .avatar{width:84px;height:84px;border-radius:14px;background:linear-gradient(135deg,#04202a,#05202a);display:flex;align-items:center;justify-content:center;color:var(--accentA);font-weight:800;font-size:22px;border:5px solid rgba(0,255,200,0.04)}
-  .profile .info{flex:1}
-  .profile .info .name{font-weight:800}
-  .profile .info .handle{color:var(--muted);font-size:13px}
-
-  .stat{display:flex;gap:12px;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.01);padding:12px;border-radius:10px;margin-top:10px}
-
-  /* Floating support chat */
-  .support-fab{
-    position:fixed;right:28px;bottom:28px;width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--accentB),var(--accentA));
-    display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800;z-index:2000;box-shadow:0 20px 60px rgba(0,255,160,0.12);cursor:pointer;
-    transition:transform .2s;
-  }
-  .support-fab:hover{transform:translateY(-6px)}
-  .support-fab .dot{position:absolute;right:8px;top:8px;width:12px;height:12px;background:#ff6b6b;border-radius:10px;box-shadow:0 6px 14px rgba(255,107,107,0.12)}
-
-  /* Chat modal */
-  .chat-backdrop{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:flex-end;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6));z-index:2010}
-  .chat-window{width:420px;max-width:96%;height:68vh;border-radius:14px;background:linear-gradient(180deg,#042231,#021b28);margin-bottom:28px;padding:12px;display:flex;flex-direction:column;gap:10px;border:1px solid rgba(255,255,255,0.04)}
-  .chat-head{display:flex;align-items:center;gap:12px}
-  .chat-messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
-  .msg{max-width:78%;padding:10px;border-radius:12px;background:rgba(255,255,255,0.02);align-self:flex-start}
-  .msg.me{background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;align-self:flex-end}
-  .chat-input{display:flex;gap:8px}
-  .chat-input input{flex:1;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#eaf7fb}
-  .chat-input button{padding:10px 12px;border-radius:10px;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;border:none;cursor:pointer}
-
-  /* Toast */
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:#05202a;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 12px 30px rgba(2,16,32,0.6);color:#eaf7fb;z-index:3000;display:none}
-
-  /* History panel styles */
-  .history-panel{margin-top:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);max-height:220px;overflow:auto}
-  .controls{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-  .btn-mini{padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,#00f0ff,#00ff9d);color:#012226;border:none;cursor:pointer}
-  .pager{display:flex;justify-content:center;margin-top:8px;color:#9fb6c6}
-
-  /* Responsive */
-  @media (max-width:980px){
-    .container{grid-template-columns:1fr; padding:14px}
-    .right-col{order:2}
-    .hero{flex-direction:column;align-items:flex-start}
-  }
+  body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf7fb}
+  .wrap{max-width:1100px;margin:28px auto;padding:18px;display:grid;grid-template-columns:1fr 380px;gap:18px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03)}
+  .logo{width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900}
+  .profile{display:flex;gap:12px;align-items:center}
+  .avatar{width:84px;height:84px;border-radius:12px;background:#05292f;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .btn{padding:8px 10px;border-radius:8px;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;border:none;cursor:pointer}
+  .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:520px;max-width:94%;background:#041726;border-radius:12px;padding:16px;z-index:10000;border:1px solid rgba(255,255,255,0.03)}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;z-index:9999}
+  .sublabel{color:#9fb6c6;font-size:13px}
+  .input,textarea,select{width:100%;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb}
+  .small{font-size:13px;color:#9fb6c6}
 </style>
 </head>
 <body>
-  <div class="container">
-    <div>
-      <div class="shell">
-        <header class="app-header">
-          <div class="logo">RC</div>
-          <div class="title">
-            <h1>ReviewCash</h1>
-            <p>Красивый интерфейс — отзывы, задания и выплаты</p>
-          </div>
-          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <button id="refreshBtn" class="tab">Обновить</button>
-            <button id="adminBtn" class="tab">Админ</button>
-          </div>
-        </header>
-
-        <div class="hero" aria-hidden="false">
-          <div id="lottie"></div>
-          <div style="flex:1">
-            <h2 style="margin:0 0 6px 0">Добро пожаловать в ReviewCash</h2>
-            <p style="margin:0;color:var(--muted)">Выполняйте задания, получайте выплаты и общайтесь с поддержкой прямо из интерфейса или через Telegram WebApp.</p>
-            <div style="margin-top:12px;display:flex;gap:8px">
-              <button id="openTasks" class="tab active">Задания</button>
-              <button id="openProfile" class="tab">Профиль</button>
-              <button id="quickTopup" class="btn" style="margin-left:auto">Пополнить</button>
-            </div>
-          </div>
+<div class="wrap">
+  <div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo">RC</div>
+        <div>
+          <h2 style="margin:0">ReviewCash</h2>
+          <div class="small">Выполняйте задания и управляйте балансом</div>
         </div>
-
-        <div class="tabs" style="margin-top:12px">
-          <div id="tabTasks" class="tab active">Задания</div>
-          <div id="tabProfile" class="tab">Профиль</div>
-          <div id="tabSupport" class="tab">Поддержка</div>
-        </div>
-
-        <div id="tasksSection" style="margin-top:12px">
-          <div style="display:flex;gap:10px;align-items:center">
-            <input id="search" placeholder="Поиск задач..." style="flex:1;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb" />
-            <button id="createBtn" class="tab">+ Создать</button>
-          </div>
-          <div id="tasksGrid" class="tasks-grid" aria-live="polite" style="margin-top:12px">
-            <!-- tasks will be injected -->
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <aside class="right-col">
-      <div class="panel profile">
-        <div class="avatar" id="avatar">RC</div>
-        <div class="info">
-          <div class="name" id="fullname">Гость</div>
-          <div class="handle" id="handle">@guest</div>
-          <div style="margin-top:8px;font-weight:800;font-size:20px;color:var(--gold)" id="balance">0 ₽</div>
+        <div style="margin-left:auto">
+          <button id="openAdmin" class="btn">Админ</button>
         </div>
       </div>
 
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <strong>Статистика</strong>
-          <small style="color:var(--muted)">обновляется в реальном времени</small>
-        </div>
-        <div class="stat" style="margin-top:10px">
-          <div>
-            <div style="font-size:13px;color:var(--muted)">Заявок</div>
-            <div style="font-weight:800" id="statRequests">0</div>
-          </div>
-          <div>
-            <div style="font-size:13px;color:var(--muted)">Пользователей</div>
-            <div style="font-weight:800" id="statUsers">—</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <strong>История действий</strong>
-        <div style="margin-top:8px;color:var(--muted);font-size:13px">Просмотр операций пользователя (пополнения, выводы, работы)</div>
-
-        <div style="margin-top:10px" id="historyControls" class="controls">
-          <select id="historyFilter">
-            <option value="">Все</option>
-            <option value="topup">Пополнения</option>
-            <option value="withdraw">Выводы</option>
-            <option value="work">Работы</option>
-          </select>
-          <div style="flex:1"></div>
-          <input id="uidManual" placeholder="UID (если нет WebApp)" style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb"/>
-          <button id="uidLoadBtn" class="btn-mini">Загрузить</button>
-        </div>
-
-        <div id="historyList" class="history-panel">
-          <div style="color:var(--muted)">Нет записей</div>
-        </div>
-
-        <div class="pager" id="historyPager">Страница 1</div>
-      </div>
-    </aside>
-  </div>
-
-  <!-- Floating Support button -->
-  <div class="support-fab" id="supportFab" title="Поддержка">
-    <div style="font-size:22px">💬</div>
-    <div class="dot"></div>
-  </div>
-
-  <!-- Chat modal -->
-  <div class="chat-backdrop" id="chatBackdrop" role="dialog" aria-modal="true">
-    <div class="chat-window" id="chatWindow">
-      <div class="chat-head">
-        <div style="font-weight:800">Поддержка</div>
-        <div style="margin-left:auto"><button id="closeChat" class="tab">Закрыть</button></div>
-      </div>
-      <div class="chat-messages" id="chatMessages" aria-live="polite">
-        <!-- messages -->
-      </div>
-      <div class="chat-input">
-        <input id="chatInput" placeholder="Опишите проблему..." />
-        <button id="chatSend">Отправить</button>
+      <div style="margin-top:14px">
+        <h3>Задания</h3>
+        <div id="tasks" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:8px"></div>
       </div>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div class="toast" id="toast">Готово</div>
+  <aside>
+    <div class="card profile">
+      <div style="display:flex;gap:12px;align-items:center">
+        <div id="avatar" class="avatar">RC</div>
+        <div>
+          <div id="fullname" style="font-weight:800">Гость</div>
+          <div id="handle" class="small">@guest</div>
+          <div style="margin-top:8px;font-weight:800;font-size:18px;color:var(--gold)" id="balance">0 ₽</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <strong>Действия</strong>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+        <button id="btnTopup" class="btn">Пополнить</button>
+        <button id="btnWithdraw" class="btn">Вывести</button>
+        <button id="openSupport" class="btn">Поддержка</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <strong>История</strong>
+      <div id="history" style="margin-top:8px;color:#9fb6c6;max-height:260px;overflow:auto"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- BACKDROPS & MODALS -->
+<div id="backdrop" class="backdrop"></div>
+
+<!-- Topup modal -->
+<div id="modalTopup" class="modal" style="display:none">
+  <h3>Пополнение баланса</h3>
+  <div class="small">Минимальная сумма — 100 ₽</div>
+  <div style="margin-top:10px">
+    <label>Сумма</label>
+    <input id="topupAmount" class="input" placeholder="Сумма в ₽" />
+  </div>
+  <div style="margin-top:10px">
+    <div class="small">Мои данные для перевода (Тинькофф):</div>
+    <div style="margin-top:6px"><strong>Раяз Н.</strong> <div class="small">Номер: <span id="bankPhone">+79600738559</span> (можно скопировать)</div></div>
+  </div>
+  <div style="margin-top:10px">
+    <div class="small">После отправки система сгенерирует одноразовый код — укажите его в комментарии при переводе.</div>
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px">
+    <button id="sendTopup" class="btn">Отправить заявку</button>
+    <button id="closeTopup" class="btn" style="background:transparent;color:#eaf7fb;border:1px solid rgba(255,255,255,0.03)">Отмена</button>
+  </div>
+  <div id="topupResult" style="margin-top:12px"></div>
+</div>
+
+<!-- Withdraw modal -->
+<div id="modalWithdraw" class="modal" style="display:none">
+  <h3>Заявка на вывод</h3>
+  <div class="small">Минимальная сумма — 250 ₽. Проверка баланса выполняется при отправке заявки.</div>
+  <div style="margin-top:10px">
+    <label>Сумма</label>
+    <input id="wdAmount" class="input" placeholder="Сумма в ₽" />
+  </div>
+  <div style="margin-top:10px">
+    <label>ФИО / Ник (как в банке)</label>
+    <input id="wdName" class="input" placeholder="ФИО или ник в банке" />
+  </div>
+  <div style="margin-top:10px">
+    <label>Банк / Реквизиты</label>
+    <input id="wdBank" class="input" placeholder="Название банка / реквизиты" />
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px">
+    <button id="sendWithdraw" class="btn">Отправить заявку</button>
+    <button id="closeWithdraw" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.03)">Отмена</button>
+  </div>
+  <div id="withdrawResult" style="margin-top:12px"></div>
+</div>
+
+<!-- Support modal -->
+<div id="modalSupport" class="modal" style="display:none">
+  <h3>Поддержка</h3>
+  <textarea id="supportText" placeholder="Опишите проблему..." style="margin-top:10px"></textarea>
+  <div style="margin-top:8px;display:flex;gap:8px">
+    <button id="sendSupport" class="btn">Отправить</button>
+    <button id="closeSupport" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.03)">Отмена</button>
+  </div>
+  <div id="supportResult" style="margin-top:10px"></div>
+</div>
 
 <script>
-/* =========================
-   Helper UI / network logic
-   ========================= */
-const toastEl = document.getElementById('toast');
-function showToast(text, delay=2200){
-  toastEl.textContent = text;
-  toastEl.style.display = 'block';
-  setTimeout(()=> toastEl.style.display='none', delay);
-}
-
-/* Lottie animation */
-try {
-  const anim = lottie.loadAnimation({
-    container: document.getElementById('lottie'),
-    renderer: 'svg',
-    loop: true,
-    autoplay: true,
-    path: 'https://assets10.lottiefiles.com/packages/lf20_jbrw3hcz.json' // soft abstract animation
-  });
-} catch(e){ console.warn('lottie fail', e) }
-
-/* Basic state */
-let tasks = [];
-let activities = [];
-const tasksGrid = document.getElementById('tasksGrid');
-const activityEl = document.getElementById('activity');
-const statRequests = document.getElementById('statRequests');
-const statUsers = document.getElementById('statUsers');
-
-function addActivity(text){
-  const time = new Date().toLocaleTimeString();
-  activities.unshift({t:time,text});
-  if(activities.length>50) activities.pop();
-  renderActivities();
-}
-function renderActivities(){
-  const el = document.getElementById('activity');
-  if (!el) return;
-  el.innerHTML = activities.slice(0,40).map(a=>`<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02)"><small style="color:var(--muted)">${a.t}</small><div style="margin-top:6px">${a.text}</div></div>`).join('');
-}
-
-/* Load tasks from server */
-async function loadTasks(){
-  tasksGrid.innerHTML = ''; // skeleton
-  for(let i=0;i<6;i++){
-    const s = document.createElement('div'); s.className='task';
-    s.innerHTML = `<div class="meta"><div class="badge">—</div></div><div class="title" style="height:18px;background:linear-gradient(90deg,#ffffff09,#ffffff00);border-radius:6px;margin-top:10px"></div>`;
-    tasksGrid.appendChild(s);
-  }
-  try {
-    const res = await fetch('/api/tasks_public');
-    const data = await res.json();
-    tasks = data || [];
-    if(tasks.length===0){
-      tasksGrid.innerHTML = `<div style="color:var(--muted)">Пока нет активных заданий</div>`;
-    } else {
-      tasksGrid.innerHTML = '';
-      tasks.forEach(t=>{
-        const node = document.createElement('div'); node.className='task';
-        node.innerHTML = `<div class="meta"><div class="badge">${t.type||'задача'}</div><div style="margin-left:auto;color:var(--muted);font-size:13px">${t.budget? t.budget + ' ₽':''}</div></div>
-                          <div class="title">${t.title||t.id}</div>
-                          <div style="margin-top:10px;color:var(--muted);font-size:13px">${t.link? t.link:''}</div>`;
-        node.addEventListener('click', ()=> openTaskModal(t));
-        tasksGrid.appendChild(node);
-      });
-    }
-    statRequests.textContent = tasks.length;
-    addActivity('Задания загружены');
-  } catch(e){
-    console.error(e);
-    tasksGrid.innerHTML = `<div style="color:var(--muted)">Ошибка загрузки заданий</div>`;
-    addActivity('Ошибка при загрузке задач');
-  }
-}
-
-/* Open Task modal (quick view) */
-function openTaskModal(t){
-  const html = `<p style="margin:0 0 8px 0">${t.title||t.id}</p>
-                <p style="color:var(--muted);margin:0 0 12px 0">Бюджет: <strong>${t.budget? t.budget+' ₽':'—'}</strong></p>
-                <p><a href="${t.link||'#'}" target="_blank" style="color:var(--accentA)">Перейти</a></p>
-                <div style="text-align:right"><button class="btn" id="doTask">Выполнить</button></div>`;
-  openModal('Задание', html, async ()=>{
-    showToast('Функция выполнения задания откроется в WebApp (или будет реализована позже)');
-  });
-}
-
-/* Very small modal helper */
-const modalBackdrop = document.createElement('div');
-modalBackdrop.style.position='fixed';
-modalBackdrop.style.left=0;modalBackdrop.style.top=0;modalBackdrop.style.width='100%';modalBackdrop.style.height='100%';
-modalBackdrop.style.display='none';modalBackdrop.style.alignItems='center';modalBackdrop.style.justifyContent='center';
-modalBackdrop.style.zIndex=2500;
-document.body.appendChild(modalBackdrop);
-function openModal(title, innerHTML, onSubmit){
-  modalBackdrop.innerHTML = '';
-  modalBackdrop.style.display = 'flex';
-  modalBackdrop.style.background = 'rgba(0,0,0,0.45)';
-  const box = document.createElement('div');
-  box.style.width='560px';box.style.maxWidth='94%';box.style.borderRadius='12px';box.style.background='linear-gradient(180deg,#06212a,#041622)';box.style.padding='18px';
-  box.style.border='1px solid rgba(255,255,255,0.04)';
-  box.innerHTML = `<h3 style="margin:0 0 8px 0">${title}</h3><div style="margin-bottom:12px">${innerHTML}</div>
-                   <div style="text-align:right"><button id="modalCancel" style="margin-right:8px" class="btn ghost">Отмена</button><button id="modalOk" class="btn">OK</button></div>`;
-  modalBackdrop.appendChild(box);
-  box.querySelector('#modalCancel').onclick = ()=> closeModal();
-  box.querySelector('#modalOk').onclick = async ()=>{
-    try{
-      await onSubmit();
-      closeModal();
-    }catch(e){ alert(e.message||e) }
-  };
-}
-function closeModal(){ modalBackdrop.style.display='none'; modalBackdrop.innerHTML=''; }
-
-/* Chat support logic */
-const supportFab = document.getElementById('supportFab');
-const chatBackdrop = document.getElementById('chatBackdrop');
-const chatMessages = document.getElementById('chatMessages');
-const chatInput = document.getElementById('chatInput');
-const chatSend = document.getElementById('chatSend');
-document.getElementById('closeChat').onclick = ()=> chatBackdrop.style.display='none';
-supportFab.onclick = ()=> chatBackdrop.style.display='flex';
-
-chatSend.onclick = async ()=>{
-  const text = chatInput.value && chatInput.value.trim();
-  if(!text) return;
-  appendChatMsg('me', text);
-  chatInput.value='';
-  showToast('Отправка в поддержку...');
-  try{
-    const res = await fetch('/api/support', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:text})});
-    const j = await res.json();
-    if(j.ok){
-      appendChatMsg('bot', 'Ваше сообщение отправлено. Мы свяжемся с вами.');
-      addActivity('Отправлено сообщение в поддержку');
-      showToast('Сообщение отправлено');
-    } else {
-      appendChatMsg('bot', 'Ошибка отправки: ' + (j.reason||''));
-      showToast('Ошибка отправки');
-    }
-  }catch(e){ appendChatMsg('bot','Ошибка сети'); showToast('Ошибка сети') }
-};
-
-function appendChatMsg(cls, text){
-  const d = document.createElement('div');
-  d.className = 'msg ' + (cls==='me'?'me':'');
-  d.textContent = text;
-  chatMessages.appendChild(d);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/* Admin socket notifications (if token present) */
+const WEBAPP_URL = new URL(window.location.href).origin; // not used on backend
 const token = new URLSearchParams(location.search).get('token') || '';
-if(token){
-  try {
-    const sock = io({ auth: { token }, transports: ['websocket'] });
-    sock.on('connect', ()=> {
-      addActivity('Socket connected');
-      showToast('Socket connected');
-    });
-    sock.on('new_topup', data => { addActivity('Новый топап: ' + (data.amount||'')); showToast('Новый топап'); });
-    sock.on('new_support', data => { addActivity('Новый запрос в поддержку'); showToast('Новый запрос'); });
-    sock.on('disconnect', ()=> addActivity('Socket disconnected'));
-  } catch(e){ console.warn('socket error', e) }
-}
 
-/* ================= history integration ================= */
-let rc_history_page = 1;
-let rc_history_page_size = 6;
-let rc_history_uid = null;
+function showModal(sel){ document.getElementById('backdrop').style.display='block'; document.getElementById(sel).style.display='block'; }
+function hideAll(){ document.getElementById('backdrop').style.display='none'; ['modalTopup','modalWithdraw','modalSupport'].forEach(id=>document.getElementById(id).style.display='none'); }
 
-async function rc_loadHistory(){
-  if(!rc_history_uid) { document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">UID не указан</div>'; return; }
-  const type = document.getElementById('historyFilter').value;
-  const res = await fetch(`/api/user_history?uid=${encodeURIComponent(rc_history_uid)}&page=${rc_history_page}&page_size=${rc_history_page_size}&type=${type}`);
-  let j;
-  try { j = await res.json(); } catch(e){ document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">Ошибка сервера</div>'; return; }
-  if(!j.ok) { document.getElementById('historyList').innerHTML = '<div style="color:var(--muted)">Ошибка: ' + (j.reason||'') + '</div>'; return; }
-  renderHistoryList(j.items);
-  document.getElementById('historyPager').textContent = `Страница ${j.page} / ${Math.max(1, Math.ceil((j.total||0)/ (j.page_size||rc_history_page_size)))}`;
-}
+document.getElementById('btnTopup').onclick = ()=> showModal('modalTopup');
+document.getElementById('closeTopup').onclick = hideAll;
+document.getElementById('btnWithdraw').onclick = ()=> showModal('modalWithdraw');
+document.getElementById('closeWithdraw').onclick = hideAll;
+document.getElementById('openSupport').onclick = ()=> showModal('modalSupport');
+document.getElementById('closeSupport').onclick = hideAll;
 
-function renderHistoryList(arr){
-  const el = document.getElementById('historyList'); el.innerHTML='';
-  if(!arr || arr.length===0) { el.innerHTML = '<div style="color:var(--muted)">Нет записей</div>'; return; }
-  arr.forEach(it=>{
-    const div = document.createElement('div');
-    div.style.display='flex';
-    div.style.justifyContent='space-between';
-    div.style.padding='8px 0';
-    div.style.borderBottom='1px dashed rgba(255,255,255,0.02)';
-    const left = document.createElement('div');
-    left.innerHTML = `<div style="font-weight:700">${(it.type||'').toUpperCase()} — ${it.id||''}</div><div style="color:var(--muted);font-size:13px">${it.summary||''}</div>`;
-    const right = document.createElement('div');
-    right.style.textAlign='right';
-    right.innerHTML = `<div style="font-weight:800">${it.amount? (it.amount + ' ₽') : ''}</div><div style="color:var(--muted);font-size:13px">${it.created_at||''}</div>`;
-    div.appendChild(left); div.appendChild(right);
-    el.appendChild(div);
-  });
-}
-
-// Controls
-document.getElementById('uidLoadBtn').onclick = ()=> {
-  const v = document.getElementById('uidManual').value.trim();
-  if(!v) return alert('Введите UID');
-  rc_history_uid = v;
-  rc_history_page = 1;
-  document.getElementById('uidManual').value = v;
-  rc_loadHistory();
+document.getElementById('openAdmin').onclick = ()=>{
+  if(!token){ alert('Требуется токен админа. Получите ссылку через бота (/mainadmin).'); return; }
+  window.open('/mainadmin?token=' + encodeURIComponent(token), '_blank');
 };
-document.getElementById('historyFilter').onchange = ()=> { rc_history_page = 1; rc_loadHistory(); };
 
-// pager by clicking pager
-document.getElementById('historyPager').addEventListener('click', ()=>{
-  rc_history_page++;
-  rc_loadHistory();
-});
+/* Lottie hero */
+try{
+  lottie.loadAnimation({container: document.getElementById('avatar'), renderer:'svg', loop:true, autoplay:true, path:'https://assets3.lottiefiles.com/packages/lf20_o1x7f9yk.json'});
+} catch(e){}
 
-// Try to pick UID from Telegram WebApp initData
-document.addEventListener('DOMContentLoaded', ()=>{
+/* load profile */
+async function loadProfileFromWebApp(){
+  // try to use Telegram.WebApp.initDataUnsafe if available
   try {
     if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user){
       const u = Telegram.WebApp.initDataUnsafe.user;
-      rc_history_uid = u.id;
       document.getElementById('fullname').textContent = (u.first_name || 'Пользователь');
-      document.getElementById('handle').textContent = 'UID: ' + u.id;
-      rc_history_page = 1;
-      rc_loadHistory();
+      document.getElementById('handle').textContent = u.username ? '@'+u.username : 'UID: ' + u.id;
+      document.getElementById('avatar').textContent = (u.first_name||'P').slice(0,2).toUpperCase();
+      // call profile_me to get balance and photo (if bot configured)
+      try {
+        const initData = Telegram.WebApp.initData;
+        const res = await fetch('/api/profile_me', { headers: { 'X-Tg-InitData': initData }});
+        const j = await res.json();
+        if(j.ok){
+          document.getElementById('balance').textContent = (j.balance || 0) + ' ₽';
+          if(j.photo_url){
+            const img = document.createElement('img'); img.src = j.photo_url; img.style.width='84px'; img.style.height='84px'; img.style.borderRadius='12px';
+            const av = document.getElementById('avatar'); av.innerHTML=''; av.appendChild(img);
+          }
+        }
+      } catch(e){}
     }
   } catch(e){}
-});
-/* ================= end history integration ================= */
+}
+loadProfileFromWebApp();
 
-/* Buttons */
-document.getElementById('refreshBtn').onclick = ()=> { loadTasks(); showToast('Обновление...') }
-document.getElementById('openProfile').onclick = ()=> { document.getElementById('tabProfile').click() }
-document.getElementById('openTasks').onclick = ()=> { document.getElementById('tabTasks').click() }
-document.getElementById('adminBtn').onclick = ()=> {
-  if(token) window.open('/mainadmin?token='+encodeURIComponent(token),'_blank');
-  else alert('Откройте админку через Telegram (получите token)');
-};
-document.getElementById('quickTopup').onclick = ()=> document.getElementById('supportFab').click();
+/* Load tasks (simple) */
+async function loadTasks(){
+  const el = document.getElementById('tasks'); el.innerHTML='';
+  try {
+    const res = await fetch('/api/tasks_public');
+    const data = await res.json();
+    if(!data || !data.length) el.innerHTML = '<div class="small">Нет задач</div>';
+    else data.forEach(t=>{
+      const d = document.createElement('div'); d.className='card';
+      d.style.cursor='pointer';
+      d.innerHTML = `<div style="font-weight:700">${t.title||t.id}</div><div class="small">${t.budget? t.budget+' ₽':''}</div>`;
+      el.appendChild(d);
+    });
+  } catch(e){ el.innerHTML = '<div class="small">Ошибка загрузки</div>'; }
+}
+loadTasks();
 
-/* Tabs */
-document.getElementById('tabTasks').onclick = () => {
-  document.getElementById('tasksSection').style.display='block';
-  document.getElementById('tabTasks').classList.add('active');
-  document.getElementById('tabProfile').classList.remove('active');
-};
-document.getElementById('tabProfile').onclick = () => {
-  document.getElementById('tasksSection').style.display='none';
-  document.getElementById('tabProfile').classList.add('active');
-  document.getElementById('tabTasks').classList.remove('active');
-  showToast('Профиль пока упрощен');
+/* Topup: send request to server; server returns code and bank info */
+document.getElementById('sendTopup').onclick = async ()=>{
+  const amt = parseFloat((document.getElementById('topupAmount').value||'').replace(',', '.')) || 0;
+  if(amt < 100){ alert('Минимальная сумма пополнения 100 ₽'); return; }
+  let headers = {'Content-Type':'application/json'};
+  // try to forward init_data if inside WebApp
+  try{ if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData } catch(e){}
+  try {
+    const res = await fetch('/api/topups_public', { method:'POST', headers, body: JSON.stringify({ amount: amt }) });
+    const j = await res.json();
+    if(!j.ok){ alert('Ошибка: ' + (j.reason||'')); return; }
+    const top = j.topup;
+    const bank = j.bank || {};
+    document.getElementById('topupResult').innerHTML = `<div class="small">Скопируйте данные и переведите указанную сумму:</div>
+      <div style="margin-top:6px"><strong>${bank.bank_name}</strong><div class="small">Номер: <span id="resPhone">${bank.phone}</span></div></div>
+      <div style="margin-top:6px"><div class="small">Код для комментария перевода: <strong id="resCode">${top.code}</strong></div></div>
+      <div style="margin-top:8px" class="small">После перевода нажмите «Отправлено» и ожидайте — в течение 24 часов пополнение будет подтверждено.</div>`;
+  } catch(e){ alert('Ошибка сети'); }
 };
 
-/* Init */
-document.addEventListener('DOMContentLoaded', async ()=>{
-  loadTasks();
-  addActivity('Интерфейс загружен');
-  // Try to fetch basic stats
-  try{
-    const res = await fetch('/api/works_pending');
-    const arr = await res.json();
-    statUsers.textContent = arr.length || '—';
-  }catch(e){}
-});
+/* Withdraw: send request (server reserves funds) */
+document.getElementById('sendWithdraw').onclick = async ()=>{
+  const amt = parseFloat((document.getElementById('wdAmount').value||'').replace(',','.'))||0;
+  const name = document.getElementById('wdName').value.trim();
+  const bank = document.getElementById('wdBank').value.trim();
+  if(amt < 250){ alert('Минимальная сумма вывода 250 ₽'); return; }
+  if(!name || !bank){ alert('Заполните все поля'); return; }
+  let headers = {'Content-Type':'application/json'};
+  try{ if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData } catch(e){}
+  try {
+    const res = await fetch('/api/withdraw_public', { method:'POST', headers, body: JSON.stringify({ amount: amt, name: name, bank: bank })});
+    const j = await res.json();
+    if(!j.ok){
+      if(j.reason === 'insufficient_balance') alert('Недостаточно средств на балансе: ' + (j.balance||0) + ' ₽');
+      else alert('Ошибка: ' + (j.reason||''));
+      return;
+    }
+    document.getElementById('withdrawResult').innerHTML = `<div class="small">Ваша заявка отправлена. В течение 24 часов мы переведём сумму.</div>`;
+    // update balance shown
+    if(j.balance_after !== undefined) document.getElementById('balance').textContent = j.balance_after + ' ₽';
+  } catch(e){ alert('Ошибка сети'); }
+};
+
+/* Support */
+document.getElementById('sendSupport').onclick = async ()=>{
+  const txt = document.getElementById('supportText').value.trim();
+  if(!txt){ alert('Напишите сообщение'); return; }
+  try {
+    const res = await fetch('/api/support', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: txt }) });
+    const j = await res.json();
+    if(j.ok){
+      document.getElementById('supportResult').textContent = 'Сообщение отправлено в поддержку.';
+    } else {
+      document.getElementById('supportResult').textContent = 'Ошибка: ' + (j.reason||'');
+    }
+  } catch(e){ document.getElementById('supportResult').textContent = 'Ошибка сети'; }
+};
 
 </script>
 </body>
