@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-ReviewCash main server (Flask + TeleBot + Flask-SocketIO).
-Important:
-- Do NOT hardcode BOT_TOKEN in this file; set environment variables instead.
-- Recommended env vars:
-  BOT_TOKEN, WEBAPP_URL, ADMIN_USER_IDS, ADMIN_USERNAMES, ADMIN_JWT_SECRET,
-  BOT_FORCE_POLLING, BOT_USE_POLLING, BOT_DISABLE_BOT, EVENTLET_NO_GREENDNS
+Improved ReviewCash server (Flask + TeleBot + Flask-SocketIO).
+
+This file includes:
+- Early disable of eventlet greendns via ENV (EVENTLET_NO_GREENDNS).
+- Safe eventlet.monkey_patch() usage with fallback for versions that don't accept dns kwarg.
+- Safe bot startup: before starting polling we attempt to delete any existing webhook to avoid Telegram 409 conflict.
+- setup_webhook_safe tries to set a webhook but falls back to polling if allowed.
+- All secret/config values must be provided via environment variables (BOT_TOKEN, ADMIN_JWT_SECRET, etc).
 """
+
 import os
-# Disable eventlet greendns as early as possible (before importing eventlet)
+# Ensure we disable eventlet greendns as early as possible
 os.environ.setdefault('EVENTLET_NO_GREENDNS', 'true')
 
 import time
@@ -19,40 +22,48 @@ import random
 import socket as _socket
 import hashlib
 import hmac
+import logging
 from datetime import datetime, timedelta
 from urllib.parse import quote_plus, parse_qsl
 
-# third-party imports
-# Import eventlet after setting EVENTLET_NO_GREENDNS
+# eventlet import & monkey_patch (safe)
 import eventlet
-# Some eventlet versions accept dns kwarg, others don't - try both safely
 try:
+    # Some eventlet versions accept dns kwarg; try it first
     eventlet.monkey_patch(dns=False)
 except TypeError:
+    # Fallback: call monkey_patch without dns kwarg. The EVENTLET_NO_GREENDNS env var prevents greendns.
     eventlet.monkey_patch()
 
-# Flask & SocketIO
 from flask import Flask, request, send_from_directory, jsonify, abort
+from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, leave_room
 
-# Optional telebot import - allow running server without bot token
+# Optional imports
 try:
     import telebot
 except Exception:
     telebot = None
 
-# JWT for admin tokens
 try:
     import jwt
 except Exception:
-    jwt = None  # If missing, admin token features will fail; recommend installing PyJWT
+    jwt = None
+
+# ---------- Logging ----------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
+)
+logger = logging.getLogger("reviewcash")
 
 # ========== CONFIG ==========
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")  # set in env
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://example.com").rstrip('/')
-CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")  # provide in env
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "").rstrip('/')
+if not WEBAPP_URL:
+    WEBAPP_URL = "https://example.com"  # fallback for local dev
 
-# Ensure your admin id is present by default (change as needed)
+CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "6482440657").split(",") if s.strip()]
 ADMIN_USERNAMES = [s.strip() for s in os.environ.get("ADMIN_USERNAMES", "").split(",") if s.strip()]
 
@@ -60,14 +71,13 @@ ADMIN_JWT_SECRET = os.environ.get("ADMIN_JWT_SECRET", "replace_with_strong_secre
 ADMIN_TOKEN_TTL_SECONDS = int(os.environ.get("ADMIN_TOKEN_TTL_SECONDS", 300))
 
 DATA_DIR = os.environ.get("DATA_DIR", ".rc_data")
+os.makedirs(DATA_DIR, exist_ok=True)
 TOPUPS_FILE = os.path.join(DATA_DIR, "topups.json")
 WITHDRAWS_FILE = os.path.join(DATA_DIR, "withdraws.json")
 TASKS_FILE = os.path.join(DATA_DIR, "tasks.json")
 WORKS_FILE = os.path.join(DATA_DIR, "works.json")
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
 ADMINS_FILE = os.path.join(DATA_DIR, "admins.json")
-
-os.makedirs(DATA_DIR, exist_ok=True)
 
 # ========== STORAGE HELPERS ==========
 def load_json_safe(path, default):
@@ -76,40 +86,34 @@ def load_json_safe(path, default):
             return default
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to load JSON %s: %s", path, e)
         return default
 
 def save_json(path, obj):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error("Failed to save JSON %s: %s", path, e)
 
 def append_json(path, obj):
     arr = load_json_safe(path, [])
     arr.append(obj)
     save_json(path, arr)
 
-# ========== APP / BOT / SOCKETIO ==========
-app = Flask(__name__, static_folder='public')
-
-# initialize telebot only if token present and library available
-if BOT_TOKEN and telebot:
-    bot = telebot.TeleBot(BOT_TOKEN)
-else:
-    bot = None
-    if not BOT_TOKEN:
-        print("[startup] BOT_TOKEN not set - Telegram bot disabled.")
-    elif not telebot:
-        print("[startup] pytelegrambotapi not installed - Telegram features disabled.")
-
-REDIS_URL = os.environ.get("REDIS_URL")
+# ========== APP & SOCKET.IO ==========
+app = Flask(__name__, static_folder='public', static_url_path='/')
+CORS(app)
+REDIS_URL = os.environ.get("REDIS_URL", None)
 if REDIS_URL:
     socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", message_queue=REDIS_URL)
 else:
     socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-# persisted data
-users = load_json_safe(USERS_FILE, {})  # keyed by uid string
-ordinary_admins = load_json_safe(ADMINS_FILE, [])  # list of identifiers (id strings or usernames)
+# persisted
+users = load_json_safe(USERS_FILE, {})
+ordinary_admins = load_json_safe(ADMINS_FILE, [])
 
 # ========== UTILITIES ==========
 def save_users():
@@ -177,15 +181,12 @@ def verify_admin_token(token):
         return False, None
     except jwt.ExpiredSignatureError:
         return False, "expired"
-    except Exception:
+    except Exception as e:
+        logger.debug("verify_admin_token failed: %s", e)
         return False, None
 
 # ========== Telegram WebApp init_data verification ==========
 def verify_telegram_init_data(init_data_str):
-    """
-    Verify Telegram WebApp initData per Telegram docs.
-    Returns (True, params) on success, else (False, None).
-    """
     if not init_data_str or not BOT_TOKEN:
         return False, None
     try:
@@ -204,19 +205,30 @@ def verify_telegram_init_data(init_data_str):
             return True, params
         return False, None
     except Exception as e:
-        print("verify_telegram_init_data error:", e)
+        logger.debug("verify_telegram_init_data error: %s", e)
         return False, None
 
-# ========== DNS / network helper ==========
+# ========== Bot init (safe) ==========
+if BOT_TOKEN and telebot:
+    bot = telebot.TeleBot(BOT_TOKEN)
+    logger.info("Telebot configured")
+else:
+    bot = None
+    if not BOT_TOKEN:
+        logger.warning("BOT_TOKEN not set — Telegram bot disabled")
+    else:
+        logger.warning("pytelegrambotapi not installed — Telegram features disabled")
+
+# ========== DNS helper ==========
 def can_resolve_host(host="api.telegram.org"):
     try:
         _socket.getaddrinfo(host, 443)
         return True
     except Exception as e:
-        print(f"[net-check] DNS resolution failed for {host}: {e}")
+        logger.debug("DNS resolution failed for %s: %s", host, e)
         return False
 
-# ========== SOCKET.IO handlers ==========
+# ========== SocketIO handlers ==========
 @socketio.on('connect')
 def _on_connect(auth):
     try:
@@ -224,8 +236,7 @@ def _on_connect(auth):
         if isinstance(auth, dict):
             token = auth.get('token')
         if not token:
-            # allow readonly connections
-            return
+            return  # allow readonly clients
         ok, payload = verify_admin_token(token)
         if not ok:
             return False
@@ -240,79 +251,45 @@ def _on_connect(auth):
         if uid: join_room(f'user:{uid}')
         if username: join_room(f'user_name:{username}')
     except Exception as e:
-        print("socket connect error:", e)
+        logger.exception("socket connect error: %s", e)
         return False
 
 @socketio.on('disconnect')
 def _on_disconnect():
     pass
 
-# ========== NOTIFY HELPERS ==========
-def notify_new_topup(topup):
+# ========== Notifications ==========
+def notify_event(name, payload, rooms=None):
     try:
-        socketio.emit('new_topup', topup, room='admins_ordinary')
-        socketio.emit('new_topup', topup, room='admins_main')
-        uid = topup.get('user', {}).get('id')
-        if uid:
-            socketio.emit('new_topup_user', topup, room=f'user:{uid}')
+        if rooms:
+            for r in rooms:
+                socketio.emit(name, payload, room=r)
+        else:
+            socketio.emit(name, payload)
     except Exception as e:
-        print("notify_new_topup error", e)
+        logger.debug("notify_event error: %s", e)
+
+def notify_new_topup(topup):
+    notify_event('new_topup', topup, rooms=['admins_ordinary','admins_main'])
+    uid = topup.get('user', {}).get('id')
+    if uid: notify_event('new_topup_user', topup, rooms=[f'user:{uid}'])
 
 def notify_update_topup(topup):
-    try:
-        socketio.emit('update_topup', topup, room='admins_ordinary')
-        socketio.emit('update_topup', topup, room='admins_main')
-        uid = topup.get('user', {}).get('id')
-        if uid:
-            socketio.emit('update_topup_user', topup, room=f'user:{uid}')
-    except Exception as e:
-        print("notify_update_topup error", e)
+    notify_event('update_topup', topup, rooms=['admins_ordinary','admins_main'])
+    uid = topup.get('user', {}).get('id')
+    if uid: notify_event('update_topup_user', topup, rooms=[f'user:{uid}'])
 
 def notify_new_withdraw(withdraw):
-    try:
-        socketio.emit('new_withdraw', withdraw, room='admins_ordinary')
-        socketio.emit('new_withdraw', withdraw, room='admins_main')
-        uid = withdraw.get('user', {}).get('id')
-        if uid:
-            socketio.emit('new_withdraw_user', withdraw, room=f'user:{uid}')
-    except Exception as e:
-        print("notify_new_withdraw error", e)
+    notify_event('new_withdraw', withdraw, rooms=['admins_ordinary','admins_main'])
+    uid = withdraw.get('user', {}).get('id')
+    if uid: notify_event('new_withdraw_user', withdraw, rooms=[f'user:{uid}'])
 
 def notify_new_work(work):
-    try:
-        socketio.emit('new_work', work, room='admins_ordinary')
-        socketio.emit('new_work', work, room='admins_main')
-        uid = work.get('user', {}).get('id')
-        if uid:
-            socketio.emit('new_work_user', work, room=f'user:{uid}')
-    except Exception as e:
-        print("notify_new_work error", e)
+    notify_event('new_work', work, rooms=['admins_ordinary','admins_main'])
+    uid = work.get('user', {}).get('id')
+    if uid: notify_event('new_work_user', work, rooms=[f'user:{uid}'])
 
-def notify_ordinary_admins_text(text, button_text="Открыть панель"):
-    if not bot:
-        print("Bot not configured, skipping notify_ordinary_admins_text")
-        return
-    for admin in ordinary_admins:
-        try:
-            if admin.isdigit():
-                token = generate_admin_token(admin, "")
-                url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
-                kb = telebot.types.InlineKeyboardMarkup()
-                kb.add(telebot.types.InlineKeyboardButton(button_text, url=url))
-                bot.send_message(int(admin), text, reply_markup=kb)
-            else:
-                token = generate_admin_token("", admin)
-                url = f"{WEBAPP_URL}/mainadmin?token={quote_plus(token)}"
-                kb = telebot.types.InlineKeyboardMarkup()
-                kb.add(telebot.types.InlineKeyboardButton(button_text, url=url))
-                try:
-                    bot.send_message(f"@{admin}", text, reply_markup=kb)
-                except Exception as e:
-                    print("notify -> send to @username failed:", admin, e)
-        except Exception as e:
-            print("notify -> error for admin", admin, e)
-
-# ========== FLASK ROUTES ==========
+# ========== Routes & API ==========
 @app.route('/')
 def index():
     return send_from_directory('public', 'index.html')
@@ -321,14 +298,22 @@ def index():
 def static_files(path):
     return send_from_directory('public', path)
 
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"ok": True, "timestamp": datetime.utcnow().isoformat() + "Z"})
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if not bot:
         return 'bot not configured', 500
     if request.headers.get('content-type') == 'application/json':
-        update = telebot.types.Update.de_json(request.get_data().decode('utf-8'))
-        bot.process_new_updates([update])
-        return '', 200
+        try:
+            update = telebot.types.Update.de_json(request.get_data().decode('utf-8'))
+            bot.process_new_updates([update])
+            return '', 200
+        except Exception as e:
+            logger.exception("webhook processing error: %s", e)
+            return 'error', 500
     return 'Invalid', 403
 
 @app.route('/api/tasks_public', methods=['GET'])
@@ -367,11 +352,6 @@ def require_admin_token(func):
 
 @app.route('/api/user_profile', methods=['GET'])
 def api_user_profile():
-    """
-    Protected user profile endpoint.
-    - Admin token: ?token=... and ?uid=...
-    - Otherwise: require Telegram WebApp init_data (header X-Tg-InitData or ?init_data=)
-    """
     admin_token = get_token_from_request(request)
     if admin_token:
         ok, payload_or_reason = verify_admin_token(admin_token)
@@ -433,7 +413,7 @@ def api_user_profile():
     except Exception as e:
         return jsonify({"ok": False, "reason": "error", "error": str(e)}), 500
 
-# Admin / main admin pages and APIs
+# Admin endpoints (list/create tasks, topups, withdraws, works)
 @app.route('/mainadmin')
 def serve_mainadmin():
     token = request.args.get("token")
@@ -731,47 +711,78 @@ def api_whoami():
     is_main = (uid in ADMIN_USER_IDS) or (username in ADMIN_USERNAMES)
     return jsonify({"ok": True, "admin": {"uid": uid, "username": username, "is_main": is_main}})
 
-# ========== WEBHOOK / POLLING ==========
+# ========== WEBHOOK / POLLING SAFE START ==========
 def start_polling_thread_safe():
+    """
+    Safe start for polling:
+    - Attempt to remove webhook first to avoid Telegram 409 conflict.
+    - Check BOT_DISABLE_BOT and bot availability.
+    - Check DNS resolution.
+    - Run polling loop with retries; on 409 attempt to delete webhook again.
+    """
     if os.environ.get("BOT_DISABLE_BOT", "").lower() in ("1", "true", "yes"):
-        print("[bot] BOT_DISABLE_BOT is set — skipping Telegram bot startup.")
+        logger.info("[bot] BOT_DISABLE_BOT is set — skipping Telegram bot startup.")
         return None
     if not bot:
-        print("[bot] bot not configured — skipping polling.")
+        logger.info("[bot] bot not configured — skipping polling.")
         return None
+
+    # Attempt to remove webhook before polling to avoid "409 conflict"
+    try:
+        bot.remove_webhook()
+        logger.info("[bot] remove_webhook() called — webhook removed (or was not set).")
+    except Exception as e:
+        logger.debug("[bot] remove_webhook() failed or not needed: %s", repr(e))
+
+    # optional network check
     if not can_resolve_host():
-        print("[bot] api.telegram.org cannot be resolved — skipping polling startup.")
+        logger.warning("[bot] api.telegram.org cannot be resolved — skipping polling startup.")
         return None
 
     def _poll_loop():
         while True:
             try:
-                print("[bot] Starting Telegram polling (background)...")
+                logger.info("[bot] Starting Telegram polling (background)...")
                 bot.infinity_polling(timeout=60, long_polling_timeout=50)
             except Exception as e:
-                print("[bot] Polling error (will retry in 10s):", repr(e))
+                errstr = repr(e)
+                logger.error("[bot] Polling error (will retry in 10s): %s", errstr)
+                # If Telegram returns 409 again, attempt delete webhook and retry
+                if "Conflict: can't use getUpdates" in errstr or "409" in errstr:
+                    try:
+                        bot.remove_webhook()
+                        logger.info("[bot] remove_webhook() called after 409 — webhook removed.")
+                    except Exception as e2:
+                        logger.debug("[bot] remove_webhook() after 409 failed: %s", repr(e2))
                 time.sleep(10)
             else:
-                print("[bot] Polling stopped unexpectedly; restarting in 5s")
+                logger.warning("[bot] Polling stopped unexpectedly; restarting in 5s")
                 time.sleep(5)
+
     t = threading.Thread(target=_poll_loop, daemon=True)
     t.start()
     return t
 
 def setup_webhook_safe():
+    """
+    Try to set webhook (with retries). If webhook cannot be set and polling fallback is allowed,
+    start polling instead.
+    """
     if os.environ.get("BOT_DISABLE_BOT", "").lower() in ("1", "true", "yes"):
-        print("[bot] BOT_DISABLE_BOT is set — skipping webhook setup.")
+        logger.info("[bot] BOT_DISABLE_BOT is set — skipping webhook setup.")
         return
     if not bot:
-        print("[bot] bot not configured — skipping webhook setup.")
+        logger.info("[bot] bot not configured — skipping webhook setup.")
         return
+
+    # If DNS/resolution fails, skip trying to set webhook
     if not can_resolve_host():
-        print("[webhook setup] api.telegram.org not resolvable — skipping webhook setup.")
+        logger.warning("[webhook setup] api.telegram.org not resolvable — skipping webhook setup.")
         if os.environ.get("BOT_FORCE_POLLING", "").lower() in ("1", "true", "yes") or os.environ.get("BOT_AUTO_POLLING", "").lower() in ("1","true","yes"):
-            print("[webhook setup] BOT_FORCE_POLLING set — starting polling fallback.")
+            logger.info("[webhook setup] BOT_FORCE_POLLING set — starting polling fallback.")
             start_polling_thread_safe()
         else:
-            print("[webhook setup] To enable fallback polling set BOT_FORCE_POLLING=true")
+            logger.info("[webhook setup] To enable fallback polling set BOT_FORCE_POLLING=true")
         return
 
     max_attempts = int(os.environ.get("WEBHOOK_MAX_ATTEMPTS", "5"))
@@ -780,32 +791,35 @@ def setup_webhook_safe():
     webhook_url = f"{WEBAPP_URL.rstrip('/')}/webhook"
     for attempt in range(1, max_attempts + 1):
         try:
+            # best-effort remove existing webhook before setting new one
             try:
                 bot.remove_webhook()
+                logger.info("[webhook setup] remove_webhook() called before set_webhook.")
             except Exception:
                 pass
             time.sleep(1)
             bot.set_webhook(url=webhook_url)
-            print(f"[webhook setup] Webhook set: {webhook_url}")
+            logger.info(f"[webhook setup] Webhook set: {webhook_url}")
             return
         except Exception as e:
-            print(f"[webhook setup] set_webhook attempt {attempt}/{max_attempts} failed: {e}")
+            logger.warning("[webhook setup] set_webhook attempt %s/%s failed: %s", attempt, max_attempts, e)
             if attempt >= max_attempts:
-                print("[webhook setup] Failed to set webhook after max attempts.")
+                logger.error("[webhook setup] Failed to set webhook after max attempts.")
                 if use_polling_on_fail or os.environ.get("BOT_FORCE_POLLING", "").lower() in ("1","true","yes"):
-                    print("[webhook setup] Starting polling fallback.")
+                    logger.info("[webhook setup] Starting polling fallback.")
                     start_polling_thread_safe()
                 else:
-                    print("[webhook setup] Enable BOT_FORCE_POLLING to fallback to polling.")
+                    logger.info("[webhook setup] Enable BOT_FORCE_POLLING to fallback to polling.")
                 return
             backoff = base_backoff * (2 ** (attempt - 1))
-            print(f"[webhook setup] Retrying in {backoff} seconds...")
+            logger.info("[webhook setup] Retrying in %s seconds...", backoff)
             time.sleep(backoff)
 
 # ========== START ==========
 if __name__ == '__main__':
+    # choose webhook vs polling
     if os.environ.get("BOT_FORCE_POLLING", "").lower() in ("1", "true", "yes"):
-        print("[main] BOT_FORCE_POLLING set — starting polling.")
+        logger.info("[main] BOT_FORCE_POLLING set — starting polling.")
         start_polling_thread_safe()
     else:
         threading.Thread(target=setup_webhook_safe, daemon=True).start()
