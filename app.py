@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 # coding: utf-8
 """
-ReviewCash — full single app.py (improved Telegram notification resilience + UI-ready)
-- Provides Flask + Flask-SocketIO + telebot handlers + persistent JSON storage
-- Replaces many direct bot.send_message calls with a background HTTP sender queue that
-  uses requests with timeouts/retries to avoid blocking and connect-timeout crashes
-- Keeps telebot for receiving updates and WebApp interactions, but outbound admin/user
-  notifications are delivered via the robust queue (so network issues won't raise in handlers)
-- Maintains persistent admin JWT tokens (admin_tokens.json) to avoid regenerating tokens each /mainadmin
-- All endpoints: tasks/topup/withdraw/support/profile_me/user_history/admin endpoints remain present
+ReviewCash — full single app.py (updated with tasks creation endpoint)
+- Flask + Flask-SocketIO + telebot + robust outbound queue
+- New endpoint: /api/tasks_create (admin-protected) to create tasks
+- Emits socket.io 'new_task' event to notify clients about new tasks
+- Keep other endpoints as in previous robust implementation
 """
 import os
 import time
@@ -78,9 +75,9 @@ SUPPORT_FILE = os.path.join(DATA_DIR, "support.json")
 ADMIN_TOKENS_FILE = os.path.join(DATA_DIR, "admin_tokens.json")
 
 # Outbound telegram HTTP sender config
-TELEGRAM_HTTP_TIMEOUT = float(os.environ.get("TELEGRAM_HTTP_TIMEOUT", "6"))  # seconds per request
+TELEGRAM_HTTP_TIMEOUT = float(os.environ.get("TELEGRAM_HTTP_TIMEOUT", "6"))
 TELEGRAM_HTTP_RETRIES = int(os.environ.get("TELEGRAM_HTTP_RETRIES", "3"))
-TELEGRAM_HTTP_BACKOFF = float(os.environ.get("TELEGRAM_HTTP_BACKOFF", "1.4"))  # multiplier
+TELEGRAM_HTTP_BACKOFF = float(os.environ.get("TELEGRAM_HTTP_BACKOFF", "1.4"))
 
 # ---------- Storage helpers ----------
 def load_json_safe(path, default):
@@ -212,10 +209,8 @@ def generate_or_get_admin_token(uid, username):
     persist_admin_tokens()
     return token
 
-# ---------- Robust outbound Telegram HTTP sender (background queue) ----------
+# ---------- Robust outbound Telegram HTTP sender ----------
 telegram_queue = queue.Queue()
-
-# prepare requests.Session with retries for stability
 _http_session = None
 def _get_http_session():
     global _http_session
@@ -230,11 +225,6 @@ def _get_http_session():
     return _http_session
 
 def enqueue_telegram_message(chat_identifier, text, parse_mode="HTML"):
-    """
-    chat_identifier: numeric id or "@username"
-    text: message text
-    This simply pushes into queue to be delivered asynchronously with timeouts and retries.
-    """
     telegram_queue.put({"chat": chat_identifier, "text": text, "parse_mode": parse_mode})
 
 def _telegram_worker_loop():
@@ -247,13 +237,11 @@ def _telegram_worker_loop():
             chat = item.get("chat")
             text = item.get("text")
             parse_mode = item.get("parse_mode", "HTML")
-            # perform HTTP POST to Telegram API (sendMessage)
             if not BOT_TOKEN or requests is None:
                 logger.debug("Skipping outbound TB message (no BOT_TOKEN or requests): %s", text[:120])
                 continue
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             payload = {"chat_id": chat, "text": text, "parse_mode": parse_mode}
-            # try attempts with backoff
             attempt = 0
             backoff = TELEGRAM_HTTP_BACKOFF
             while attempt < TELEGRAM_HTTP_RETRIES:
@@ -276,7 +264,6 @@ def _telegram_worker_loop():
             except Exception:
                 pass
 
-# start worker thread
 if requests:
     _telegram_thread = threading.Thread(target=_telegram_worker_loop, daemon=True)
     _telegram_thread.start()
@@ -315,7 +302,7 @@ else:
     if not BOT_TOKEN:
         logger.warning("BOT_TOKEN not set — Telegram features disabled")
     else:
-        logger.warning("pytelegrambotapi not installed — Telegram features disabled")
+        logger.warning("pytelegrambotapi not installed — Telegram disabled")
 
 if bot:
     @bot.message_handler(commands=['start'])
@@ -353,7 +340,6 @@ if bot:
                 rec['subscribed'] = True
                 save_users()
                 bot.answer_callback_query(call.id, "Подписка подтверждена")
-                # use queue for outbound send (avoid blocking)
                 enqueue_telegram_message(uid, "Спасибо! Подписка подтверждена.")
             else:
                 bot.answer_callback_query(call.id, "Подписка не найдена")
@@ -382,7 +368,6 @@ if bot:
                     kb.add(tb_types.InlineKeyboardButton(text="Открыть в браузере", url=admin_url))
                     bot.send_message(uid, "Откройте админку:", reply_markup=kb)
                 except Exception:
-                    # fallback: queue plain link
                     enqueue_telegram_message(uid, f"Ссылка на админку: {admin_url}")
                 return
             if cmd == '/admin':
@@ -448,12 +433,21 @@ def notify_event(name, payload, rooms=None):
     except Exception as e:
         logger.debug("notify_event error: %s", e)
 
+def notify_new_task(task):
+    notify_event('new_task', task)  # broadcast to all connected clients
+    # notify admins via queue
+    try:
+        msg = f"Новая задача: {task.get('title')} • {task.get('budget','')} ₽ • id {task.get('id')}"
+        for a in ordinary_admins + ADMIN_USER_IDS:
+            enqueue_telegram_message(a, msg)
+    except Exception:
+        pass
+
 def notify_new_topup(t):
     notify_event('new_topup', t, rooms=['admins_main','admins_ordinary'])
     uid = t.get('user',{}).get('id')
     if uid:
         notify_event('new_topup_user', t, rooms=[f'user:{uid}'])
-    # enqueue admin notifications (non-blocking)
     try:
         msg = f"Новый топап: {t.get('amount')} ₽, код {t.get('code','')}, id {t.get('id')}"
         for a in ordinary_admins + ADMIN_USER_IDS:
@@ -485,10 +479,8 @@ def notify_new_support(s):
 # ---------- Routes & API ----------
 @app.route('/')
 def index(): return send_from_directory('public', 'index.html')
-
 @app.route('/<path:path>')
 def static_files(path): return send_from_directory('public', path)
-
 @app.route('/health')
 def health(): return jsonify({"ok": True, "ts": datetime.utcnow().isoformat()+"Z"})
 
@@ -514,17 +506,40 @@ def require_admin_token(func):
     wrapper.__name__ = func.__name__
     return wrapper
 
-# Public endpoints (tasks/topup/withdraw/support/profile/history) ...
-# For brevity in this file block we include the same functional endpoints as previously described.
-# They are implemented below (full versions), using enqueue_telegram_message for notifications
-# and the same validations as in earlier versions.
-
 # ----- tasks_public -----
 @app.route('/api/tasks_public', methods=['GET'])
 def api_tasks_public():
     tasks = load_json_safe(TASKS_FILE, [])
-    active = [t for t in tasks if t.get("status","active") == "active"]
+    active = [t for t in tasks if t.get('status','active') == 'active']
     return jsonify(active)
+
+# ----- tasks_create (admin only) -----
+@app.route('/api/tasks_create', methods=['POST'])
+@require_admin_token
+def api_tasks_create():
+    data = request.get_json() or {}
+    title = (data.get('title') or "").strip()
+    description = (data.get('description') or "").strip()
+    link = (data.get('link') or "").strip()
+    try:
+        budget = float(data.get('budget') or 0)
+    except Exception:
+        budget = 0
+    if not title:
+        return jsonify({"ok": False, "reason": "title_required"}), 400
+    rec = {
+        "id": f"task_{int(time.time()*1000)}",
+        "title": title,
+        "description": description,
+        "link": link,
+        "budget": budget,
+        "status": "active",
+        "created_at": datetime.utcnow().isoformat()+"Z"
+    }
+    append_json(TASKS_FILE, rec)
+    # notify clients & admins
+    notify_new_task(rec)
+    return jsonify({"ok": True, "task": rec})
 
 # ----- topups_public -----
 @app.route('/api/topups_public', methods=['POST'])
@@ -617,9 +632,7 @@ def api_support_reply(sid):
     if not found: return jsonify({"ok": False, "reason": "not_found"}), 404
     reply = {"message": message, "admin": admin_ident, "created_at": datetime.utcnow().isoformat()+"Z"}
     found.setdefault('replies', []).append(reply)
-    found['status'] = 'replied'
-    found.setdefault('handled_by', admin_ident)
-    found['handled_at'] = datetime.utcnow().isoformat()+"Z"
+    found['status'] = 'replied'; found.setdefault('handled_by', admin_ident); found['handled_at'] = datetime.utcnow().isoformat()+"Z"
     save_json(SUPPORT_FILE, arr)
     notify_event('update_support', found, rooms=['admins_main','admins_ordinary'])
     uid = found.get('user',{}).get('id')
@@ -639,9 +652,7 @@ def api_support_resolve(sid):
     arr = load_json_safe(SUPPORT_FILE, [])
     found = next((s for s in arr if s.get('id')==sid), None)
     if not found: return jsonify({"ok": False, "reason": "not_found"}), 404
-    found['status'] = 'resolved'
-    found.setdefault('closed_by', admin_ident)
-    found['closed_at'] = datetime.utcnow().isoformat()+"Z"
+    found['status'] = 'resolved'; found.setdefault('closed_by', admin_ident); found['closed_at'] = datetime.utcnow().isoformat()+"Z"
     if reason: found.setdefault('close_reason', reason)
     save_json(SUPPORT_FILE, arr)
     notify_event('update_support', found, rooms=['admins_main','admins_ordinary'])
@@ -752,7 +763,7 @@ def webhook():
             return 'error', 500
     return 'Invalid', 403
 
-# ---------- Bot startup helpers (avoid 409) ----------
+# ---------- Bot startup helpers ----------
 def can_resolve_host(host="api.telegram.org"):
     import socket
     try: socket.getaddrinfo(host, 443); return True
@@ -776,11 +787,8 @@ def start_polling_thread_safe():
                 bot.infinity_polling(timeout=60, long_polling_timeout=50)
             except Exception as e:
                 logger.error("Polling exception: %s", e)
-                # try remove webhook and retry after sleep
-                try:
-                    bot.remove_webhook()
-                except Exception:
-                    pass
+                try: bot.remove_webhook()
+                except Exception: pass
                 time.sleep(8)
     t = threading.Thread(target=_loop, daemon=True); t.start(); return t
 
@@ -789,16 +797,11 @@ def setup_webhook_safe():
         return
     if not WEBAPP_URL:
         logger.info("WEBAPP_URL not set — falling back to polling")
-        start_polling_thread_safe()
-        return
+        start_polling_thread_safe(); return
     if not can_resolve_host():
-        logger.warning("api.telegram.org not resolvable — using polling")
-        start_polling_thread_safe()
-        return
-    try:
-        bot.remove_webhook()
-    except Exception:
-        pass
+        logger.warning("api.telegram.org not resolvable — using polling"); start_polling_thread_safe(); return
+    try: bot.remove_webhook()
+    except Exception: pass
     try:
         bot.set_webhook(url=f"{WEBAPP_URL.rstrip('/')}/webhook")
         logger.info("Webhook set to %s", f"{WEBAPP_URL.rstrip('/')}/webhook")
