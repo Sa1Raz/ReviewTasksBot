@@ -9,559 +9,303 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <style>
   :root{
-    --bg1: #07172a;
-    --bg2: #081a33;
+    --bg1:#07172a; --bg2:#081a33; --muted:#9fb6c6;
+    --accent1:#00f0ff; --accent2:#00ff9d; --gold:#ffd166; --danger:#ff6b80;
     --glass: rgba(255,255,255,0.03);
-    --muted: #9fb6c6;
-    --accent1: #00f0ff;
-    --accent2: #00ff9d;
-    --gold: #ffd166;
-    --danger: #ff5c7a;
-    --card-shadow: 0 8px 30px rgba(2,6,23,0.6);
-    --glass-border: rgba(255,255,255,0.04);
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-    background: linear-gradient(135deg,var(--bg1),var(--bg2));
-    color:#eaf7fb;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-    padding:20px;
-  }
-  .app {
-    max-width:980px;
-    margin:0 auto;
-    display:grid;
-    grid-template-columns: 1fr 360px;
-    gap:20px;
-    align-items:start;
-  }
-
-  /* Header */
-  .header {
-    grid-column: 1 / -1;
-    display:flex;
-    align-items:center;
-    gap:16px;
-    margin-bottom:6px;
-  }
-  .logo {
-    display:flex;
-    align-items:center;
-    gap:12px;
-  }
-  .logo .mark {
-    width:56px;height:56px;border-radius:12px;
-    background: linear-gradient(135deg,var(--accent1),var(--accent2));
-    box-shadow: 0 8px 30px rgba(0,255,220,0.08), inset 0 -6px 20px rgba(255,255,255,0.06);
-    display:flex;align-items:center;justify-content:center;font-weight:800;color:#012226;font-size:20px;
-  }
-  h1 {font-size:18px;margin:0;font-weight:800;letter-spacing:0.6px}
-  .sub {color:var(--muted);font-size:13px;margin-top:2px}
-
-  /* Left column - content */
-  .panel {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border-radius:14px;
-    padding:18px;
-    box-shadow: var(--card-shadow);
-    border:1px solid var(--glass-border);
-  }
-  .controls {display:flex;gap:8px;align-items:center;margin-bottom:12px}
-  .btn {
-    border:0;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer;
-    background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);
-    transition:all .18s ease;
-  }
-  .btn:hover {transform:translateY(-3px); color:#fff}
-  .btn-primary {
-    background: linear-gradient(90deg,var(--accent1),var(--accent2));
-    color:#032b2a;border:none; box-shadow: 0 8px 30px rgba(0,255,220,0.06);
-  }
-  .search {
-    flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb;
-  }
-
-  /* Tasks list */
-  .tasks-list {display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-  .task-card {
-    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-    padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);
-    transition:transform .22s ease, box-shadow .22s ease; cursor:pointer;opacity:0;
-    transform: translateY(8px);
-  }
-  .task-card.visible {opacity:1; transform:none}
-  .task-card:hover {transform:translateY(-8px); box-shadow:0 18px 50px rgba(2,6,23,0.65)}
-  .task-title {font-weight:800;font-size:15px;margin-bottom:6px;color:#fff}
-  .task-meta {font-size:13px;color:var(--muted);margin-bottom:8px}
-  .task-row {display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .badge {padding:6px 8px;border-radius:8px;font-weight:800;color:#032b2a;background:linear-gradient(90deg,var(--accent1),var(--accent2));font-size:12px}
-
-  /* Right column - profile / admin */
-  .sidebar {position:sticky;top:20px}
-  .profile {
-    display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px;border-radius:12px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-    border:1px solid rgba(255,255,255,0.03);
-  }
-  .avatar {
-    width:120px;height:120px;border-radius:50%;overflow:hidden;border:6px solid rgba(0,255,220,0.08);margin-bottom:12px;
-    background:linear-gradient(90deg,#071b2a,#04202a);
-    display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;color:#0ff;
-  }
-  .balance {font-size:28px;font-weight:800;color:var(--gold);margin-top:6px}
-  .mini {font-size:13px;color:var(--muted)}
-
-  .profile-actions {display:flex;flex-direction:column;gap:8px;width:100%;margin-top:12px}
-  .profile-actions .btn{width:100%}
-
-  .requests-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-  .request-item {padding:10px;border-radius:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.02);font-size:13px}
-
-  /* Loader overlay */
-  .loader-overlay {
-    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10000;
-    background: linear-gradient(180deg, rgba(2,6,23,0.7), rgba(2,6,23,0.9));
-    backdrop-filter: blur(6px);
-    transition:opacity .3s ease;
-  }
-  .loader {
-    width:240px;height:240px;border-radius:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border:1px solid rgba(255,255,255,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,0.7)
-  }
-  .loader .mark {width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#012226;margin-bottom:12px}
-  .loader h2 {margin:0;font-size:18px}
-  .dots {display:flex;gap:8px;margin-top:12px}
-  .dot {width:10px;height:10px;background:#fff;border-radius:50%;opacity:0.15;transform:translateY(0)}
-  .dot.animate {animation:loaderDot 1s infinite}
-  .dot.animate:nth-child(2){animation-delay:.15s}
-  .dot.animate:nth-child(3){animation-delay:.3s}
-  @keyframes loaderDot {
-    0%{opacity:.2; transform:translateY(0)}
-    50%{opacity:1; transform:translateY(-8px)}
-    100%{opacity:.2; transform:translateY(0)}
-  }
-
-  /* Nice micro interactions */
-  a {color:inherit}
-  .muted {color:var(--muted);font-size:13px}
-
-  /* responsive */
-  @media (max-width:900px){
-    .app{grid-template-columns:1fr; padding-bottom:120px}
-    .sidebar{position:static}
-  }
+  body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:#eaf7fb;min-height:100vh}
+  .container{max-width:980px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 360px;gap:20px}
+  header{display:flex;align-items:center;gap:16px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .mark{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#012226}
+  h1{margin:0;font-size:20px;font-weight:800}
+  .subtitle{color:var(--muted);font-size:13px}
+  /* Tabs */
+  .tabs{display:flex;gap:8px;margin-top:12px}
+  .tab{padding:10px 14px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.04);cursor:pointer;color:var(--muted);font-weight:700}
+  .tab.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#012226;box-shadow:0 12px 40px rgba(0,255,200,0.06)}
+  /* Panels */
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .search{flex:1;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#eaf7fb}
+  .btn{padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#012226}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  /* Task cards */
+  .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .task{padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:transform .2s,box-shadow .2s}
+  .task:hover{transform:translateY(-8px);box-shadow:0 18px 50px rgba(2,6,23,0.7)}
+  .task .title{font-weight:800}
+  .task .meta{color:var(--muted);font-size:13px;margin-top:6px}
+  .badge{display:inline-block;padding:6px 8px;border-radius:10px;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#012226;font-weight:800}
+  /* Profile */
+  .profile-box{text-align:center}
+  .avatar{width:120px;height:120px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#05202a,#04202a);font-weight:900;color:var(--accent1);font-size:40px;border:6px solid rgba(0,255,200,0.06)}
+  .username{font-weight:800;margin-top:8px}
+  .userhandle{color:var(--muted);font-size:13px;margin-bottom:6px}
+  .balance{font-weight:900;font-size:28px;color:var(--gold)}
+  .profile-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  /* Loader / entry animation */
+  .loader-overlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,6,23,0.8),rgba(2,6,23,0.9));display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .25s}
+  .loader-card{width:260px;height:260px;border-radius:14px;background:linear-gradient(180deg,#071426,#081a33);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.04)}
+  .loader-card .logo{margin-bottom:12px}
+  .loader-dots{display:flex;gap:8px;margin-top:12px}
+  .dot{width:10px;height:10px;border-radius:50%;background:#fff;opacity:.15;animation:jump 1s infinite}
+  .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+  @keyframes jump{0%{transform:translateY(0);opacity:.15}50%{transform:translateY(-10px);opacity:1}100%{transform:translateY(0);opacity:.15}}
+  /* Responsive */
+  @media (max-width:900px){ .container{grid-template-columns:1fr;padding:14px} .sidebar{order:2} }
+  /* small helpers */
+  .muted{color:var(--muted)}
+  .hidden{display:none}
 </style>
 </head>
 <body>
   <!-- Loader -->
-  <div id="loaderOverlay" class="loader-overlay" aria-hidden="false">
-    <div class="loader" role="status" aria-live="polite">
-      <div class="mark">RC</div>
-      <h2>Загрузка ReviewCash</h2>
-      <div class="muted" style="margin-top:8px">Подготовка интерфейса и данных...</div>
-      <div class="dots" aria-hidden="true">
-        <div class="dot animate"></div>
-        <div class="dot animate"></div>
-        <div class="dot animate"></div>
+  <div id="loader" class="loader-overlay" aria-hidden="false">
+    <div class="loader-card">
+      <div class="logo mark">RC</div>
+      <div style="font-weight:800;margin-top:8px">Добро пожаловать в ReviewCash</div>
+      <div class="muted" style="margin-top:6px;font-size:13px">Подключаемся к Telegram и загружаем данные...</div>
+      <div class="loader-dots" role="status" aria-hidden="true">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       </div>
     </div>
   </div>
 
-  <div class="app" id="app" style="visibility:hidden">
-    <div class="header">
-      <div class="logo">
-        <div class="mark">RC</div>
-      </div>
-      <div>
-        <h1>ReviewCash</h1>
-        <div class="sub">Реальные отзывы — честные выплаты · Админ-панель в реальном времени</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <button id="openMainAdmin" class="btn" title="Открыть админ-панель">Админ-панель</button>
-        <button id="refreshAll" class="btn" title="Обновить всё">Обновить</button>
-      </div>
-    </div>
-
-    <!-- Left column -->
+  <div class="container" id="app" style="visibility:hidden">
     <div>
-      <div class="panel">
+      <header>
+        <div class="logo"><div class="mark">RC</div></div>
+        <div>
+          <h1>ReviewCash</h1>
+          <div class="subtitle">Отзывы, задания и выплаты — красиво и честно</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button id="adminBtn" class="btn ghost" title="Админ-панель">Админ-панель</button>
+          <button id="refreshBtn" class="btn ghost" title="Обновить">Обновить</button>
+        </div>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="Навигация">
+        <button id="tabTasks" class="tab active" role="tab">Задания</button>
+        <button id="tabProfile" class="tab" role="tab">Профиль</button>
+      </div>
+
+      <main id="tasksView" class="panel" aria-live="polite">
         <div class="controls">
-          <input id="globalSearch" class="search" placeholder="Поиск заданий по названию..." />
-          <select id="filterType" class="btn" style="padding:10px;border-radius:10px;">
+          <input id="search" class="search" placeholder="Поиск заданий..." />
+          <select id="filter" class="btn ghost" style="padding:10px;border-radius:10px">
             <option value="">Все типы</option>
             <option value="yandex">Яндекс</option>
             <option value="google">Google</option>
             <option value="telegram">Telegram</option>
           </select>
-          <button id="createTaskBtn" class="btn btn-primary">+ Создать</button>
+          <button id="createBtn" class="btn primary">+ Создать</button>
         </div>
 
-        <div id="tasksContainer" class="tasks-list" aria-live="polite"></div>
-        <div id="noTasks" class="muted" style="display:none;margin-top:12px">Заданий не найдено</div>
-      </div>
+        <div id="tasksGrid" class="tasks-grid"></div>
+        <div id="noTasks" class="muted hidden">Заданий не найдено</div>
+      </main>
 
-      <div style="height:16px"></div>
-
-      <div class="panel">
-        <h3 style="margin:0 0 12px 0">Недавние активности</h3>
-        <div id="activities" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding-right:6px"></div>
-      </div>
+      <section id="profileView" class="panel hidden">
+        <div class="profile-box">
+          <div id="avatar" class="avatar">RC</div>
+          <div id="fullname" class="username">Гость</div>
+          <div id="handle" class="userhandle">@guest</div>
+          <div id="balance" class="balance">0 ₽</div>
+          <div class="profile-actions">
+            <button id="topup" class="btn primary">Пополнить</button>
+            <button id="withdraw" class="btn ghost">Вывести</button>
+            <button id="support" class="btn ghost">Поддержка</button>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <h3 style="margin:0 0 8px 0">Мои заявки</h3>
+          <div id="myList" class="muted">Загрузка...</div>
+        </div>
+      </section>
     </div>
 
-    <!-- Right column -->
     <aside class="sidebar">
-      <div class="panel profile">
-        <div class="avatar" id="avatarEl">RC</div>
-        <div id="userName" style="font-weight:800">Гость</div>
-        <div class="muted" id="userHandle">@guest</div>
-        <div class="balance" id="userBalance">0 ₽</div>
-        <div class="mini" style="margin-top:4px">Доступно для вывода</div>
-
-        <div class="profile-actions">
-          <button id="topupBtn" class="btn btn-primary">Пополнить баланс</button>
-          <button id="withdrawBtn" class="btn">Вывести средства</button>
-          <button id="supportBtn" class="btn">Поддержка</button>
-        </div>
-
-        <div style="width:100%;margin-top:12px;text-align:left">
-          <div class="mini" style="margin-bottom:6px">Мои заявки</div>
-          <div id="myRequests" class="requests-list"></div>
-        </div>
+      <div class="panel">
+        <h3 style="margin:0 0 8px 0">Статистика</h3>
+        <div class="muted">Заявок: <span id="statRequests">0</span></div>
+        <div class="muted" style="margin-top:6px">Пользователей: <span id="statUsers">—</span></div>
       </div>
-
       <div style="height:12px"></div>
-
-      <div class="panel" style="padding:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:800">Админ-панель</div>
-          <div class="muted" style="font-size:12px">В реальном времени</div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <div style="flex:1;padding:10px;border-radius:10px;background:rgba(0,0,0,0.25);text-align:center">
-            <div class="mini">Заявки</div>
-            <div id="statRequests" style="font-weight:800;font-size:18px">0</div>
-          </div>
-          <div style="flex:1;padding:10px;border-radius:10px;background:rgba(0,0,0,0.25);text-align:center">
-            <div class="mini">Пользователи</div>
-            <div id="statUsers" style="font-weight:800;font-size:18px">—</div>
-          </div>
-        </div>
+      <div class="panel">
+        <h3 style="margin:0 0 8px 0">Последние действия</h3>
+        <div id="activityList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding-right:6px"></div>
       </div>
-
     </aside>
-  </div>
-
-  <!-- Create Task Modal -->
-  <div id="createModal" class="modal-backdrop" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:10001">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="createTitle" style="width:92%;max-width:640px;background:linear-gradient(180deg,#071426,#081a33);border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 40px 100px rgba(0,0,0,0.7);">
-      <h3 id="createTitle">Создать задание</h3>
-      <div class="muted">Заполните поля и нажмите «Создать»</div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <input id="m_title" placeholder="Название задания (макс 200 символов)" maxlength="200" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb" />
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <select id="m_type" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb">
-          <option value="">Выберите тип</option>
-          <option value="yandex">Яндекс — отзыв</option>
-          <option value="google">Google — отзыв</option>
-          <option value="telegram">Telegram — подписка</option>
-        </select>
-        <input id="m_budget" type="number" placeholder="Сумма за задание (₽)" min="10" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb" />
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <input id="m_link" placeholder="Ссылка на ресурс (опционально)" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb" />
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button id="m_cancel" class="btn" style="padding:10px;border-radius:10px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)">Отмена</button>
-        <button id="m_create" class="btn btn-primary" style="padding:10px;border-radius:10px">Создать</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Submit Work Modal -->
-  <div id="workModal" class="modal-backdrop" aria-hidden="true" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:10001">
-    <div class="modal" role="dialog" aria-modal="true" style="width:92%;max-width:640px;background:linear-gradient(180deg,#071426,#081a33);border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 40px 100px rgba(0,0,0,0.7);">
-      <h3 id="workTitle">Отправить выполненную работу</h3>
-      <div class="muted">Укажите платформу и ссылку/текст</div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <select id="w_platform" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb;width:150px">
-          <option value="yandex">yandex</option>
-          <option value="google">google</option>
-          <option value="telegram">telegram</option>
-        </select>
-        <input id="w_link" placeholder="Ссылка / текст" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb" />
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button id="w_cancel" class="btn" style="padding:10px;border-radius:10px">Отмена</button>
-        <button id="w_send" class="btn btn-primary" style="padding:10px;border-radius:10px">Отправить</button>
-      </div>
-    </div>
   </div>
 
 <script>
 (function(){
-  // Utility
-  function qs(name){ return new URLSearchParams(location.search).get(name); }
-  function el(id){ return document.getElementById(id); }
-  function create(tag, cls){ const d = document.createElement(tag); if(cls) d.className = cls; return d; }
+  // Helpers
+  const qs = (k) => new URLSearchParams(location.search).get(k);
   const token = qs('token') || '';
+  const loader = document.getElementById('loader');
+  const appEl = document.getElementById('app');
+  const tabTasks = document.getElementById('tabTasks');
+  const tabProfile = document.getElementById('tabProfile');
+  const tasksView = document.getElementById('tasksView');
+  const profileView = document.getElementById('profileView');
+  const tasksGrid = document.getElementById('tasksGrid');
+  const noTasks = document.getElementById('noTasks');
+  const activityList = document.getElementById('activityList');
 
-  // Socket setup
+  // UI actions
+  tabTasks.addEventListener('click', ()=>{ tabTasks.classList.add('active'); tabProfile.classList.remove('active'); tasksView.classList.remove('hidden'); profileView.classList.add('hidden'); });
+  tabProfile.addEventListener('click', ()=>{ tabProfile.classList.add('active'); tabTasks.classList.remove('active'); profileView.classList.remove('hidden'); tasksView.classList.add('hidden'); });
+
+  document.getElementById('adminBtn').addEventListener('click', ()=>{
+    if(token) window.open('/mainadmin?token=' + encodeURIComponent(token), '_blank');
+    else alert('Откройте админ-панель через /mainadmin (требуется токен).');
+  });
+  document.getElementById('refreshBtn').addEventListener('click', ()=> init(true));
+  document.getElementById('support').addEventListener('click', ()=> {
+    const uid = '7233175676';
+    window.location.href = 'tg://user?id=' + uid;
+    setTimeout(()=> window.open('https://t.me/' + uid, '_blank'), 300);
+  });
+
+  // socket (if available)
   let socket = null;
   try {
     if (typeof io !== 'undefined') {
       socket = io({ auth: { token: token }, transports: ['websocket'] });
       socket.on('connect', ()=> console.log('socket connected', socket.id));
-      socket.on('connect_error', (err)=> console.error('socket error', err));
-      socket.on('new_task', (d)=> { appendActivity('Новое задание: ' + (d.title||d.id)); loadTasks(); });
-      socket.on('new_topup', (d)=> { appendActivity('Новая заявка на пополнение: ' + (d.amount||'')); loadTopups?.(); });
-      socket.on('new_withdraw', (d)=> { appendActivity('Новая заявка на вывод: ' + (d.amount||'')); loadWithdraws?.(); });
-      socket.on('new_work', (d)=> { appendActivity('Новая заявка на выполнение: ' + (d.task_title||'')); loadWorks?.(); });
-      socket.on('user_balance_changed', (d)=> { console.log('balance changed', d); if (d.uid && d.uid === currentUserId){ el('userBalance').textContent = d.balance + ' ₽'; } });
-      socket.on('new_topup_user', ()=> { alert('Заявка на пополнение принята'); loadMyRequests(); });
-      socket.on('new_work_user', ()=> { alert('Ваша заявка принята в очередь проверки'); loadMyRequests(); });
+      socket.on('new_task', (d)=> { addActivity('Новое задание: ' + (d.title||d.id)); loadTasks(); });
+      socket.on('new_topup', (d)=> { addActivity('Пополнение: ' + (d.amount||'')); });
+      socket.on('new_withdraw', (d)=> { addActivity('Вывод: ' + (d.amount||'')); });
+      socket.on('new_work', (d)=> { addActivity('Новая работа: ' + (d.task_title||'')); loadMyRequests(); });
+      socket.on('new_topup_user', ()=> alert('Заявка на пополнение принята'));
+      socket.on('new_work_user', ()=> alert('Ваша заявка принята на проверку'));
     }
-  } catch (e) { console.warn('socket init failed', e); }
+  } catch(e){ console.warn('socket init failed', e); }
 
-  // State
-  let tasks = [];
-  let myRequests = [];
-  let currentUserId = null;
-  let loaderTimeout = null;
-
-  // DOM refs
-  const tasksContainer = el('tasksContainer');
-  const myRequestsEl = el('myRequests');
-  const activitiesEl = el('activities');
-  const loaderOverlay = el('loaderOverlay');
-  const appEl = el('app');
-
-  // Events
-  el('refreshAll').addEventListener('click', ()=> { showLoader(); Promise.all([loadTasks(), loadMyRequests()]).finally(hideLoader); });
-  el('globalSearch').addEventListener('input', ()=> renderTasks());
-  el('filterType').addEventListener('change', ()=> renderTasks());
-  el('createTaskBtn').addEventListener('click', ()=> { el('m_title').value=''; el('m_link').value=''; el('m_budget').value=''; el('m_type').value=''; showModal(el('createModal')); });
-  el('supportBtn').addEventListener('click', ()=> openSupport());
-  el('openMainAdmin').addEventListener('click', ()=> {
-    if (token) window.open('/mainadmin?token=' + encodeURIComponent(token), '_blank');
-    else alert('Откройте админ-панель через команду /mainadmin в Telegram (требуется токен).');
-  });
-  el('topupBtn').addEventListener('click', ()=> alert('Откроется форма пополнения (реализуйте WebApp форму)'));
-  el('withdrawBtn').addEventListener('click', ()=> alert('Откроется форма вывода (реализуйте WebApp форму)'));
-
-  // support
-  function openSupport(){
-    const uid = '7233175676';
-    window.location.href = 'tg://user?id=' + uid;
-    setTimeout(function(){ window.open('https://t.me/' + uid, '_blank'); }, 300);
-  }
-
-  // Loading control
-  function showLoader(){
-    loaderOverlay.style.opacity = '1';
-    loaderOverlay.style.pointerEvents = 'auto';
-    loaderOverlay.setAttribute('aria-hidden','false');
-    appEl.style.visibility = 'hidden';
-    clearTimeout(loaderTimeout);
-    loaderTimeout = setTimeout(()=> { hideLoader(); }, 10000);
-  }
-  function hideLoader(){
-    loaderOverlay.style.opacity = '0';
-    loaderOverlay.style.pointerEvents = 'none';
-    loaderOverlay.setAttribute('aria-hidden','true');
-    appEl.style.visibility = 'visible';
-    clearTimeout(loaderTimeout);
-  }
-
-  // Modal helpers
-  function showModal(elm){ elm.style.display='flex'; elm.setAttribute('aria-hidden','false'); }
-  function hideModal(elm){ elm.style.display='none'; elm.setAttribute('aria-hidden','true'); }
-
-  // Activities
-  function appendActivity(text){
-    const it = create('div','request-item');
-    it.textContent = (new Date()).toLocaleTimeString() + ' — ' + text;
-    activitiesEl.prepend(it);
-    if (activitiesEl.children.length > 80) activitiesEl.removeChild(activitiesEl.lastChild);
+  function addActivity(text){
+    const el = document.createElement('div'); el.className='muted'; el.textContent = new Date().toLocaleTimeString() + ' — ' + text;
+    activityList.prepend(el);
+    if(activityList.children.length>80) activityList.removeChild(activityList.lastChild);
   }
 
   // Fetch tasks
   async function loadTasks(){
     try {
       const res = await fetch('/api/tasks_public');
-      if (!res.ok) throw new Error('failed to load tasks');
-      tasks = await res.json();
-    } catch (e){
-      console.warn('loadTasks error', e);
-      tasks = [];
+      if(!res.ok) throw new Error('Ошибка загрузки заданий');
+      const data = await res.json();
+      renderTasks(data);
+      return data;
+    } catch(e){
+      console.error(e); tasksGrid.innerHTML = '<div class="muted">Ошибка загрузки заданий</div>'; return [];
     }
-    renderTasks();
-    return tasks;
   }
-
-  function renderTasks(){
-    tasksContainer.innerHTML = '';
-    const q = el('globalSearch').value.trim().toLowerCase();
-    const type = el('filterType').value;
-    const filt = tasks.filter(t=>{
-      if (type && t.type !== type) return false;
-      if (q && !( (t.title||'').toLowerCase().includes(q) || (t.link||'').toLowerCase().includes(q) )) return false;
-      return t.status !== 'deleted';
-    });
-    if (filt.length === 0){
-      el('noTasks').style.display = 'block';
-    } else {
-      el('noTasks').style.display = 'none';
-    }
-    filt.forEach((t, idx) => {
-      const c = create('div','task-card');
-      setTimeout(()=> c.classList.add('visible'), 30 + idx * 40);
-      const title = create('div','task-title'); title.textContent = t.title || ('Задание ' + t.id);
-      const meta = create('div','task-meta'); meta.textContent = (t.type||'') + ' · ' + (t.budget ? (t.budget + ' ₽') : '-');
-      const row = create('div','task-row');
-      const left = create('div'); left.appendChild(title); left.appendChild(meta);
-      const right = create('div');
-      const badge = create('div','badge'); badge.textContent = (t.budget || 0) + ' ₽';
-      right.appendChild(badge);
-      row.appendChild(left); row.appendChild(right);
-      c.appendChild(row);
-
-      c.addEventListener('click', ()=> {
-        openWorkModalFor(t);
-      });
-
-      tasksContainer.appendChild(c);
+  function renderTasks(list){
+    tasksGrid.innerHTML = '';
+    if(!list || list.length===0){ noTasks.classList.remove('hidden'); return; } else noTasks.classList.add('hidden');
+    list.forEach(task=>{
+      const t = document.createElement('div'); t.className='task';
+      t.innerHTML = `<div class="title">${task.title||task.id}</div><div class="meta">${task.type||''} · ${task.budget?task.budget+' ₽':''}</div><div style="margin-top:8px"><span class="badge">${task.budget||0} ₽</span></div>`;
+      t.addEventListener('click', ()=> openSubmitModal(task));
+      tasksGrid.appendChild(t);
     });
   }
 
-  // My requests
+  // Profile / my requests
   async function loadMyRequests(){
     try {
-      if (token) {
-        const res = await fetch('/api/works?token=' + encodeURIComponent(token));
-        if (res.ok) {
-          myRequests = await res.json();
-        } else {
-          myRequests = [];
-        }
-      } else {
-        const res2 = await fetch('/api/works_pending');
-        if (res2.ok) myRequests = await res2.json();
-        else myRequests = [];
-      }
-    } catch(e){ myRequests = []; }
-    renderMyRequests();
-    return myRequests;
-  }
-
-  function renderMyRequests(){
-    myRequestsEl.innerHTML = '';
-    if (!myRequests || myRequests.length === 0){
-      myRequestsEl.innerHTML = '<div class="muted">У вас пока нет заявок</div>';
-      return;
+      // If admin token present, use /api/works, else /api/works_pending (public)
+      let res = token ? await fetch('/api/works?token=' + encodeURIComponent(token)) : await fetch('/api/works_pending');
+      let data = res.ok ? await res.json() : [];
+      renderMyRequests(data);
+      return data;
+    } catch(e){
+      console.error(e); document.getElementById('myList').innerHTML = '<div class="muted">Ошибка загрузки</div>'; return [];
     }
-    myRequests.slice(0,8).forEach(r=>{
-      const it = create('div','request-item');
-      const t = r.task_title || (r.id || '').toString();
-      it.innerHTML = '<div style="font-weight:800;margin-bottom:4px">'+ t +'</div>' +
-                     '<div class="muted">' + (r.status || '-') + ' · ' + (r.amount ? (r.amount + ' ₽') : '-') + '</div>';
-      myRequestsEl.appendChild(it);
+  }
+  function renderMyRequests(arr){
+    const el = document.getElementById('myList');
+    el.innerHTML = '';
+    if(!arr || arr.length===0){ el.innerHTML = '<div class="muted">Заявок нет</div>'; return; }
+    arr.slice(0,8).forEach(it=>{
+      const d = document.createElement('div'); d.className='muted'; d.style.padding='8px'; d.style.borderRadius='8px';
+      d.style.background='rgba(0,0,0,0.12)'; d.innerHTML = `<div style="font-weight:800">${it.task_title||it.id}</div><div style="font-size:13px;color:var(--muted)">${it.status||'-'} · ${it.amount?it.amount+' ₽':''}</div>`;
+      el.appendChild(d);
     });
   }
 
-  // Load placeholders for admin functions
-  async function loadTopups(){ /* implement as needed */ }
-  async function loadWithdraws(){ /* implement as needed */ }
-  async function loadWorks(){ /* implement as needed */ }
-
-  // Create modal handlers
-  el('m_cancel').addEventListener('click', ()=> hideModal(el('createModal')));
-  el('m_create').addEventListener('click', async ()=>{
-    const title = el('m_title').value.trim();
-    const type = el('m_type').value;
-    const budget = parseInt(el('m_budget').value || '0',10);
-    const link = el('m_link').value.trim();
-    if (!title) return alert('Укажите название задания.');
-    if (!type) return alert('Выберите тип задания.');
-    if (!budget || budget < 1) return alert('Укажите корректный бюджет.');
-    if (token) {
-      try {
-        const res = await fetch('/api/tasks?token=' + encodeURIComponent(token), {
-          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, type, budget, link })
-        });
-        const data = await res.json();
-        if (data && data.ok) {
-          appendActivity('Задание создано админом');
-          hideModal(el('createModal'));
-          loadTasks();
-          return;
-        } else {
-          alert('Ошибка создания: ' + (data.reason || JSON.stringify(data)));
-        }
-      } catch(e){ alert('Ошибка создания: ' + e); }
-    } else {
-      try {
-        Telegram.WebApp.sendData(JSON.stringify({ action:'publish_task', title, link, type, budget }));
-        hideModal(el('createModal'));
-        appendActivity('Задание отправлено из WebApp на публикацию');
-      } catch(e){
-        tasks.unshift({ id: 'local_'+Date.now(), title, type, budget, link, created_at: new Date().toISOString(), status: 'active' });
-        hideModal(el('createModal'));
-        renderTasks();
-        appendActivity('Локальное задание создано');
-      }
-    }
-  });
-
-  // Work modal handlers
-  function openWorkModalFor(task){
-    currentTaskForWork = task;
-    el('workTitle').textContent = 'Отправить работу: ' + (task.title || task.id);
-    el('w_link').value = task.link || '';
-    showModal(el('workModal'));
-  }
-  el('w_cancel').addEventListener('click', ()=> hideModal(el('workModal')));
-  el('w_send').addEventListener('click', async ()=>{
-    const platform = el('w_platform').value;
-    const link = el('w_link').value.trim();
-    if (!platform) return alert('Выберите платформу');
-    if (!link) return alert('Укажите ссылку/текст');
+  // Submit modal (simple prompt replacement)
+  function openSubmitModal(task){
+    const platform = prompt('Платформа (yandex/google/telegram):', 'yandex');
+    if(!platform) return;
+    const link = prompt('Ссылка / текст отчёта:','');
+    if(link===null) return;
     try {
-      Telegram.WebApp.sendData(JSON.stringify({ action:'submit_work', task_id: currentTaskForWork.id, platform, text:link, link }));
-      hideModal(el('workModal'));
-      appendActivity('Заявка на проверку отправлена (через WebApp)');
-      return;
+      Telegram.WebApp.sendData(JSON.stringify({ action:'submit_work', task_id: task.id, platform, text: link, link }));
+      alert('Отправлено через WebApp');
     } catch(e){
-      myRequests.unshift({ id:'local_'+Date.now(), task_title: currentTaskForWork.title, amount: currentTaskForWork.budget, status:'pending', created_at: new Date().toISOString(), platform, link });
-      hideModal(el('workModal'));
-      renderMyRequests();
-      appendActivity('Заявка отправлена локально');
+      alert('Не в WebApp — локально создана заявка');
+      // local fallback
+      addActivity('Локальная заявка для ' + task.title);
     }
-  });
-
-  // Initial load
-  async function init(){
-    showLoader();
-    try {
-      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
-        currentUserId = Telegram.WebApp.initDataUnsafe.user.id;
-        el('userName').textContent = (Telegram.WebApp.initDataUnsafe.user.first_name || 'Пользователь');
-        el('userHandle').textContent = '@' + (Telegram.WebApp.initDataUnsafe.user.username || ('id'+currentUserId));
-      } else {
-        if (qs('uid')) {
-          currentUserId = qs('uid');
-          el('userHandle').textContent = '@' + (qs('username') || ('id'+currentUserId));
-        }
-      }
-      await Promise.all([loadTasks(), loadMyRequests()]);
-    } catch(e){ console.error(e) } finally { hideLoader(); appEl.style.visibility = 'visible'; }
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  // Get profile via Telegram.WebApp.initData (secure)
+  async function loadProfileViaInitData(){
+    try {
+      if(!window.Telegram || !Telegram.WebApp) return false;
+      const initData = Telegram.WebApp.initData || '';
+      if(!initData) return false;
+      // send init_data in header for verification
+      const res = await fetch('/api/user_profile', { headers: { 'X-Tg-InitData': initData }});
+      if(!res.ok) throw new Error('profile denied');
+      const payload = await res.json();
+      if(payload.ok && payload.user){
+        document.getElementById('fullname').textContent = (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user && Telegram.WebApp.initDataUnsafe.user.first_name) || 'Пользователь';
+        document.getElementById('handle').textContent = '@' + ((Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user && Telegram.WebApp.initDataUnsafe.user.username) || ('id'+(payload.user.id||'')));
+        document.getElementById('balance').textContent = (payload.user.balance || 0) + ' ₽';
+        return true;
+      }
+      return false;
+    } catch(e){
+      console.warn('loadProfileViaInitData failed', e);
+      return false;
+    }
+  }
+
+  // Entry / loader logic: wait for Telegram.WebApp or timeout
+  async function init(skipLoading=false){
+    if(!skipLoading) loader.style.opacity = '1';
+    appEl.style.visibility = 'hidden';
+    // Try to call Telegram.WebApp.ready() if in WebApp
+    try{ if(window.Telegram && Telegram.WebApp && Telegram.WebApp.ready) Telegram.WebApp.ready(); }catch(e){}
+    // Try to load profile via initData (secure)
+    let profileLoaded = false;
+    try {
+      if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData){
+        profileLoaded = await loadProfileViaInitData();
+      }
+    } catch(e){}
+    // always load tasks and my requests
+    await loadTasks();
+    await loadMyRequests();
+    // short delay to make animation feel nice
+    setTimeout(()=> {
+      loader.style.opacity = '0';
+      loader.style.pointerEvents = 'none';
+      loader.setAttribute('aria-hidden','true');
+      appEl.style.visibility = 'visible';
+    }, 350);
+  }
+
+  // WebApp integration: hide loader when Telegram signals ready or after timeout
+  document.addEventListener('DOMContentLoaded', ()=> init());
+
 })();
 </script>
 </body>
