@@ -3,12 +3,10 @@
 """
 Improved ReviewCash server (Flask + TeleBot + Flask-SocketIO).
 
-Additions in this variant:
-- Public endpoints for submitting support, topup and withdraw requests.
-- Bot commands /help and /support.
-- Notify admins via socketio and Telegram on user actions.
-- Robust handling of Eventlet greendns and optional Flask-Cors.
-- Central logging.
+В этом файле добавлены:
+ - bot handlers: /admin, /mainadmin, /addadmin (доступны только главным админам, определённым в ADMIN_USER_IDS/ADMIN_USERNAMES)
+ - endpoint /api/admins (требует admin token) — возвращает список админов и статистику: сколько support-запросов обработал каждый
+ - при ответе/закрытии support теперь учитываем handled_by / replies (раньше уже были)
 """
 import os
 # Ensure we disable eventlet greendns as early as possible
@@ -244,14 +242,16 @@ if bot:
                 "/start — приветствие\n"
                 "/help — этот список\n"
                 "/support — открыть запрос в поддержку (ответьте сообщением после команды)\n"
+                "/admin — общая статистика (только для главных админов)\n"
+                "/mainadmin — ссылка на админку с токеном (только для главных админов)\n"
+                "/addadmin <uid_or_username> — добавить обычного админа (только для главных админов)\n"
             )
             bot.send_message(message.chat.id, help_text)
             logger.info("[bot] Handled /help from %s", message.chat.id)
         except Exception as e:
             logger.exception("[bot] Exception in /help handler: %s", e)
 
-    # /support: user will send a follow-up message; we accept next reply as support text
-    # Simple approach: ask user to send message; if next message arrives, treat as support submission.
+    # /support awaiting logic (unchanged)
     _awaiting_support = {}  # chat_id -> waiting flag
 
     @bot.message_handler(commands=['support'])
@@ -277,7 +277,8 @@ if bot:
                     "user": {"id": cid, "username": getattr(message.from_user, "username", None), "first_name": getattr(message.from_user, "first_name", None)},
                     "message": text,
                     "created_at": datetime.utcnow().isoformat() + "Z",
-                    "status": "new"
+                    "status": "new",
+                    "replies": []
                 }
                 append_json(SUPPORT_FILE, rec)
                 # Notify admins via socketio and Telegram
@@ -296,7 +297,68 @@ if bot:
                 bot.send_message(cid, "Спасибо — ваше сообщение отправлено в поддержку. Мы свяжемся с вами.")
                 logger.info("[bot] Received support message from %s", cid)
                 return
-            # Otherwise echo for debug / or handle other flows
+            # Otherwise handle certain admin commands (/admin, /mainadmin, /addadmin)
+            text_l = (text or "").strip()
+            if text_l.startswith('/admin') or text_l.startswith('/mainadmin') or text_l.startswith('/addadmin'):
+                cmd_parts = text_l.split()
+                cmd = cmd_parts[0].lower()
+                uid = getattr(message.from_user, "id", None)
+                uname = getattr(message.from_user, "username", None)
+                # Only main admins allowed
+                if not is_main_admin(uid) and not is_main_admin(uname):
+                    bot.send_message(message.chat.id, "У вас нет прав выполнять эту команду.")
+                    return
+                # /admin — send quick stats
+                if cmd == '/admin':
+                    try:
+                        topups = load_json_safe(TOPUPS_FILE, [])
+                        withdraws = load_json_safe(WITHDRAWS_FILE, [])
+                        works = load_json_safe(WORKS_FILE, [])
+                        supports = load_json_safe(SUPPORT_FILE, [])
+                        users_map = load_json_safe(USERS_FILE, {})
+                        text_out = (
+                            f"Статистика системы:\n"
+                            f"Пользователей (записей): {len(users_map)}\n"
+                            f"Заявок на пополнение: {len(topups)}\n"
+                            f"Заявок на вывод: {len(withdraws)}\n"
+                            f"Работ (всего): {len(works)}\n"
+                            f"Запросов в поддержку: {len(supports)}\n"
+                        )
+                        bot.send_message(message.chat.id, text_out)
+                    except Exception as e:
+                        logger.exception("Failed to prepare /admin stats: %s", e)
+                        bot.send_message(message.chat.id, "Ошибка при получении статистики.")
+                    return
+                # /mainadmin — send link with token
+                if cmd == '/mainadmin':
+                    try:
+                        token_admin = generate_admin_token(uid, uname)
+                        url = f"{WEBAPP_URL.rstrip('/')}/mainadmin?token={quote_plus(token_admin)}"
+                        bot.send_message(message.chat.id, f"Ссылка на админку: {url}")
+                    except Exception as e:
+                        logger.exception("Failed to generate mainadmin link: %s", e)
+                        bot.send_message(message.chat.id, "Ошибка при генерации ссылки на админку.")
+                    return
+                # /addadmin <id_or_username>
+                if cmd == '/addadmin':
+                    if len(cmd_parts) < 2:
+                        bot.send_message(message.chat.id, "Использование: /addadmin <uid_or_username>")
+                        return
+                    target = cmd_parts[1].strip()
+                    # normalize: allow @username or raw username/uid
+                    if target.startswith('@'):
+                        target_key = target[1:]
+                    else:
+                        target_key = target
+                    added = add_ordinary_admin(target_key)
+                    if added:
+                        bot.send_message(message.chat.id, f"{target_key} добавлен(а) как ordinary admin.")
+                        # notify via socket to admins
+                        notify_event('admins_updated', {"action": "add", "who": target_key}, rooms=['admins_main','admins_ordinary'])
+                    else:
+                        bot.send_message(message.chat.id, f"{target_key} уже есть в списке админов.")
+                    return
+            # Generic messages
             logger.info("[bot] Generic message from %s: %s", cid, text)
             bot.reply_to(message, f"Echo: {text}")
         except Exception as e:
@@ -585,7 +647,6 @@ def api_supports_list():
     arr = load_json_safe(SUPPORT_FILE, [])
     if status:
         arr = [s for s in arr if (s.get('status') or '').lower() == status]
-    # return as-is (admins will filter on client)
     return jsonify(arr)
 
 @app.route('/api/supports/<sid>/reply', methods=['POST'])
@@ -635,10 +696,8 @@ def api_support_reply(sid):
             uid = found.get('user', {}).get('id')
             if uid:
                 try:
-                    # uid may be string; try int
                     bot.send_message(int(uid), f"Ответ поддержки: {message}")
                 except Exception:
-                    # fallback to username mention
                     uname = found.get('user', {}).get('username')
                     if uname:
                         try:
@@ -701,7 +760,65 @@ def api_support_resolve(sid):
             logger.exception("Failed to send resolve notification to user via bot")
     return jsonify({"ok": True, "support": found})
 
-# ========== User history endpoints (added) ==========
+# ========== Admins listing & stats endpoint ==========
+@app.route('/api/admins', methods=['GET'])
+@require_admin_token
+def api_admins_list():
+    """
+    Returns list of admins (main + ordinary) and simple stats:
+      - id_or_username
+      - is_main: bool
+      - supports_handled: number of support requests this admin handled (handled_by OR replies)
+    """
+    # gather admin identifiers (preserve order: main admins first)
+    admins_out = []
+    # create unified set to avoid duplicates
+    seen = set()
+    # main admins (string ids/usernames from ADMIN_USER_IDS/ADMIN_USERNAMES)
+    for a in ADMIN_USER_IDS:
+        if a in seen: continue
+        seen.add(a)
+        admins_out.append({"id_or_username": a, "is_main": True})
+    for a in ADMIN_USERNAMES:
+        if a in seen: continue
+        seen.add(a)
+        admins_out.append({"id_or_username": a, "is_main": True})
+    # ordinary admins
+    for a in ordinary_admins:
+        if a in seen: continue
+        seen.add(a)
+        admins_out.append({"id_or_username": a, "is_main": False})
+
+    # compute supports handled counts
+    supports = load_json_safe(SUPPORT_FILE, [])
+    # normalize function to compare admin keys
+    def normalize_key(k):
+        return str(k) if k is not None else ""
+
+    # build map from admin -> count
+    count_map = {adm["id_or_username"]: 0 for adm in admins_out}
+    for s in supports:
+        # handled_by may be dict with uid/username
+        hb = s.get('handled_by') or {}
+        if isinstance(hb, dict):
+            cand_u = normalize_key(hb.get('uid') or hb.get('username') or '')
+            if cand_u in count_map:
+                count_map[cand_u] = count_map.get(cand_u, 0) + 1
+        # replies may include admin per reply
+        for r in s.get('replies', []) or []:
+            adm = r.get('admin') or {}
+            cand = normalize_key(adm.get('uid') or adm.get('username') or '')
+            if cand in count_map:
+                count_map[cand] = count_map.get(cand, 0) + 1
+
+    # attach counts
+    for adm in admins_out:
+        k = adm["id_or_username"]
+        adm["supports_handled"] = count_map.get(k, 0)
+
+    return jsonify({"ok": True, "admins": admins_out})
+
+# ========== User history endpoints (if present) ==========
 from functools import cmp_to_key
 
 @app.route('/api/user_history', methods=['GET'])
@@ -797,10 +914,6 @@ def api_user_history_me():
     # build query string
     qs = '&'.join([f"{k}={v}" for k,v in args.items()])
     return app.test_client().get(f"/api/user_history?{qs}").get_data(as_text=False), 200, {'Content-Type':'application/json'}
-
-# ========== Existing admin endpoints (unchanged) ==========
-# ... (existing admin endpoints remain as in previous app.py, not duplicated here)
-# For brevity in this chat message we assume earlier admin endpoints (approve/reject etc.) remain unchanged.
 
 # ========== WEBHOOK / POLLING SAFE START ==========
 def start_polling_thread_safe():
