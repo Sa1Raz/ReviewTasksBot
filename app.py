@@ -48,7 +48,7 @@ except Exception:
     jwt = None  # If missing, admin token features will fail; recommend installing PyJWT
 
 # ========== CONFIG ==========
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")  # set in env
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")  # set in env
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://example.com").rstrip('/')
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 
