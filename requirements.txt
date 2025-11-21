@@ -1,4 +1,5 @@
 Flask>=2.0
+Flask-Cors>=3.0.10
 pytelegrambotapi>=4.0
 PyJWT>=2.0
 Flask-SocketIO>=5.0
@@ -7,4 +8,3 @@ eventlet>=0.33
 dnspython>=2.0
 requests>=2.0
 redis>=4.0
-Flask-Cors>=3.0.10
