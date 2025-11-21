@@ -1,262 +1,529 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ReviewCash — красивый интерфейс</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ReviewCash — Интерфейс</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lottie-web@5.8.1/build/player/lottie.min.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <style>
-  :root{
-    --bg1:#061426; --bg2:#031827;
-    --accentA:#00f0ff; --accentB:#00ff9d;
-    --muted:#9fb6c6; --gold:#ffd166;
-    --card-radius:16px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf7fb}
-  .container{max-width:1100px;margin:28px auto;padding:18px;display:flex;flex-direction:column;gap:18px}
-  header{display:flex;align-items:center;gap:12px}
-  .logo{width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900;font-family:Poppins;font-size:22px;box-shadow:0 18px 60px rgba(0,240,255,0.06)}
-  .title h1{margin:0;font-size:20px}
-  .title p{margin:0;color:var(--muted);font-size:13px}
-  .main{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:var(--card-radius);padding:16px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 18px 60px rgba(0,0,0,0.6)}
-  .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
-  .task{border-radius:12px;padding:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:transform .18s,box-shadow .18s}
-  .task:hover{transform:translateY(-8px);box-shadow:0 30px 60px rgba(0,0,0,0.6)}
-  .profile{display:flex;flex-direction:column;gap:12px}
-  .profile-top{display:flex;gap:12px;align-items:center;position:relative}
-  .avatar{width:84px;height:84px;border-radius:14px;background:linear-gradient(135deg,#04202a,#05202a);display:flex;align-items:center;justify-content:center;color:var(--accentA);font-weight:900;font-size:22px;border:4px solid rgba(0,255,200,0.03)}
-  .profile-info .name{font-weight:800}
-  .profile-info .handle{color:var(--muted);font-size:13px}
-  .support-small{position:absolute;right:0;top:0;width:40px;height:40px;border-radius:10px;background:linear-gradient(90deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;color:#012226;cursor:pointer}
-  .history{max-height:300px;overflow:auto;margin-top:8px;border-top:1px dashed rgba(255,255,255,0.03);padding-top:10px}
-  .history-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,0.02)}
-  .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:420px;max-width:94%;height:72px;border-radius:14px;background:linear-gradient(180deg,#051425,#02121a);display:flex;align-items:center;justify-content:space-around;box-shadow:0 22px 80px rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.03)}
-  .nav-button{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);cursor:pointer;padding:8px 12px;border-radius:10px;transition:all .18s}
-  .nav-button.active{color:var(--accentA);background:linear-gradient(90deg, rgba(0,240,255,0.04), rgba(0,255,157,0.02));transform:translateY(-6px)}
-  .hide{display:none}
-  @media(max-width:1000px){ .main{grid-template-columns:1fr} .profile{order:2} }
+/* ===========================
+   Theme variables (light/dark)
+   =========================== */
+:root{
+  --bg-0: #f6f8fb;
+  --bg-1: #061426;
+  --bg-2: #031827;
+  --card: rgba(255,255,255,0.03);
+  --glass: rgba(255,255,255,0.04);
+  --muted: #9fb6c6;
+  --accentA: #00f0ff;
+  --accentB: #00ff9d;
+  --neon: rgba(0,240,255,0.12);
+  --radius: 14px;
+  --text: #eaf7fb;
+  --glass-blur: 8px;
+  --shadow-1: 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-2: 0 18px 60px rgba(0,0,0,0.55);
+  --cursor-image: auto; /* fallback default cursor */
+}
+
+/* Light theme overrides */
+:root[data-theme="light"]{
+  --bg-1: #f4f7fb;
+  --bg-2: #eaf0f6;
+  --card: rgba(2,6,12,0.03);
+  --glass: rgba(0,0,0,0.04);
+  --muted: #546c7a;
+  --text: #071426;
+  --neon: rgba(0,120,255,0.06);
+  --shadow-1: 0 8px 24px rgba(2,8,20,0.06);
+  --shadow-2: 0 18px 60px rgba(2,8,20,0.09);
+}
+
+/* Global layout and typography */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color:var(--text);
+  background:
+    radial-gradient(900px 400px at 10% 10%, rgba(0,240,255,0.02), transparent),
+    linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  transition: background .45s ease, color .35s ease;
+  cursor: var(--cursor-image);
+}
+
+/* Container */
+.app{
+  max-width:1200px;
+  margin:28px auto;
+  padding:20px;
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  gap:22px;
+  align-items:start;
+}
+
+/* Header */
+.header{
+  grid-column:1/-1;
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+.logo{
+  width:64px;height:64px;border-radius:14px;
+  background:linear-gradient(135deg,var(--accentA),var(--accentB));
+  display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900;font-size:20px;
+  box-shadow:0 18px 60px rgba(0,240,255,0.06);
+  transform: translateZ(0);
+  will-change: transform;
+}
+.header .title h1{margin:0;font-size:20px}
+.header .title p{margin:0;color:var(--muted);font-size:13px}
+.header-actions{margin-left:auto;display:flex;gap:10px;align-items:center}
+
+/* Main cards */
+.panel{
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border-radius: var(--radius);
+  padding:16px;
+  border:1px solid var(--glass);
+  box-shadow: var(--shadow-1);
+  transition: transform .28s cubic-bezier(.2,.9,.25,1), box-shadow .28s;
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow;
+}
+.panel:hover{ transform: translateY(-6px); box-shadow: var(--shadow-2); }
+
+/* Grid for tasks */
+.tasks-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+  gap:14px;
+  margin-top:12px;
+}
+
+/* Task card (microinteraction + neon glow + hover) */
+.task{
+  border-radius:12px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:transform .22s ease, box-shadow .22s ease;
+  will-change: transform, box-shadow;
+}
+.task:hover{
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.25);
+  animation: glow 1.8s ease-in-out infinite alternate;
+}
+@keyframes glow {
+  from{ box-shadow: 0 12px 30px rgba(0,240,255,0.06), 0 0 14px rgba(0,240,255,0.04);}
+  to{ box-shadow: 0 18px 40px rgba(0,255,157,0.06), 0 0 30px rgba(0,255,157,0.03);}
+}
+
+/* Buttons: microinteractions, pulse on click */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:none;cursor:pointer;
+  font-weight:700;color:#012226;background:linear-gradient(90deg,var(--accentA),var(--accentB));
+  transition: transform .12s cubic-bezier(.2,.9,.3,1), box-shadow .12s;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  will-change: transform, box-shadow;
+}
+.btn:active{ animation: btnPulse .36s ease; transform: scale(.985); }
+@keyframes btnPulse{ 0%{ transform: scale(1); } 50%{ transform: scale(.98); } 100%{ transform: scale(1); } }
+
+/* Ghost button */
+.btn-ghost{ background:transparent;color:var(--text); border:1px solid rgba(255,255,255,0.04); font-weight:600 }
+
+/* Navigation bottom (mobile) */
+.bottom-nav{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:420px;max-width:94%;height:68px;border-radius:14px;
+  display:flex;align-items:center;justify-content:space-around;gap:8px;padding:8px;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.16));
+  border:1px solid rgba(255,255,255,0.03);box-shadow:0 18px 60px rgba(0,0,0,0.5);
+}
+.nav-button{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);cursor:pointer;padding:6px;border-radius:10px;transition:all .25s cubic-bezier(.2,.9,.3,1);backface-visibility:hidden}
+.nav-button.active{ color:var(--accentA); transform:translateY(-6px); background:linear-gradient(90deg, rgba(0,240,255,0.05), rgba(0,255,157,0.02)); box-shadow:0 10px 30px rgba(0,240,255,0.05); }
+
+/* Skeleton placeholders (animated) */
+.skeleton { height:12px;border-radius:8px;background:linear-gradient(90deg,#ffffff06,#ffffff02,#ffffff06); animation: skeletonPulse 1.6s linear infinite; }
+@keyframes skeletonPulse { 0%{ opacity:.6 } 50%{ opacity:1 } 100%{ opacity:.6 } }
+
+/* Parallax layers - background elements */
+.parallax-layer{
+  position:fixed;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:-1;transform:translate3d(0,0,0);
+  transition: transform .12s ease-out;
+}
+.parallax-blob{
+  position:absolute;width:700px;height:700px;border-radius:50%;
+  filter: blur(80px) saturate(110%);
+  opacity:.12;
+  background: radial-gradient(circle at 30% 30%, var(--accentA), transparent 30%), radial-gradient(circle at 70% 70%, var(--accentB), transparent 30%);
+}
+
+/* Neon borderline for important elements */
+.neon {
+  box-shadow: 0 6px 18px rgba(0,240,255,0.06), inset 0 1px 0 rgba(255,255,255,0.02);
+  border:1px solid rgba(0,240,255,0.06);
+}
+
+/* Tooltips (simple) */
+.tooltip{ position:relative; display:inline-block }
+.tooltip .tooltip-text{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 10px);background:rgba(0,0,0,0.75);color:#fff;padding:8px;border-radius:8px;font-size:13px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;
+}
+.tooltip:hover .tooltip-text{ opacity:1; }
+
+/* Progress overlay for long operations */
+.progress-overlay{
+  position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,6,12,0.5),rgba(2,6,12,0.6));display:none;align-items:center;justify-content:center;z-index:9999;
+}
+.progress-card{background:linear-gradient(180deg,#061426,#031827);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);display:flex;flex-direction:column;gap:10px;align-items:center}
+.progress-bar{width:320px;height:10px;border-radius:10px;background:rgba(255,255,255,0.04);overflow:hidden}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accentA),var(--accentB));transition:width .4s ease}
+
+/* Responsive typography (clamp) */
+h1{font-size:clamp(18px, 2.2vw, 24px)}
+h2{font-size:clamp(16px, 1.6vw, 18px)}
+p, .muted{font-size:clamp(13px, 1.2vw, 15px)}
+
+/* Performance hints */
+.will-change-transform{ will-change: transform }
+.use-3d{ transform: translateZ(0) }
+
+/* Custom cursor for interactive areas */
+.interactive{ cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="10" fill="%2300f0ff"/></svg>') 12 12, pointer; }
+
+/* Accessibility focus */
+button:focus, a:focus{ outline:2px dashed var(--accentA); outline-offset:4px }
 </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="logo">RC</div>
-      <div class="title"><h1>ReviewCash</h1><p>Красиво, современно, плавно</p></div>
-      <div style="margin-left:auto"><button id="refresh" style="padding:8px;border-radius:10px;background:linear-gradient(90deg,#00f0ff,#00ff9d);border:none;color:#012226;cursor:pointer">Обновить</button></div>
-    </header>
+  <!-- Parallax background layers -->
+  <div class="parallax-layer" id="parallax">
+    <div class="parallax-blob" id="blob1" style="left:-200px;top:-200px;width:800px;height:800px;opacity:0.12"></div>
+    <div class="parallax-blob" id="blob2" style="right:-260px;bottom:-240px;width:600px;height:600px;opacity:0.09"></div>
+  </div>
 
-    <div class="main">
-      <!-- Tasks panel -->
-      <div class="panel" id="tasksPanel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><h2 style="margin:0">Задания</h2><div style="color:var(--muted);font-size:13px">Выберите задание</div></div>
-          <div><input id="searchInput" placeholder="Поиск..." style="padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf7fb"/></div>
-        </div>
-        <div id="tasksGrid" class="tasks-grid" aria-live="polite"></div>
+  <div class="app" id="app">
+    <div class="header">
+      <div class="logo interactive" title="ReviewCash">RC</div>
+      <div class="title">
+        <h1>ReviewCash</h1>
+        <p>Красивый современный интерфейс — задания и профиль</p>
       </div>
 
-      <!-- Profile panel -->
-      <aside class="panel profile" id="profilePanel">
-        <div class="profile-top">
-          <div class="avatar" id="avatar">RC</div>
-          <div class="profile-info">
-            <div class="name" id="nameDisplay">Профиль скрыт</div>
-            <div class="handle" id="handleDisplay">Нажмите «Показать профиль» чтобы увидеть</div>
-            <div style="margin-top:8px"><button id="revealProfile" style="padding:8px;border-radius:10px;border:none;background:linear-gradient(90deg,#00f0ff,#00ff9d);color:#012226;cursor:pointer">Показать профиль</button></div>
-          </div>
-          <div class="support-small" id="supportSmall" title="Поддержка">🎧</div>
+      <div class="header-actions">
+        <div class="tooltip">
+          <button id="themeToggle" class="btn-ghost interactive" title="Переключить тему">Тема</button>
+          <div class="tooltip-text">Светлая / Тёмная тема</div>
         </div>
-
-        <div style="margin-top:10px">
-          <h3 style="margin:0">История</h3>
-          <div id="history" class="history"><div style="color:var(--muted)">История скрыта пока профиль не открыт</div></div>
-        </div>
-
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <button id="topupBtn" style="padding:10px;border-radius:10px;border:none;background:linear-gradient(90deg,#00f0ff,#00ff9d);color:#012226;cursor:pointer">Пополнить</button>
-          <button id="withdrawBtn" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf7fb;cursor:pointer">Вывести</button>
-        </div>
-      </aside>
+        <button id="openAdmin" class="btn interactive">Админ</button>
+      </div>
     </div>
 
-    <!-- Bottom nav -->
-    <div class="bottom-nav" id="bottomNav">
-      <div class="nav-button active" id="navTasks" data-view="tasks"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M7 8h10v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div>Задания</div></div>
-      <div class="nav-button" id="navProfile" data-view="profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.4"/></svg><div>Профиль</div></div>
+    <!-- MAIN CONTENT -->
+    <main class="panel will-change-transform" id="mainPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="margin:0">Задания</h2>
+          <div class="muted">Список доступных задач с красивыми анимациями</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="search" placeholder="Поиск..." style="padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text)" />
+          <button id="refresh" class="btn interactive tooltip"><span>Обновить</span><div class="tooltip-text">Обновить список</div></button>
+        </div>
+      </div>
+
+      <div id="tasksGrid" class="tasks-grid" aria-live="polite">
+        <!-- skeleton placeholders until tasks loaded -->
+        <div><div class="task skeleton" style="height:84px"></div></div>
+        <div><div class="task skeleton" style="height:84px"></div></div>
+        <div><div class="task skeleton" style="height:84px"></div></div>
+      </div>
+    </main>
+
+    <!-- PROFILE SIDEBAR -->
+    <aside class="panel will-change-transform" id="sidebar">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div id="avatar" style="width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#04202a,#05202a);display:flex;align-items:center;justify-content:center;font-weight:800">RC</div>
+        </div>
+        <div style="flex:1;margin-left:12px">
+          <div id="fullname" style="font-weight:800">Профиль скрыт</div>
+          <div id="handle" class="muted">Нажмите показать профиль</div>
+          <div style="margin-top:8px">
+            <button id="revealProfile" class="btn-ghost interactive">Показать профиль</button>
+          </div>
+        </div>
+        <div>
+          <button id="supportBtn" class="btn-ghost interactive tooltip" aria-label="Поддержка">🎧
+            <div class="tooltip-text">Написать в поддержку</div>
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <h3 style="margin:6px 0">История</h3>
+        <div id="history" style="max-height:260px;overflow:auto">
+          <div class="muted">Скрыто до открытия профиля</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="btnTopup" class="btn interactive">Пополнить</button>
+        <button id="btnWithdraw" class="btn-ghost interactive">Вывести</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Progress overlay -->
+  <div class="progress-overlay" id="progressOverlay" role="status" aria-hidden="true">
+    <div class="progress-card">
+      <div class="muted">Операция выполняется...</div>
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <div class="muted" id="progressText">0%</div>
     </div>
   </div>
 
-<!-- Minimal modals: we'll use simple prompts for support and maintain polished UX -->
 <script>
-/* Smooth view toggling */
-const navTasks = document.getElementById('navTasks');
-const navProfile = document.getElementById('navProfile');
-const tasksPanel = document.getElementById('tasksPanel');
-const profilePanel = document.getElementById('profilePanel');
-const bottomNav = document.getElementById('bottomNav');
-
-function activate(view){
-  if(view === 'tasks'){
-    navTasks.classList.add('active'); navProfile.classList.remove('active');
-    // show tasks panel, hide profile on small screens
-    if(window.innerWidth <= 1000){
-      tasksPanel.classList.remove('hide'); profilePanel.classList.add('hide');
-    }
-  } else {
-    navProfile.classList.add('active'); navTasks.classList.remove('active');
-    if(window.innerWidth <= 1000){
-      profilePanel.classList.remove('hide'); tasksPanel.classList.add('hide');
-    }
+/* ============================
+   Theme toggle (dark/light)
+   ============================ */
+(function(){
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const stored = localStorage.getItem('rc_theme');
+  if(stored) root.setAttribute('data-theme', stored);
+  else {
+    // default to prefers-color-scheme
+    if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) root.setAttribute('data-theme','light');
   }
-  // small fade effect
-  [tasksPanel, profilePanel].forEach(el => { el.style.opacity = 0.0; setTimeout(()=> el.style.opacity = 1, 60); });
-}
+  themeToggle.addEventListener('click', ()=>{
+    const cur = root.getAttribute('data-theme');
+    const next = (cur === 'light') ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('rc_theme', next);
+  });
+})();
 
-navTasks.addEventListener('click', ()=> activate('tasks'));
-navProfile.addEventListener('click', ()=> activate('profile'));
-window.addEventListener('resize', ()=> { if(window.innerWidth > 1000){ tasksPanel.classList.remove('hide'); profilePanel.classList.remove('hide'); } else { activate(navTasks.classList.contains('active') ? 'tasks' : 'profile'); } });
+/* ============================
+   Parallax effect (pointer)
+   ============================ */
+(function(){
+  const parallax = document.getElementById('parallax');
+  const blob1 = document.getElementById('blob1');
+  const blob2 = document.getElementById('blob2');
+  const speed1 = 0.02, speed2 = 0.03;
+  document.addEventListener('mousemove', (e)=>{
+    const cx = e.clientX - window.innerWidth/2;
+    const cy = e.clientY - window.innerHeight/2;
+    blob1.style.transform = `translate(${cx*speed1}px, ${cy*speed1}px)`;
+    blob2.style.transform = `translate(${cx*-speed2}px, ${cy*-speed2}px)`;
+  });
+  // subtle motion on scroll
+  window.addEventListener('scroll', ()=>{
+    const s = window.scrollY;
+    parallax.style.transform = `translateY(${s*0.08}px)`;
+  }, {passive:true});
+})();
 
-/* Load tasks (simple) */
+/* ============================
+   Load tasks + skeleton animation + progressive reveal
+   ============================ */
 async function loadTasks(){
   const grid = document.getElementById('tasksGrid');
+  // keep skeleton while loading
   grid.innerHTML = '';
   for(let i=0;i<6;i++){
-    const sk = document.createElement('div'); sk.className = 'task';
-    sk.innerHTML = `<div style="height:14px;background:linear-gradient(90deg,#ffffff06,#ffffff03,#ffffff06);border-radius:8px;margin-bottom:8px"></div><div style="height:12px;background:linear-gradient(90deg,#ffffff06,#ffffff03,#ffffff06);border-radius:6px;width:70%"></div>`;
-    grid.appendChild(sk);
+    const s = document.createElement('div');
+    s.innerHTML = '<div class="task skeleton" style="height:84px"></div>';
+    grid.appendChild(s);
   }
   try {
     const res = await fetch('/api/tasks_public');
-    const data = await res.json();
+    const tasks = await res.json();
+    // progressive reveal: render in small batches
     grid.innerHTML = '';
-    if(!data || data.length === 0){
-      grid.innerHTML = '<div style="color:#9fb6c6">Нет активных заданий</div>'; return;
+    if(!Array.isArray(tasks) || tasks.length === 0){
+      grid.innerHTML = '<div class="muted">Нет активных заданий</div>';
+      return;
     }
-    data.forEach(t => {
-      const el = document.createElement('div'); el.className = 'task';
-      el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">${t.title || t.id}</div><div style="color:#9fb6c6">${t.budget ? t.budget+' ₽' : ''}</div></div><div style="margin-top:8px;color:#9fb6c6;font-size:13px">${t.link||''}</div>`;
+    // Render with slight delay per item for micro-animations
+    for(let i=0;i<tasks.length;i++){
+      const t = tasks[i];
+      const el = document.createElement('div');
+      el.className = 'fadeIn will-change-transform';
+      el.innerHTML = `<div class="task interactive task-glow" role="button" tabindex="0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">${escapeHtml(t.title||t.id)}</div>
+          <div style="color:var(--muted)">${t.budget? t.budget+' ₽':''}</div>
+        </div>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">${escapeHtml(t.link||'')}</div>
+      </div>`;
       grid.appendChild(el);
-    });
-  } catch(e){ grid.innerHTML = '<div style="color:#9fb6c6">Ошибка загрузки</div>'; }
-}
-loadTasks();
-
-/* Profile reveal: default hides personal data until user explicitly clicks */
-const revealBtn = document.getElementById('revealProfile');
-revealBtn.addEventListener('click', async ()=>{
-  // when clicked, attempt to fetch profile via WebApp initData (or just reveal)
-  let initData = null;
-  try { if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) initData = Telegram.WebApp.initData; } catch(e){}
-  if(!initData){
-    // fallback: simple reveal message
-    document.getElementById('nameDisplay').textContent = 'Гость';
-    document.getElementById('handleDisplay').textContent = 'Профиль открыт локально';
-    revealBtn.style.display = 'none';
-    return;
-  }
-  try {
-    const res = await fetch('/api/profile_me', { headers: { 'X-Tg-InitData': initData }});
-    const j = await res.json();
-    if(j.ok){
-      // show sanitized data only (we no longer auto display username if you asked to hide; here user explicitly asked)
-      document.getElementById('nameDisplay').textContent = j.user.first_name || 'Пользователь';
-      document.getElementById('handleDisplay').textContent = j.user.username ? '@' + j.user.username : 'UID: ' + j.user.id;
-      document.getElementById('balance').textContent = (j.balance||0) + ' ₽';
-      if(j.photo_url){
-        const av = document.getElementById('avatar'); av.innerHTML = '';
-        const img = document.createElement('img');
-        img.src = j.photo_url; img.style.width='84px'; img.style.height='84px'; img.style.borderRadius='14px';
-        av.appendChild(img);
-      }
-      revealBtn.style.display = 'none';
-      // load history now that user revealed profile
-      loadHistory(j.user.id);
-    } else {
-      alert('Не удалось получить профиль: ' + (j.reason||''));
+      // microinteraction: click ripple/pulse
+      const card = el.querySelector('.task');
+      card.addEventListener('click', ()=> { pulse(card); openTask(t); });
+      // progressive delay
+      await sleep(70);
     }
   } catch(e){
-    console.error('profile_me', e);
-    alert('Ошибка получения профиля');
+    console.error('loadTasks error', e);
+    grid.innerHTML = '<div class="muted">Ошибка загрузки заданий</div>';
+  }
+}
+function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function openTask(t){ alert('Открыто задание: '+(t.title||t.id)); }
+
+/* ============================
+   Button pulse microinteraction
+   ============================ */
+function pulse(el){
+  el.animate([{ transform: 'scale(1)' }, { transform: 'scale(.98)' }, { transform: 'scale(1)' }], { duration: 260, easing:'ease-out' });
+}
+
+/* ============================
+   Reveal profile + load profile_me + responsive typography
+   ============================ */
+document.getElementById('revealProfile').addEventListener('click', async ()=>{
+  try {
+    const tgInit = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp.initData : null;
+    if(!tgInit){
+      // local reveal only
+      document.getElementById('fullname').textContent = 'Гость';
+      document.getElementById('handle').textContent = 'Профиль открыт локально';
+      return;
+    }
+    const res = await fetch('/api/profile_me', { headers: { 'X-Tg-InitData': tgInit }});
+    const j = await res.json();
+    if(!j.ok){ alert('Не удалось получить профиль: '+(j.reason||'')); return; }
+    document.getElementById('fullname').textContent = j.user.first_name || 'Пользователь';
+    document.getElementById('handle').textContent = j.user.username ? '@'+j.user.username : 'UID: '+j.user.id;
+    if(j.photo_url){
+      const av = document.getElementById('avatar');
+      av.innerHTML = '';
+      const img = document.createElement('img'); img.src = j.photo_url; img.style.width='72px'; img.style.height='72px'; img.style.borderRadius='12px';
+      av.appendChild(img);
+    }
+    // load history
+    loadHistory(j.user.id);
+  } catch(e){
+    console.error('revealProfile error', e); alert('Ошибка получения профиля');
   }
 });
 
-/* Load history by uid */
+/* ============================
+   History loader
+   ============================ */
 async function loadHistory(uid){
   const list = document.getElementById('history');
   list.innerHTML = '';
   try {
-    const res = await fetch(`/api/user_history?uid=${encodeURIComponent(uid)}&page=1&page_size=8`);
+    const res = await fetch(`/api/user_history?uid=${encodeURIComponent(uid)}&page=1&page_size=6`);
     const j = await res.json();
-    if(!j.ok){ list.innerHTML = '<div style="color:#9fb6c6">Нет записей</div>'; return; }
-    if(!j.items || j.items.length === 0){ list.innerHTML = '<div style="color:#9fb6c6">Нет записей</div>'; return; }
+    if(!j.ok || !j.items || j.items.length === 0){ list.innerHTML = '<div class="muted">Нет записей</div>'; return; }
     j.items.forEach(it=>{
-      const row = document.createElement('div'); row.className = 'history-item';
-      row.innerHTML = `<div class="left"><div class="title">${(it.type||'').toUpperCase()} — ${it.id}</div><div class="small" style="color:#9fb6c6">${it.summary||''}</div></div><div class="right"><div class="amount">${it.amount ? it.amount + ' ₽' : ''}</div><div class="small" style="color:#9fb6c6">${it.created_at||''}</div></div>`;
+      const row = document.createElement('div');
+      row.style.display='flex';row.style.justifyContent='space-between';row.style.padding='8px 0';row.style.borderBottom='1px dashed rgba(255,255,255,0.03)';
+      row.innerHTML = `<div><div style="font-weight:700">${escapeHtml((it.type||'').toUpperCase())} — ${escapeHtml(it.id||'')}</div><div class="muted" style="font-size:13px">${escapeHtml(it.summary||'')}</div></div><div style="text-align:right"><div style="font-weight:800">${it.amount? it.amount+' ₽': ''}</div><div class="muted" style="font-size:12px">${escapeHtml(it.created_at||'')}</div></div>`;
       list.appendChild(row);
     });
-  } catch(e){
-    list.innerHTML = '<div style="color:#9fb6c6">Ошибка загрузки истории</div>';
-  }
+  } catch(e){ list.innerHTML = '<div class="muted">Ошибка загрузки истории</div>'; }
 }
 
-/* Small handlers for topup/withdraw/support using prompts for simplicity and perfect UX can be added later */
-document.getElementById('topupBtn').addEventListener('click', ()=> {
+/* ============================
+   Support, Topup, Withdraw (simplified prompts + progress)
+   ============================ */
+function showProgress(){
+  const overlay = document.getElementById('progressOverlay');
+  overlay.style.display = 'flex';
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  fill.style.width = '0%'; text.textContent = '0%';
+  let pct = 0;
+  const id = setInterval(()=>{ pct = Math.min(95, pct + Math.floor(Math.random()*8)+4); fill.style.width = pct+'%'; text.textContent = pct+'%'; }, 300);
+  return {
+    done: (finalPct=100)=>{ clearInterval(id); fill.style.width = finalPct+'%'; text.textContent = finalPct+'%'; setTimeout(()=> overlay.style.display='none', 700); }
+  };
+}
+
+document.getElementById('btnTopup').addEventListener('click', async ()=>{
   const s = prompt('Введите сумму пополнения (мин. 100 ₽):');
   if(!s) return;
   const amount = parseFloat(s.replace(',','.'));
-  if(isNaN(amount) || amount < 100){ alert('Минимальная сумма 100 ₽'); return; }
-  // call API
-  (async ()=>{
-    try {
-      const headers = {'Content-Type':'application/json'};
-      if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
-      const res = await fetch('/api/topups_public', { method:'POST', headers, body: JSON.stringify({ amount })});
-      const j = await res.json();
-      if(j.ok){
-        alert(`Создано: код ${j.topup.code}. Переведите ${amount} ₽ на номер ${j.bank.phone} с кодом в комментарии.`);
-      } else alert('Ошибка: ' + (j.reason||''));
-    } catch(e){ alert('Ошибка сети'); }
-  })();
-});
-
-document.getElementById('withdrawBtn').addEventListener('click', async ()=>{
-  const s = prompt('Введите сумму вывода (мин. 250 ₽):');
-  if(!s) return;
-  const amt = parseFloat(s.replace(',','.'));
-  if(isNaN(amt) || amt < 250){ alert('Мин. 250 ₽'); return; }
-  const name = prompt('Введите ФИО или ник в банке:');
-  if(!name) return;
-  const bank = prompt('Введите банк / реквизиты:');
-  if(!bank) return;
+  if(isNaN(amount) || amount < 100){ alert('Мин. 100 ₽'); return; }
+  const p = showProgress();
   try {
     const headers = {'Content-Type':'application/json'};
     if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
-    const res = await fetch('/api/withdraw_public', { method:'POST', headers, body: JSON.stringify({ amount: amt, name, bank })});
-    const j = await res.json();
-    if(j.ok) alert('Заявка создана. В течение 24 часов переведём сумму.');
-    else if(j.reason === 'insufficient_balance') alert('Недостаточно средств. Баланс: ' + (j.balance||0) + ' ₽');
-    else alert('Ошибка: ' + (j.reason||''));
-  } catch(e){ alert('Ошибка сети'); }
+    const res = await fetch('/api/topups_public', { method:'POST', headers, body: JSON.stringify({ amount })});
+    const data = await res.json();
+    p.done();
+    if(!data.ok) return alert('Ошибка: '+(data.reason||''));
+    alert(`Создано пополнение. Код: ${data.topup.code}. Переведите ${amount} ₽ на ${data.bank.phone} и укажите код.`);
+    loadTasks();
+  } catch(e){ p.done(100); alert('Ошибка сети'); }
+});
+
+document.getElementById('btnWithdraw').addEventListener('click', async ()=>{
+  const s = prompt('Введите сумму вывода (мин. 250 ₽):');
+  if(!s) return;
+  const amount = parseFloat(s.replace(',','.'));
+  if(isNaN(amount) || amount < 250){ alert('Мин. 250 ₽'); return; }
+  const name = prompt('Введите ФИО / ник в банке:'); if(!name) return;
+  const bank = prompt('Введите банк / реквизиты:'); if(!bank) return;
+  const p = showProgress();
+  try {
+    const headers = {'Content-Type':'application/json'};
+    if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
+    const res = await fetch('/api/withdraw_public', { method:'POST', headers, body: JSON.stringify({ amount, name, bank })});
+    const data = await res.json();
+    p.done();
+    if(!data.ok){
+      if(data.reason === 'insufficient_balance') alert('Недостаточно средств: '+(data.balance||0)+' ₽');
+      else alert('Ошибка: '+(data.reason||''));
+      return;
+    }
+    alert('Заявка на вывод отправлена. В течение 24 часов переведём сумму.');
+  } catch(e){ p.done(100); alert('Ошибка сети'); }
 });
 
 /* Support small button */
-document.getElementById('supportSmall').addEventListener('click', ()=> {
-  const text = prompt('Опишите проблему для поддержки:');
+document.getElementById('supportBtn').addEventListener('click', async ()=>{
+  const text = prompt('Опишите проблему:');
   if(!text) return;
-  (async ()=>{
-    try {
-      const headers = {'Content-Type':'application/json'};
-      if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
-      const res = await fetch('/api/support', { method:'POST', headers, body: JSON.stringify({ message: text })});
-      const j = await res.json();
-      if(j.ok) alert('Сообщение отправлено в поддержку');
-      else alert('Ошибка: ' + (j.reason||''));
-    } catch(e){ alert('Ошибка сети'); }
-  })();
+  const p = showProgress();
+  try {
+    const headers = {'Content-Type':'application/json'};
+    if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
+    const res = await fetch('/api/support', { method:'POST', headers, body: JSON.stringify({ message: text })});
+    const data = await res.json();
+    p.done();
+    if(!data.ok) alert('Ошибка: '+(data.reason||'')); else alert('Сообщение отправлено в поддержку');
+  } catch(e){ p.done(100); alert('Ошибка сети'); }
+});
+
+/* ============================
+   Initial load
+   ============================ */
+document.getElementById('refresh').addEventListener('click', ()=> { pulse(document.getElementById('refresh')); loadTasks(); });
+loadTasks();
+
+/* ============================
+   Accessibility helpers (keyboard)
+   ============================ */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA'){
+    e.preventDefault(); document.getElementById('search').focus();
+  }
 });
 </script>
 </body>
