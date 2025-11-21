@@ -1,3 +1,14 @@
+# Вставьте эти строки В САМЫЙ НАЧАЛО файла (до импорта eventlet и других сетевых библиотек)
+import os
+
+# Отключаем greendns у eventlet через переменную окружения.
+# Это должно быть установлено ДО импорта eventlet.
+os.environ.setdefault('EVENTLET_NO_GREENDNS', 'true')
+
+# Затем импортируем eventlet и патчим
+import eventlet
+# ВАЖНО: не передавайте dns=False, т.к. в некоторых версиях eventlet этот kwargs отсутствует
+eventlet.monkey_patch()
 #!/usr/bin/env python3
 # coding: utf-8
 # IMPORTANT: This file includes a defensive DNS fix for Eventlet greendns.
