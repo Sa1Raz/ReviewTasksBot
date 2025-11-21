@@ -7,3 +7,4 @@ eventlet>=0.33
 dnspython>=2.0
 requests>=2.0
 redis>=4.0
+Flask-Cors>=3.0.10
