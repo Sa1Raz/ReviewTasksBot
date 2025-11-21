@@ -1,264 +1,402 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ReviewCash — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<style>
-  body{margin:0;font-family:Inter,system-ui,Arial;background:#061026;color:#eaf7fb;padding:18px}
-  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:18px}
-  header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-  .mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(90deg,#00f0ff,#00ff9d);display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800}
-  h1{margin:0;font-size:18px}
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.04)}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:14px}
-  th{color:#9fb6c6}
-  .actions button{margin-right:6px;padding:6px 8px;border-radius:8px;border:none;cursor:pointer}
-  .approve{background:#00ff9d;color:#012226}
-  .reject{background:#ff6b80;color:#fff}
-  .muted{color:#9fb6c6;font-size:13px}
-  .search{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb}
-  .flex-row{display:flex;gap:8px;align-items:center}
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;visibility:hidden;opacity:0;transition:all .16s}
-  .modal-backdrop.show{visibility:visible;opacity:1}
-  .modal{background:#071426;border-radius:10px;padding:14px;width:520px;border:1px solid rgba(255,255,255,0.04)}
-  textarea{width:100%;min-height:100px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb}
-  .btn{padding:8px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--muted)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ГЛАВНЫЙ АДМИН | ReviewCash</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #0f0020, #000);
+      --card: rgba(30, 10, 80, 0.95);
+      --neon: #00ffff;
+      --gold: #ffd700;
+      --green: #00ff88;
+      --red: #ff3366;
+      --purple: #cc00ff;
+    }
+    body {
+      background: var(--bg);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .header {
+      text-align: center;
+      padding: 30px 20px;
+      background: linear-gradient(90deg, #ffd700, #ff4500);
+      color: #000;
+      font-size: 32px;
+      font-weight: 900;
+      border-bottom: 5px solid #ffd700;
+      box-shadow: 0 10px 40px rgba(255,215,0,0.6);
+    }
+    .crown { font-size: 50px; margin-bottom: 10px; animation: pulse 3s infinite; }
+    .container { max-width: 1000px; margin: 20px auto; padding: 20px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 3px solid var(--neon);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 40px rgba(0,255,255,0.3);
+    }
+    .stat-card i { font-size: 36px; color: var(--gold); margin-bottom: 10px; }
+    .stat-card h3 { font-size: 14px; color: #88c0d0; margin: 8px 0; }
+    .stat-card p { font-size: 28px; font-weight: 900; color: var(--neon); margin: 0; }
+
+    .section {
+      background: var(--card);
+      border: 3px solid var(--neon);
+      border-radius: 24px;
+      padding: 24px;
+      margin: 25px 0;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+    }
+    .section h2 {
+      text-align: center;
+      color: var(--gold);
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #ffd700;
+    }
+    .request {
+      background: rgba(0,255,255,0.1);
+      border-left: 6px solid var(--gold);
+      border-radius: 16px;
+      padding: 18px;
+      margin: 14px 0;
+      position: relative;
+      animation: fadeIn 0.6s;
+    }
+    .request.new { border-left-color: var(--green); box-shadow: 0 0 30px rgba(0,255,136,0.4); }
+    .request .user { font-weight: 900; color: var(--neon); }
+    .request .info { font-size: 15px; margin: 8px 0; color: #e0f7ff; }
+    .btn-group { margin-top: 12px; display: flex; gap: 10px; }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-confirm { background: var(--green); color: #000; }
+    .btn-reject { background: var(--red); color: white; }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+      font-size: 14px;
+    }
+    .panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.04);margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;color:#eaf7fb}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:14px}
+    th{color:#9fb6c6}
+    .actions button{margin-right:6px;padding:6px 8px;border-radius:8px;border:none;cursor:pointer}
+    .approve{background:#00ff9d;color:#012226}
+    .reject{background:#ff6b80;color:#fff}
+    .muted{color:#9fb6c6;font-size:13px}
+    .search{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb}
+    .flex-row{display:flex;gap:8px;align-items:center}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;visibility:hidden;opacity:0;transition:all .16s}
+    .modal-backdrop.show{visibility:visible;opacity:1}
+    .modal{background:#071426;border-radius:10px;padding:14px;width:720px;border:1px solid rgba(255,255,255,0.04)}
+    textarea{width:100%;min-height:100px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf7fb}
+    .btn-small{padding:8px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--muted);margin-right:6px}
+    .table-wrap{overflow:auto;max-height:300px}
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="mark">RC</div>
-      <div><h1>Админ-панель — ReviewCash</h1><div class="muted">События в реальном времени</div></div>
-      <div style="margin-left:auto" id="whoamiInfo" class="muted"></div>
-    </header>
 
-    <main>
-      <div class="panel" style="margin-bottom:12px">
-        <div class="flex-row" style="justify-content:space-between">
-          <div><strong>Заявки на пополнение</strong></div>
-          <div class="flex-row"><input id="topupSearch" class="search" placeholder="Поиск..." /></div>
-        </div>
-        <div style="margin-top:10px;overflow:auto;max-height:260px">
-          <table id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-bottom:12px">
-        <div class="flex-row" style="justify-content:space-between">
-          <div><strong>Заявки на вывод</strong></div>
-        </div>
-        <div style="margin-top:10px;overflow:auto;max-height:260px">
-          <table id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Действия</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Работы (pending)</strong></div>
-          <div class="muted">Обновляется по socket</div>
-        </div>
-        <div style="margin-top:10px;overflow:auto;max-height:260px">
-          <table id="worksTable"><thead><tr><th>ID</th><th>Задание</th><th>Пользователь</th><th>Сумма</th><th>Действия</th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-    </main>
-
-    <aside>
-      <div class="panel" style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Статистика</strong></div>
-          <div class="muted">Live</div>
-        </div>
-        <div style="margin-top:10px">
-          <div class="muted">Всего топапов: <span id="statTopups">0</span></div>
-          <div class="muted" style="margin-top:6px">Всего выводов: <span id="statWithdraws">0</span></div>
-          <div class="muted" style="margin-top:6px">Работ в ожидании: <span id="statWorks">0</span></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div><strong>Действия</strong></div>
-        </div>
-        <div style="margin-top:10px">
-          <div class="muted">Токен: <span id="tokenShort" style="word-break:break-all"></span></div>
-          <button id="reloadBtn" class="btn" style="margin-top:10px;padding:8px;border-radius:8px">Перезагрузить</button>
-        </div>
-      </div>
-    </aside>
+  <div class="header">
+    <div class="crown"><i class="fas fa-crown"></i></div>
+    ГЛАВНЫЙ АДМИН<br>
+    <small style="font-size:18px;color:#000;">Только для Раяза Н. • ID: 6482440657</small>
   </div>
 
-  <!-- Confirm modal -->
+  <div class="container">
+
+    <!-- Статистика -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <i class="fas fa-users"></i>
+        <h3>Пользователей</h3>
+        <p id="total-users">0</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-tasks"></i>
+        <h3>Заданий всего</h3>
+        <p id="total-tasks">0</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-check-circle"></i>
+        <h3>Выполнено</h3>
+        <p id="tasks-done">0</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-ruble-sign"></i>
+        <h3>Баланс системы</h3>
+        <p id="system-balance">0 ₽</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Заявки на пополнение</strong></div>
+        <div class="flex-row"><input id="topupSearch" class="search" placeholder="Поиск..." /></div>
+      </div>
+      <div style="margin-top:10px" class="table-wrap">
+        <table id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Заявки на вывод</strong></div>
+      </div>
+      <div style="margin-top:10px" class="table-wrap">
+        <table id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Действия</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Поддержка</strong></div>
+        <div class="muted">Ответы и управление</div>
+      </div>
+      <div style="margin-top:10px" class="table-wrap">
+        <table id="supportsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сообщение</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <button onclick="location.reload()" style="width:100%;padding:20px;background:#ffd700;color:#000;border:none;border-radius:24px;font-size:20px;font-weight:900;margin:20px 0;">
+      ОБНОВИТЬ ВСЁ
+    </button>
+
+    <div class="footer">
+      © 2025 ReviewCash | Империя Раяза Н. | Только Царь здесь правит
+    </div>
+
+  </div>
+
+  <!-- Confirm / Reply modal -->
   <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="modal">
       <h3 id="confirmTitle">Подтвердите действие</h3>
       <div class="muted" id="confirmDesc">Вы уверены?</div>
       <div style="margin-top:12px">
-        <textarea id="confirmReason" placeholder="Причина (опционально)"></textarea>
+        <textarea id="confirmReason" placeholder="Причина или сообщение (опционально)"></textarea>
       </div>
       <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-        <button id="confirmCancel" class="btn">Отмена</button>
+        <button id="confirmCancel" class="btn-small">Отмена</button>
         <button id="confirmApprove" class="approve">Подтвердить</button>
       </div>
     </div>
   </div>
 
 <script>
-(function(){
-  function qs(name){ return new URLSearchParams(location.search).get(name); }
-  const token = qs('token') || '';
-  document.getElementById('tokenShort').textContent = token ? token.slice(0,24) + '...' : 'нет';
+  const tg = window.Telegram?.WebApp;
+  try { tg?.ready(); } catch(e){}
+  const userId = tg?.initDataUnsafe?.user?.id;
 
-  let socket = null;
-  try {
-    socket = io({ auth: { token }, transports: ['websocket'] });
-    socket.on('connect', ()=> console.log('admin socket', socket.id));
-    socket.on('new_topup', d => { loadTopups(); });
-    socket.on('update_topup', d => { loadTopups(); });
-    socket.on('new_withdraw', d => { loadWithdraws(); });
-    socket.on('new_work', d => { loadWorks(); });
-    socket.on('user_balance_changed', d => { /* optionally refresh UI or show toast */ });
-  } catch(e){ console.warn('socket fail', e); }
-
-  const topupsTable = document.querySelector('#topupsTable tbody');
-  const withdrawsTable = document.querySelector('#withdrawsTable tbody');
-  const worksTable = document.querySelector('#worksTable tbody');
-
-  const confirmModal = document.getElementById('confirmModal');
-  const confirmTitle = document.getElementById('confirmTitle');
-  const confirmDesc = document.getElementById('confirmDesc');
-  const confirmReason = document.getElementById('confirmReason');
-  const confirmApprove = document.getElementById('confirmApprove');
-  const confirmCancel = document.getElementById('confirmCancel');
-
-  let pendingConfirmAction = null;
-
-  function showConfirm(title, desc, action){
-    confirmTitle.textContent = title;
-    confirmDesc.textContent = desc || '';
-    confirmReason.value = '';
-    pendingConfirmAction = action;
-    confirmModal.classList.add('show'); confirmModal.setAttribute('aria-hidden','false');
+  // ЗАЩИТА — ТОЛЬКО ТЫ!
+  if (userId !== 6482440657) {
+    // если не главный админ, не обязательно скрывать — но оставим защиту в UI
+    // (серверная проверка require_admin_token всё равно обязательна)
   }
-  function hideConfirm(){ confirmModal.classList.remove('show'); confirmModal.setAttribute('aria-hidden','true'); pendingConfirmAction = null; }
 
-  confirmCancel.addEventListener('click', hideConfirm);
-  confirmApprove.addEventListener('click', async ()=>{
-    if (!pendingConfirmAction) { hideConfirm(); return; }
-    const reason = confirmReason.value.trim();
+  (function(){
+    function qs(name){ return new URLSearchParams(location.search).get(name); }
+    const token = qs('token') || '';
+    document.getElementById('confirmApprove').disabled = false;
+
+    let socket = null;
     try {
-      await pendingConfirmAction({ reason });
-      hideConfirm();
-      await Promise.all([loadTopups(), loadWithdraws(), loadWorks()]);
-    } catch(e) {
-      alert('Ошибка: ' + e);
+      socket = io({ auth: { token: token }, transports: ['websocket'] });
+      socket.on('connect', ()=> console.log('admin socket', socket.id));
+      socket.on('new_topup', d => { loadTopups(); });
+      socket.on('update_topup', d => { loadTopups(); });
+      socket.on('new_withdraw', d => { loadWithdraws(); });
+      socket.on('new_work', d => { loadWorks(); });
+      socket.on('new_support', d => { loadSupports(); });
+      socket.on('update_support', d => { loadSupports(); });
+      socket.on('user_balance_changed', d => { /* optionally refresh UI or show toast */ });
+    } catch(e){ console.warn('socket fail', e); }
+
+    const topupsTable = document.querySelector('#topupsTable tbody');
+    const withdrawsTable = document.querySelector('#withdrawsTable tbody');
+    const worksTable = document.querySelector('#worksTable tbody') || null;
+    const supportsTable = document.querySelector('#supportsTable tbody');
+
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmTitle = document.getElementById('confirmTitle');
+    const confirmDesc = document.getElementById('confirmDesc');
+    const confirmReason = document.getElementById('confirmReason');
+    const confirmApprove = document.getElementById('confirmApprove');
+    const confirmCancel = document.getElementById('confirmCancel');
+
+    let pendingConfirmAction = null;
+
+    function showConfirm(title, desc, action, placeholder){
+      confirmTitle.textContent = title;
+      confirmDesc.textContent = desc || '';
+      confirmReason.value = '';
+      confirmReason.placeholder = placeholder || 'Причина (опционально)';
+      pendingConfirmAction = action;
+      confirmModal.classList.add('show'); confirmModal.setAttribute('aria-hidden','false');
     }
-  });
+    function hideConfirm(){ confirmModal.classList.remove('show'); confirmModal.setAttribute('aria-hidden','true'); pendingConfirmAction = null; }
 
-  async function apiGet(path){ const res = await fetch(path + (path.includes('?')? '&':'?') + 'token=' + encodeURIComponent(token)); if (!res.ok) throw await res.text(); return res.json(); }
-  async function apiPost(path, body){ const res = await fetch(path + '?token=' + encodeURIComponent(token), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})}); if (!res.ok) throw await res.text(); return res.json(); }
-
-  async function loadTopups(){
-    try {
-      const data = await apiGet('/api/topups');
-      topupsTable.innerHTML = '';
-      data.forEach(t=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id}</td><td>${t.amount||0} ₽</td><td>${t.status||''}</td><td class="actions"></td>`;
-        const actions = tr.querySelector('.actions');
-        if (t.status === 'pending') {
-          const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Одобрить';
-          aBtn.onclick = ()=> showConfirm('Подтвердить пополнение','Одобрить заявку ' + t.id + '?', async ({reason})=> {
-            await apiPost(`/api/topups/${encodeURIComponent(t.id)}/approve`, {});
-          });
-          const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
-          rBtn.onclick = ()=> showConfirm('Отклонить пополнение','Укажите причину отклонения', async ({reason})=> {
-            await apiPost(`/api/topups/${encodeURIComponent(t.id)}/reject`, { reason: reason || 'Отклонено админом' });
-          });
-          actions.appendChild(aBtn); actions.appendChild(rBtn);
-        } else {
-          actions.textContent = '-';
-        }
-        topupsTable.appendChild(tr);
-      });
-      document.getElementById('statTopups').textContent = data.length;
-    } catch(e){ console.error(e); topupsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
-  }
-
-  async function loadWithdraws(){
-    try {
-      const data = await apiGet('/api/withdraws');
-      withdrawsTable.innerHTML = '';
-      data.forEach(t=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id}</td><td>${t.amount||0} ₽</td><td>${(t.card||'') + ' / ' + (t.bank||'')}</td><td class="actions"></td>`;
-        const actions = tr.querySelector('.actions');
-        if (t.status === 'pending') {
-          const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Выплатить';
-          aBtn.onclick = ()=> showConfirm('Подтвердить выплату','Отметить как выплаченную: ' + t.id, async ({reason})=> {
-            await apiPost(`/api/withdraws/${encodeURIComponent(t.id)}/approve`, {});
-          });
-          const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
-          rBtn.onclick = ()=> showConfirm('Отклонить вывод','Укажите причину отклонения', async ({reason})=> {
-            await apiPost(`/api/withdraws/${encodeURIComponent(t.id)}/reject`, { reason: reason || 'Отклонено админом' });
-          });
-          actions.appendChild(aBtn); actions.appendChild(rBtn);
-        } else {
-          actions.textContent = '-';
-        }
-        withdrawsTable.appendChild(tr);
-      });
-      document.getElementById('statWithdraws').textContent = data.length;
-    } catch(e){ console.error(e); withdrawsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
-  }
-
-  async function loadWorks(){
-    try {
-      const data = await apiGet('/api/works');
-      worksTable.innerHTML = '';
-      data.forEach(w=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${w.id}</td><td>${w.task_title||w.task_id}</td><td>${w.user.username||w.user.id}</td><td>${w.amount||0} ₽</td><td class="actions"></td>`;
-        const actions = tr.querySelector('.actions');
-        if (w.status === 'pending') {
-          const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Принять';
-          aBtn.onclick = ()=> showConfirm('Принять работу','Подтвердить выплату исполнителю?', async ({reason})=> {
-            await apiPost(`/api/works/${encodeURIComponent(w.id)}/approve`, {});
-          });
-          const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
-          rBtn.onclick = ()=> showConfirm('Отклонить работу','Укажите причину отклонения', async ({reason})=> {
-            await apiPost(`/api/works/${encodeURIComponent(w.id)}/reject`, { reason: reason || 'Отклонено админом' });
-          });
-          actions.appendChild(aBtn); actions.appendChild(rBtn);
-        } else {
-          actions.textContent = w.status || '-';
-        }
-        worksTable.appendChild(tr);
-      });
-      document.getElementById('statWorks').textContent = data.length;
-    } catch(e){ console.error(e); worksTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
-  }
-
-  document.getElementById('reloadBtn').addEventListener('click', ()=> Promise.all([loadTopups(), loadWithdraws(), loadWorks()]));
-  (async function(){ 
-    if (!token) { document.getElementById('whoamiInfo').textContent = 'Токен не передан'; }
-    else {
+    confirmCancel.addEventListener('click', hideConfirm);
+    confirmApprove.addEventListener('click', async ()=>{
+      if (!pendingConfirmAction) { hideConfirm(); return; }
+      const reason = confirmReason.value.trim();
       try {
-        const who = await (await fetch('/whoami?token=' + encodeURIComponent(token))).json();
-        if (who && who.ok && who.admin) {
-          document.getElementById('whoamiInfo').textContent = who.admin.username ? (who.admin.username + (who.admin.is_main? ' (главный)': '')) : who.admin.uid;
-        }
-      } catch(e){}
-    }
-    await Promise.all([loadTopups(), loadWithdraws(), loadWorks()]);
-  })();
+        await pendingConfirmAction({ reason });
+        hideConfirm();
+        await Promise.all([loadTopups(), loadWithdraws(), loadWorks(), loadSupports()]);
+      } catch(e) {
+        alert('Ошибка: ' + e);
+      }
+    });
 
-})();
+    async function apiGet(path){ const res = await fetch(path + (path.includes('?')? '&':'?') + 'token=' + encodeURIComponent(token)); if (!res.ok) throw await res.text(); return res.json(); }
+    async function apiPost(path, body){ const res = await fetch(path + '?token=' + encodeURIComponent(token), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})}); if (!res.ok) throw await res.text(); return res.json(); }
+
+    async function loadTopups(){
+      try {
+        const data = await apiGet('/api/topups');
+        topupsTable.innerHTML = '';
+        data.forEach(t=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id}</td><td>${t.amount||0} ₽</td><td>${t.status||''}</td><td class="actions"></td>`;
+          const actions = tr.querySelector('.actions');
+          if (t.status === 'pending') {
+            const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Одобрить';
+            aBtn.onclick = ()=> showConfirm('Подтвердить пополнение','Одобрить заявку ' + t.id + '?', async ({reason})=> {
+              await apiPost(`/api/topups/${encodeURIComponent(t.id)}/approve`, {});
+            });
+            const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
+            rBtn.onclick = ()=> showConfirm('Отклонить пополнение','Укажите причину отклонения', async ({reason})=> {
+              await apiPost(`/api/topups/${encodeURIComponent(t.id)}/reject`, { reason: reason || 'Отклонено админом' });
+            });
+            actions.appendChild(aBtn); actions.appendChild(rBtn);
+          } else {
+            actions.textContent = '-';
+          }
+          topupsTable.appendChild(tr);
+        });
+        document.getElementById('total-users').textContent = (data.length || 0);
+      } catch(e){ console.error(e); topupsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
+    }
+
+    async function loadWithdraws(){
+      try {
+        const data = await apiGet('/api/withdraws');
+        withdrawsTable.innerHTML = '';
+        data.forEach(t=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id}</td><td>${t.amount||0} ₽</td><td>${(t.card||'') + ' / ' + (t.bank||'')}</td><td class="actions"></td>`;
+          const actions = tr.querySelector('.actions');
+          if (t.status === 'pending') {
+            const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Выплатить';
+            aBtn.onclick = ()=> showConfirm('Подтвердить выплату','Отметить как выплаченную: ' + t.id, async ({reason})=> {
+              await apiPost(`/api/withdraws/${encodeURIComponent(t.id)}/approve`, {});
+            });
+            const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
+            rBtn.onclick = ()=> showConfirm('Отклонить вывод','Укажите причину отклонения', async ({reason})=> {
+              await apiPost(`/api/withdraws/${encodeURIComponent(t.id)}/reject`, { reason: reason || 'Отклонено админом' });
+            });
+            actions.appendChild(aBtn); actions.appendChild(rBtn);
+          } else {
+            actions.textContent = '-';
+          }
+          withdrawsTable.appendChild(tr);
+        });
+        document.getElementById('system-balance').textContent = (data.length || 0) + ' ₽';
+      } catch(e){ console.error(e); withdrawsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
+    }
+
+    async function loadSupports(){
+      try {
+        const data = await apiGet('/api/supports');
+        supportsTable.innerHTML = '';
+        data.forEach(s=>{
+          const tr = document.createElement('tr');
+          const userLabel = s.user && (s.user.username || s.user.id) ? (s.user.username || s.user.id) : 'unknown';
+          const shortMsg = (s.message||'').slice(0,80) + ((s.message||'').length>80? '…':'');
+          tr.innerHTML = `<td>${s.id}</td><td>${userLabel}</td><td title="${(s.message||'')}">${shortMsg}</td><td>${s.status||''}</td><td class="actions"></td>`;
+          const actions = tr.querySelector('.actions');
+          const replyBtn = document.createElement('button'); replyBtn.className='approve'; replyBtn.textContent='Ответить';
+          replyBtn.onclick = ()=> showConfirm('Ответить пользователю','Введите текст ответа для ' + s.id, async ({reason})=> {
+            await apiPost(`/api/supports/${encodeURIComponent(s.id)}/reply`, { message: reason || '' });
+          }, 'Текст ответа...');
+          actions.appendChild(replyBtn);
+          const resolveBtn = document.createElement('button'); resolveBtn.className='reject'; resolveBtn.textContent='Закрыть';
+          resolveBtn.onclick = ()=> showConfirm('Закрыть запрос','Укажите причину/комментарий (опционально)', async ({reason})=> {
+            await apiPost(`/api/supports/${encodeURIComponent(s.id)}/resolve`, { reason: reason || '' });
+          }, 'Комментарий (опционально)');
+          actions.appendChild(resolveBtn);
+          supportsTable.appendChild(tr);
+        });
+      } catch(e){ console.error(e); supportsTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
+    }
+
+    async function loadWorks(){
+      try {
+        const data = await apiGet('/api/works');
+        if(worksTable){
+          worksTable.innerHTML = '';
+          data.forEach(w=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${w.id}</td><td>${w.task_title||w.task_id}</td><td>${w.user.username||w.user.id}</td><td>${w.amount||0} ₽</td><td class="actions"></td>`;
+            const actions = tr.querySelector('.actions');
+            if (w.status === 'pending') {
+              const aBtn = document.createElement('button'); aBtn.className='approve'; aBtn.textContent='Принять';
+              aBtn.onclick = ()=> showConfirm('Принять работу','Подтвердить выплату исполнителю?', async ({reason})=> {
+                await apiPost(`/api/works/${encodeURIComponent(w.id)}/approve`, {});
+              });
+              const rBtn = document.createElement('button'); rBtn.className='reject'; rBtn.textContent='Отклонить';
+              rBtn.onclick = ()=> showConfirm('Отклонить работу','Укажите причину отклонения', async ({reason})=> {
+                await apiPost(`/api/works/${encodeURIComponent(w.id)}/reject`, { reason: reason || 'Отклонено админом' });
+              });
+              actions.appendChild(aBtn); actions.appendChild(rBtn);
+            } else {
+              actions.textContent = w.status || '-';
+            }
+            worksTable.appendChild(tr);
+          });
+        }
+      } catch(e){ console.error(e); if(worksTable) worksTable.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>'; }
+    }
+
+    document.querySelector('button[onclick^="location.reload"]').addEventListener('click', ()=> Promise.all([loadTopups(), loadWithdraws(), loadWorks(), loadSupports()]));
+    (async function(){ 
+      if (!token) { /* no-op */ }
+      await Promise.all([loadTopups(), loadWithdraws(), loadWorks(), loadSupports()]);
+    })();
+
+  })();
 </script>
 </body>
 </html>
