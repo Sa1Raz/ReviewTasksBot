@@ -55,10 +55,10 @@ logging.basicConfig(
 logger = logging.getLogger("reviewcash")
 
 # ========== CONFIG ==========
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "").rstrip('/')
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://web-production-398fb.up.railway.app/").rstrip('/')
 if not WEBAPP_URL:
-    WEBAPP_URL = "https://example.com"
+    WEBAPP_URL = "https://web-production-398fb.up.railway.app/"
 
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "6482440657").split(",") if s.strip()]
@@ -454,7 +454,8 @@ def api_support_create():
         "message": message_text,
         "contact": contact,
         "created_at": datetime.utcnow().isoformat() + "Z",
-        "status": "new"
+        "status": "new",
+        "replies": []
     }
     append_json(SUPPORT_FILE, rec)
     notify_new_support(rec)
@@ -571,6 +572,231 @@ def api_withdraw_public():
         except Exception:
             logger.exception("Failed to notify admins via bot about withdraw")
     return jsonify({"ok": True, "withdraw": rec})
+
+# ========== Support admin endpoints (new) ==========
+@app.route('/api/supports', methods=['GET'])
+@require_admin_token
+def api_supports_list():
+    """
+    Admin-only: list support requests.
+    Optional ?status=new|replied|resolved
+    """
+    status = (request.args.get('status') or "").strip().lower()
+    arr = load_json_safe(SUPPORT_FILE, [])
+    if status:
+        arr = [s for s in arr if (s.get('status') or '').lower() == status]
+    # return as-is (admins will filter on client)
+    return jsonify(arr)
+
+@app.route('/api/supports/<sid>/reply', methods=['POST'])
+@require_admin_token
+def api_support_reply(sid):
+    """
+    Admin replies to support request.
+    Body: { message: str, notify: bool (default true) }
+    """
+    data = request.get_json() or {}
+    message = (data.get('message') or "").strip()
+    notify_flag = bool(data.get('notify', True))
+    if not message:
+        return jsonify({"ok": False, "reason": "message_required"}), 400
+
+    token = get_token_from_request(request)
+    ok, payload = verify_admin_token(token)
+    admin_ident = {}
+    if ok and isinstance(payload, dict):
+        admin_ident = {"uid": payload.get("uid"), "username": payload.get("username")}
+
+    arr = load_json_safe(SUPPORT_FILE, [])
+    found = None
+    for s in arr:
+        if s.get('id') == sid:
+            found = s
+            break
+    if not found:
+        return jsonify({"ok": False, "reason": "not_found"}), 404
+
+    reply = {
+        "message": message,
+        "admin": admin_ident,
+        "created_at": datetime.utcnow().isoformat() + "Z"
+    }
+    found.setdefault('replies', []).append(reply)
+    found['status'] = 'replied'
+    found.setdefault('handled_by', admin_ident)
+    found['handled_at'] = datetime.utcnow().isoformat() + "Z"
+    save_json(SUPPORT_FILE, arr)
+
+    # notify via socket
+    notify_event('update_support', found, rooms=['admins_main','admins_ordinary'])
+    # notify user via bot if possible
+    if notify_flag and bot:
+        try:
+            uid = found.get('user', {}).get('id')
+            if uid:
+                try:
+                    # uid may be string; try int
+                    bot.send_message(int(uid), f"Ответ поддержки: {message}")
+                except Exception:
+                    # fallback to username mention
+                    uname = found.get('user', {}).get('username')
+                    if uname:
+                        try:
+                            bot.send_message(f"@{uname}", f"Ответ поддержки: {message}")
+                        except Exception:
+                            logger.debug("Failed to notify user via bot for support %s", sid)
+        except Exception:
+            logger.exception("Failed to send reply to user via bot")
+    return jsonify({"ok": True, "support": found})
+
+@app.route('/api/supports/<sid>/resolve', methods=['POST'])
+@require_admin_token
+def api_support_resolve(sid):
+    """
+    Mark support request resolved/closed.
+    Body: { reason: str (optional), notify: bool (default true) }
+    """
+    data = request.get_json() or {}
+    reason = (data.get('reason') or "").strip()
+    notify_flag = bool(data.get('notify', True))
+
+    token = get_token_from_request(request)
+    ok, payload = verify_admin_token(token)
+    admin_ident = {}
+    if ok and isinstance(payload, dict):
+        admin_ident = {"uid": payload.get("uid"), "username": payload.get("username")}
+
+    arr = load_json_safe(SUPPORT_FILE, [])
+    found = None
+    for s in arr:
+        if s.get('id') == sid:
+            found = s
+            break
+    if not found:
+        return jsonify({"ok": False, "reason": "not_found"}), 404
+
+    found['status'] = 'resolved'
+    found.setdefault('closed_by', admin_ident)
+    found['closed_at'] = datetime.utcnow().isoformat() + "Z"
+    if reason:
+        found.setdefault('close_reason', reason)
+    save_json(SUPPORT_FILE, arr)
+
+    notify_event('update_support', found, rooms=['admins_main','admins_ordinary'])
+    # notify user via bot if possible
+    if notify_flag and bot:
+        try:
+            uid = found.get('user', {}).get('id')
+            if uid:
+                try:
+                    bot.send_message(int(uid), f"Ваш запрос закрыт. {reason or ''}")
+                except Exception:
+                    uname = found.get('user', {}).get('username')
+                    if uname:
+                        try:
+                            bot.send_message(f"@{uname}", f"Ваш запрос закрыт. {reason or ''}")
+                        except Exception:
+                            logger.debug("Failed to notify user via bot for support resolve %s", sid)
+        except Exception:
+            logger.exception("Failed to send resolve notification to user via bot")
+    return jsonify({"ok": True, "support": found})
+
+# ========== User history endpoints (added) ==========
+from functools import cmp_to_key
+
+@app.route('/api/user_history', methods=['GET'])
+def api_user_history():
+    """
+    Returns combined history for given uid.
+    Query params:
+      - uid (required)
+      - page (default 1)
+      - page_size (default 20)
+      - type (optional: topup|withdraw|work)
+    """
+    uid = (request.args.get('uid') or "").strip()
+    if not uid:
+        return jsonify({"ok": False, "reason": "missing_uid"}), 400
+    page = int(request.args.get('page') or 1)
+    page_size = int(request.args.get('page_size') or 20)
+    ftype = (request.args.get('type') or "").strip().lower()
+
+    # Load sources
+    topups = load_json_safe(TOPUPS_FILE, [])
+    withdraws = load_json_safe(WITHDRAWS_FILE, [])
+    works = load_json_safe(WORKS_FILE, [])
+
+    items = []
+
+    def push_items(arr, typ):
+        for it in arr:
+            user_id = None
+            try:
+                user_id = str(it.get('user', {}).get('id') or '')
+            except Exception:
+                user_id = ''
+            if user_id == str(uid):
+                summary = ''
+                if typ == 'topup':
+                    summary = f"Пополнение {it.get('amount',0)} ₽"
+                elif typ == 'withdraw':
+                    summary = f"Вывод {it.get('amount',0)} ₽ ({it.get('method') or ''})"
+                elif typ == 'work':
+                    summary = it.get('task_title') or it.get('task_id') or ''
+                items.append({
+                    "id": it.get('id'),
+                    "type": typ,
+                    "amount": it.get('amount'),
+                    "summary": summary,
+                    "created_at": it.get('created_at') or it.get('handled_at') or ''
+                })
+
+    if not ftype or ftype == 'topup':
+        push_items(topups, 'topup')
+    if not ftype or ftype == 'withdraw':
+        push_items(withdraws, 'withdraw')
+    if not ftype or ftype == 'work':
+        push_items(works, 'work')
+
+    # sort by created_at desc (attempt parse ISO)
+    def cmp(a,b):
+        try:
+            ta = a.get('created_at') or ''
+            tb = b.get('created_at') or ''
+            # simple lexicographic compare for ISO timestamps
+            if ta > tb: return -1
+            if ta < tb: return 1
+            return 0
+        except:
+            return 0
+    items.sort(key=cmp_to_key(cmp))
+
+    total = len(items)
+    start = (page-1)*page_size
+    end = start + page_size
+    paged = items[start:end]
+    return jsonify({"ok": True, "items": paged, "total": total, "page": page, "page_size": page_size})
+
+@app.route('/api/user_history_me', methods=['GET'])
+def api_user_history_me():
+    """
+    Convenience: uses Telegram WebApp init_data to identify user and returns user_history.
+    """
+    init_data = request.headers.get('X-Tg-InitData') or request.args.get('init_data')
+    if not init_data:
+        return jsonify({"ok": False, "reason": "init_data_required"}), 401
+    ok, params = verify_telegram_init_data(init_data)
+    if not ok:
+        return jsonify({"ok": False, "reason": "invalid_init_data"}), 403
+    uid = params.get('id') or params.get('user_id')
+    if not uid:
+        return jsonify({"ok": False, "reason": "uid_not_found"}), 400
+    # Forward to /api/user_history
+    args = request.args.to_dict()
+    args['uid'] = uid
+    # build query string
+    qs = '&'.join([f"{k}={v}" for k,v in args.items()])
+    return app.test_client().get(f"/api/user_history?{qs}").get_data(as_text=False), 200, {'Content-Type':'application/json'}
 
 # ========== Existing admin endpoints (unchanged) ==========
 # ... (existing admin endpoints remain as in previous app.py, not duplicated here)
