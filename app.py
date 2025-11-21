@@ -48,7 +48,7 @@ CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 
 # Ensure main admin id is present by default (your id)
 ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "6482440657").split(",") if s.strip()]
-ADMIN_USERNAMES = [s.strip() for s in os.environ.get("ADMIN_USERNAMES", "Sa1Raz").split(",") if s.strip()]
+ADMIN_USERNAMES = [s.strip() for s in os.environ.get("ADMIN_USERNAMES", "Rapi_YT").split(",") if s.strip()]
 
 ADMIN_JWT_SECRET = os.environ.get("ADMIN_JWT_SECRET", "replace_with_strong_secret")
 ADMIN_TOKEN_TTL_SECONDS = int(os.environ.get("ADMIN_TOKEN_TTL_SECONDS", 300))
