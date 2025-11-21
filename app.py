@@ -59,10 +59,10 @@ logging.basicConfig(
 logger = logging.getLogger("reviewcash")
 
 # ========== CONFIG ==========
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")  # provide in env
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "").rstrip('/')
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")  # provide in env
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://web-production-398fb.up.railway.app/").rstrip('/')
 if not WEBAPP_URL:
-    WEBAPP_URL = "https://example.com"  # fallback for local dev
+    WEBAPP_URL = "https://web-production-398fb.up.railway.app/"  # fallback for local dev
 
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
 ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "6482440657").split(",") if s.strip()]
