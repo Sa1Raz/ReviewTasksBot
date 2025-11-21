@@ -8,6 +8,7 @@ This file includes:
 - Safe eventlet.monkey_patch() usage with fallback for versions that don't accept dns kwarg.
 - Safe bot startup: before starting polling we attempt to delete any existing webhook to avoid Telegram 409 conflict.
 - setup_webhook_safe tries to set a webhook but falls back to polling if allowed.
+- Graceful handling if Flask-Cors is not installed.
 - All secret/config values must be provided via environment variables (BOT_TOKEN, ADMIN_JWT_SECRET, etc).
 """
 
@@ -36,7 +37,7 @@ except TypeError:
     eventlet.monkey_patch()
 
 from flask import Flask, request, send_from_directory, jsonify, abort
-from flask_cors import CORS
+# Flask-CORS will be enabled if available; handled after app creation
 from flask_socketio import SocketIO, join_room, leave_room
 
 # Optional imports
@@ -104,7 +105,15 @@ def append_json(path, obj):
 
 # ========== APP & SOCKET.IO ==========
 app = Flask(__name__, static_folder='public', static_url_path='/')
-CORS(app)
+
+# Enable Flask-Cors if installed (graceful fallback)
+try:
+    from flask_cors import CORS
+    CORS(app)
+    logger.info("Flask-Cors enabled")
+except Exception:
+    logger.warning("Flask-Cors not installed — continuing without CORS")
+
 REDIS_URL = os.environ.get("REDIS_URL", None)
 if REDIS_URL:
     socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet", message_queue=REDIS_URL)
