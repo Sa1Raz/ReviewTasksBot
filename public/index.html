@@ -3,250 +3,433 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash — WebApp</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>ReviewCash — красивая версия</title>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Lottie for entrance animation -->
+<script src="https://unpkg.com/lottie-web@5.8.1/build/player/lottie.min.js"></script>
+<!-- Socket.IO (if enabled on backend) -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <style>
   :root{
-    --bg:#071426; --panel:#071a2a; --accent1:#00f0ff; --accent2:#00ff9d;
-    --muted:#9fb6c6; --gold:#ffd166; --glass:rgba(255,255,255,0.04);
+    --bg-1: #031025;
+    --bg-2: #0b2030;
+    --glass: rgba(255,255,255,0.06);
+    --accentA: #00f0ff;
+    --accentB: #00ff9d;
+    --muted: #9fb6c6;
+    --gold: #ffd166;
+    --card-shadow: 0 10px 30px rgba(4,19,30,0.6);
+    --glass-border: rgba(255,255,255,0.06);
+    --radius: 14px;
   }
+
   *{box-sizing:border-box}
-  body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(135deg,var(--bg),#081a33);color:#eaf7fb;min-height:100vh;overflow-x:hidden}
-  .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 360px;gap:20px;opacity:0;transform:translateY(20px);animation:enter 800ms cubic-bezier(.2,.9,.2,1) forwards;}
-  @keyframes enter{to{opacity:1;transform:none}}
-  header{display:flex;align-items:center;gap:12px}
-  .mark{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900;box-shadow:0 8px 30px rgba(0,240,255,0.08)}
-  h1{margin:0;font-size:20px}
-  .tabs{display:flex;gap:8px;margin-top:12px}
-  .tab{padding:10px 14px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.04);cursor:pointer}
-  .tab.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#012226}
-  .panel{background:var(--panel);padding:16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
-  .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-  .task{padding:16px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;transition:transform .18s ease, box-shadow .18s ease}
-  .task:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(2,16,32,0.6)}
-  .avatar{width:120px;height:120px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#05202a,#04202a);font-weight:900;color:var(--accent1);border:6px solid rgba(0,255,200,0.06)}
-  .support-btn{
-    position:fixed;right:22px;bottom:22px;width:64px;height:64px;border-radius:50%;background:linear-gradient(90deg,var(--accent2),var(--accent1));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800;box-shadow:0 12px 40px rgba(0,255,160,0.12),0 6px 18px rgba(0,255,160,0.06);cursor:pointer;z-index:999;
-    animation:btnPulse 2000ms infinite;
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(0,240,255,0.04), transparent),
+                linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    color:#eaf7fb;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow-x:hidden;
   }
-  @keyframes btnPulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
-  .pulse-ring{position:absolute;right:-6px;bottom:-6px;width:76px;height:76px;border-radius:50%;border:2px solid rgba(0,255,160,0.06);pointer-events:none}
-  .modal-backdrop{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(2,8,16,0.6);display:none;align-items:center;justify-content:center;z-index:1000}
-  .modal{width:520px;max-width:94%;background:linear-gradient(180deg,#082033, #041827);padding:18px;border-radius:12px;color:#eaf7fb;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
-  .modal h3{margin:0 0 10px 0}
-  .modal textarea, .modal input {width:100%;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:#eaf7fb;margin-bottom:10px}
-  .modal .row{display:flex;gap:8px}
-  .btn {padding:10px 14px;border-radius:10px;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#012226;border:none;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  footer{margin-top:18px;color:var(--muted);font-size:13px}
+
+  /* Layout */
+  .container{max-width:1200px;margin:28px auto;padding:24px;display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
+  .shell{background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border-radius:var(--radius); padding:18px; box-shadow: var(--card-shadow); border:1px solid var(--glass-border);}
+
+  header.app-header{display:flex;gap:16px;align-items:center;margin-bottom:12px}
+  .logo{
+    width:68px;height:68px;border-radius:14px;background:linear-gradient(135deg,var(--accentA),var(--accentB));
+    display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800;font-family:Poppins,Inter;font-size:20px;box-shadow:0 18px 50px rgba(0,240,255,0.06);
+  }
+  .title{display:flex;flex-direction:column}
+  .title h1{margin:0;font-size:20px;font-weight:800}
+  .title p{margin:0;color:var(--muted);font-size:13px}
+
+  /* Animated hero */
+  .hero{
+    display:flex;gap:16px;align-items:center;padding:16px;border-radius:12px;background:linear-gradient(90deg, rgba(0,255,160,0.03), transparent);
+    border:1px solid rgba(255,255,255,0.02);
+  }
+  #lottie {width:140px;height:140px;flex:0 0 140px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:10px;margin-top:14px}
+  .tab{padding:8px 12px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted)}
+  .tab.active{background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;font-weight:700;border:none;box-shadow:0 12px 35px rgba(0,240,255,0.06)}
+
+  /* Tasks grid */
+  .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
+  .task{
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    border-radius:12px;padding:14px;border:1px solid var(--glass-border);transition:transform .22s cubic-bezier(.2,.9,.2,1), box-shadow .22s;
+    cursor:pointer;overflow:hidden;position:relative;
+  }
+  .task:hover{transform:translateY(-10px);box-shadow:0 30px 60px rgba(0,0,0,0.6)}
+  .task .meta{display:flex;align-items:center;gap:12px}
+  .task .badge{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:8px;font-size:13px;color:var(--muted)}
+  .task .title{font-weight:700;margin-top:8px}
+
+  /* Right column */
+  .right-col{display:flex;flex-direction:column;gap:14px}
+  .panel{padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid var(--glass-border)}
+
+  .profile{
+    display:flex;gap:12px;align-items:center;
+  }
+  .avatar{width:84px;height:84px;border-radius:14px;background:linear-gradient(135deg,#04202a,#05202a);display:flex;align-items:center;justify-content:center;color:var(--accentA);font-weight:800;font-size:22px;border:5px solid rgba(0,255,200,0.04)}
+  .profile .info{flex:1}
+  .profile .info .name{font-weight:800}
+  .profile .info .handle{color:var(--muted);font-size:13px}
+
+  .stat{display:flex;gap:12px;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.01);padding:12px;border-radius:10px;margin-top:10px}
+
+  /* Floating support chat */
+  .support-fab{
+    position:fixed;right:28px;bottom:28px;width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--accentB),var(--accentA));
+    display:flex;align-items:center;justify-content:center;color:#012226;font-weight:800;z-index:2000;box-shadow:0 20px 60px rgba(0,255,160,0.12);cursor:pointer;
+    transition:transform .2s;
+  }
+  .support-fab:hover{transform:translateY(-6px)}
+  .support-fab .dot{position:absolute;right:8px;top:8px;width:12px;height:12px;background:#ff6b6b;border-radius:10px;box-shadow:0 6px 14px rgba(255,107,107,0.12)}
+
+  /* Chat modal */
+  .chat-backdrop{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:flex-end;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6));z-index:2010}
+  .chat-window{width:420px;max-width:96%;height:68vh;border-radius:14px;background:linear-gradient(180deg,#042231,#021b28);margin-bottom:28px;padding:12px;display:flex;flex-direction:column;gap:10px;border:1px solid rgba(255,255,255,0.04)}
+  .chat-head{display:flex;align-items:center;gap:12px}
+  .chat-messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+  .msg{max-width:78%;padding:10px;border-radius:12px;background:rgba(255,255,255,0.02);align-self:flex-start}
+  .msg.me{background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;align-self:flex-end}
+  .chat-input{display:flex;gap:8px}
+  .chat-input input{flex:1;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#eaf7fb}
+  .chat-input button{padding:10px 12px;border-radius:10px;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;border:none;cursor:pointer}
+
+  /* Toast */
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:#05202a;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 12px 30px rgba(2,16,32,0.6);color:#eaf7fb;z-index:3000;display:none}
+
+  /* Responsive */
+  @media (max-width:980px){
+    .container{grid-template-columns:1fr; padding:14px}
+    .right-col{order:2}
+    .hero{flex-direction:column;align-items:flex-start}
+  }
 </style>
 </head>
 <body>
-<div class="wrap" id="app">
-  <div>
-    <header>
-      <div class="mark">RC</div>
-      <div>
-        <h1>ReviewCash</h1>
-        <div style="color:var(--muted)">Отзывы и выплаты — интерактивно</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px">
-        <button id="adminBtn" class="tab">Админ-панель</button>
-        <button id="refreshBtn" class="tab">Обновить</button>
-      </div>
-    </header>
+  <div class="container">
+    <div>
+      <div class="shell">
+        <header class="app-header">
+          <div class="logo">RC</div>
+          <div class="title">
+            <h1>ReviewCash</h1>
+            <p>Красивый интерфейс — отзывы, задания и выплаты</p>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <button id="refreshBtn" class="tab">Обновить</button>
+            <button id="adminBtn" class="tab">Админ</button>
+          </div>
+        </header>
 
-    <div class="tabs">
-      <button id="tabTasks" class="tab active">Задания</button>
-      <button id="tabProfile" class="tab">Профиль</button>
+        <div class="hero" aria-hidden="false">
+          <div id="lottie"></div>
+          <div style="flex:1">
+            <h2 style="margin:0 0 6px 0">Добро пожаловать в ReviewCash</h2>
+            <p style="margin:0;color:var(--muted)">Выполняйте задания, получайте выплаты и общайтесь с поддержкой прямо из интерфейса или через Telegram WebApp.</p>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="openTasks" class="tab active">Задания</button>
+              <button id="openProfile" class="tab">Профиль</button>
+              <button id="quickTopup" class="btn" style="margin-left:auto">Пополнить</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs" style="margin-top:12px">
+          <div id="tabTasks" class="tab active">Задания</div>
+          <div id="tabProfile" class="tab">Профиль</div>
+          <div id="tabSupport" class="tab">Поддержка</div>
+        </div>
+
+        <div id="tasksSection" style="margin-top:12px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <input id="search" placeholder="Поиск задач..." style="flex:1;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb" />
+            <button id="createBtn" class="tab">+ Создать</button>
+          </div>
+          <div id="tasksGrid" class="tasks-grid" aria-live="polite" style="margin-top:12px">
+            <!-- tasks will be injected -->
+          </div>
+        </div>
+
+      </div>
     </div>
 
-    <main id="tasksView" class="panel" style="margin-top:12px">
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <input id="search" placeholder="Поиск..." style="flex:1;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#eaf7fb"/>
-        <button id="createBtn" class="btn ghost">+ Создать</button>
-      </div>
-      <div id="tasksGrid" class="tasks-grid"></div>
-    </main>
-
-    <section id="profileView" class="panel" style="display:none;margin-top:12px">
-      <div style="text-align:center">
-        <div id="avatar" class="avatar">RC</div>
-        <div id="fullname" style="font-weight:800;margin-top:8px">Гость</div>
-        <div id="handle" style="color:var(--muted)">@guest</div>
-        <div id="balance" style="font-weight:900;font-size:28px;color:var(--gold);margin-top:8px">0 ₽</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-          <button id="topupBtn" class="btn">Пополнить</button>
-          <button id="withdrawBtn" class="btn ghost">Вывести</button>
+    <aside class="right-col">
+      <div class="panel profile">
+        <div class="avatar" id="avatar">RC</div>
+        <div class="info">
+          <div class="name" id="fullname">Гость</div>
+          <div class="handle" id="handle">@guest</div>
+          <div style="margin-top:8px;font-weight:800;font-size:20px;color:var(--gold)" id="balance">0 ₽</div>
         </div>
       </div>
-      <div style="margin-top:12px">
-        <h3>Мои заявки</h3>
-        <div id="myList" style="color:var(--muted)">Загрузка...</div>
+
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <strong>Статистика</strong>
+          <small style="color:var(--muted)">обновляется в реальном времени</small>
+        </div>
+        <div class="stat" style="margin-top:10px">
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Заявок</div>
+            <div style="font-weight:800" id="statRequests">0</div>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Пользователей</div>
+            <div style="font-weight:800" id="statUsers">—</div>
+          </div>
+        </div>
       </div>
-    </section>
+
+      <div class="panel">
+        <strong>История действий</strong>
+        <div id="activity" style="margin-top:10px;color:var(--muted);max-height:200px;overflow:auto;padding-right:6px"></div>
+      </div>
+    </aside>
   </div>
 
-  <aside>
-    <div class="panel">
-      <h3 style="margin:0 0 8px 0">Статистика</h3>
-      <div style="color:var(--muted)">Заявок: <span id="statRequests">0</span></div>
-      <div style="color:var(--muted);margin-top:6px">Пользователей: <span id="statUsers">—</span></div>
-    </div>
-  </aside>
-</div>
+  <!-- Floating Support button -->
+  <div class="support-fab" id="supportFab" title="Поддержка">
+    <div style="font-size:22px">💬</div>
+    <div class="dot"></div>
+  </div>
 
-<!-- Support floating button -->
-<div class="support-btn" id="supportBtn" title="Поддержка">
-  <div style="position:relative;z-index:2">?</div>
-  <div class="pulse-ring"></div>
-</div>
-
-<!-- Modal backdrop -->
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal" id="modal">
-    <h3 id="modalTitle">Поддержка</h3>
-    <div id="modalBody"></div>
-    <div style="text-align:right;margin-top:8px">
-      <button id="modalCancel" class="btn ghost">Отмена</button>
-      <button id="modalSubmit" class="btn">Отправить</button>
+  <!-- Chat modal -->
+  <div class="chat-backdrop" id="chatBackdrop" role="dialog" aria-modal="true">
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-head">
+        <div style="font-weight:800">Поддержка</div>
+        <div style="margin-left:auto"><button id="closeChat" class="tab">Закрыть</button></div>
+      </div>
+      <div class="chat-messages" id="chatMessages" aria-live="polite">
+        <!-- messages -->
+      </div>
+      <div class="chat-input">
+        <input id="chatInput" placeholder="Опишите проблему..." />
+        <button id="chatSend">Отправить</button>
+      </div>
     </div>
   </div>
-</div>
 
-<footer style="text-align:center;margin-top:20px">© ReviewCash — интерактивная платформа</footer>
+  <!-- Toast -->
+  <div class="toast" id="toast">Готово</div>
 
 <script>
-(function(){
-  const qsVal = k => new URLSearchParams(location.search).get(k) || '';
-  const token = qsVal('token') || '';
-  const modalBackdrop = document.getElementById('modalBackdrop');
-  const modal = document.getElementById('modal');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalBody = document.getElementById('modalBody');
-  const modalCancel = document.getElementById('modalCancel');
-  const modalSubmit = document.getElementById('modalSubmit');
+/* =========================
+   Helper UI / network logic
+   ========================= */
+const toastEl = document.getElementById('toast');
+function showToast(text, delay=2200){
+  toastEl.textContent = text;
+  toastEl.style.display = 'block';
+  setTimeout(()=> toastEl.style.display='none', delay);
+}
 
-  function openModal(title, innerHTML, onSubmit){
-    modalTitle.textContent = title;
-    modalBody.innerHTML = innerHTML;
-    modalBackdrop.style.display = 'flex';
-    modalSubmit.onclick = async ()=> {
-      try {
-        const data = {};
-        // collect inputs
-        modalBody.querySelectorAll('input,textarea,select').forEach(el=>{
-          if(el.name) data[el.name] = el.value;
-        });
-        await onSubmit(data);
-        closeModal();
-      } catch(e){
-        alert("Ошибка: " + (e.message||e));
-      }
-    };
+/* Lottie animation */
+try {
+  const anim = lottie.loadAnimation({
+    container: document.getElementById('lottie'),
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: 'https://assets10.lottiefiles.com/packages/lf20_jbrw3hcz.json' // soft abstract animation
+  });
+} catch(e){ console.warn('lottie fail', e) }
+
+/* Basic state */
+let tasks = [];
+let activities = [];
+const tasksGrid = document.getElementById('tasksGrid');
+const activityEl = document.getElementById('activity');
+const statRequests = document.getElementById('statRequests');
+const statUsers = document.getElementById('statUsers');
+
+function addActivity(text){
+  const time = new Date().toLocaleTimeString();
+  activities.unshift({t:time,text});
+  if(activities.length>50) activities.pop();
+  renderActivities();
+}
+function renderActivities(){
+  activityEl.innerHTML = activities.slice(0,40).map(a=>`<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02)"><small style="color:var(--muted)">${a.t}</small><div style="margin-top:6px">${a.text}</div></div>`).join('');
+}
+
+/* Load tasks from server */
+async function loadTasks(){
+  tasksGrid.innerHTML = ''; // skeleton
+  for(let i=0;i<6;i++){
+    const s = document.createElement('div'); s.className='task';
+    s.innerHTML = `<div class="meta"><div class="badge">—</div></div><div class="title" style="height:18px;background:linear-gradient(90deg,#ffffff09,#ffffff00);border-radius:6px;margin-top:10px"></div>`;
+    tasksGrid.appendChild(s);
   }
-  function closeModal(){ modalBackdrop.style.display = 'none'; modalBody.innerHTML=''; }
-
-  modalCancel.addEventListener('click', closeModal);
-  modalBackdrop.addEventListener('click', (e)=> { if(e.target===modalBackdrop) closeModal(); });
-
-  // Support button
-  document.getElementById('supportBtn').addEventListener('click', ()=> {
-    openModal("Поддержка", `
-      <p>Опишите вашу проблему — мы свяжемся с вами.</p>
-      <textarea name="message" placeholder="Ваше сообщение" rows="5"></textarea>
-      <input name="contact" placeholder="Email или Telegram (необязательно)"/>
-    `, async (formData)=>{
-      if(!formData.message || formData.message.trim().length<5) throw new Error("Опишите проблему минимум 5 символов.");
-      const res = await fetch('/api/support', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(formData)});
-      const j = await res.json();
-      if(!j.ok) throw new Error(j.reason || 'Ошибка отправки');
-      alert('Сообщение отправлено — спасибо!');
-    });
-  });
-
-  // Topup modal
-  document.getElementById('topupBtn').addEventListener('click', ()=> {
-    openModal("Пополнение", `
-      <p>Укажите сумму и реквизиты.</p>
-      <input name="amount" placeholder="Сумма (₽)" />
-      <textarea name="details" placeholder="Комментарий / реквизиты" rows="3"></textarea>
-    `, async (formData)=>{
-      const amount = parseFloat(formData.amount);
-      if(!amount || amount<=0) throw new Error("Введите корректную сумму.");
-      const res = await fetch('/api/topups_public', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amount: amount, details: formData.details||''})});
-      const j = await res.json();
-      if(!j.ok) throw new Error(j.reason || 'Ошибка');
-      alert('Заявка на пополнение создана!');
-    });
-  });
-
-  // Withdraw modal
-  document.getElementById('withdrawBtn').addEventListener('click', ()=> {
-    openModal("Вывод средств", `
-      <p>Укажите сумму и метод выплаты.</p>
-      <input name="amount" placeholder="Сумма (₽)" />
-      <input name="method" placeholder="Метод (например, bank/card/qiwi)" />
-      <textarea name="details" placeholder="Реквизиты" rows="3"></textarea>
-    `, async (formData)=>{
-      const amount = parseFloat(formData.amount);
-      if(!amount || amount<=0) throw new Error("Введите корректную сумму.");
-      if(!formData.method || formData.method.trim().length<2) throw new Error("Укажите метод выплаты.");
-      const res = await fetch('/api/withdraw_public', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amount: amount, method: formData.method, details: formData.details||''})});
-      const j = await res.json();
-      if(!j.ok) throw new Error(j.reason || 'Ошибка');
-      alert('Заявка на вывод создана!');
-    });
-  });
-
-  // Admin button
-  document.getElementById('adminBtn').addEventListener('click', ()=> {
-    if(token) window.open('/mainadmin?token=' + encodeURIComponent(token), '_blank');
-    else alert('Требуется админ-токен (откройте панель через Telegram).');
-  });
-
-  // Refresh button
-  document.getElementById('refreshBtn').addEventListener('click', ()=> loadTasks());
-
-  // Load tasks
-  async function loadTasks(){
-    try {
-      const res = await fetch('/api/tasks_public');
-      const data = await res.json();
-      const el = document.getElementById('tasksGrid');
-      el.innerHTML = '';
-      if(!data || data.length===0){ el.innerHTML = '<div style="color:var(--muted)">Нет заданий</div>'; return; }
-      data.forEach(t=>{
-        const node = document.createElement('div');
-        node.className = 'task';
-        node.innerHTML = `<div style="font-weight:800">${t.title||t.id}</div><div style="color:var(--muted);margin-top:6px">${t.type||''} · ${t.budget? t.budget + ' ₽' : ''}</div>`;
-        node.addEventListener('click', ()=> {
-          openModal("Задание: " + (t.title||t.id), `<p>Ссылка: <a href="${t.link||'#'}" target="_blank">${t.link||'—'}</a></p><p>Бюджет: ${t.budget||0} ₽</p><div style="text-align:right"><button class="btn" onclick="alert('Для выполнения задания используйте WebApp.');">Выполнить</button></div>`);
-        });
-        el.appendChild(node);
+  try {
+    const res = await fetch('/api/tasks_public');
+    const data = await res.json();
+    tasks = data || [];
+    if(tasks.length===0){
+      tasksGrid.innerHTML = `<div style="color:var(--muted)">Пока нет активных заданий</div>`;
+    } else {
+      tasksGrid.innerHTML = '';
+      tasks.forEach(t=>{
+        const node = document.createElement('div'); node.className='task';
+        node.innerHTML = `<div class="meta"><div class="badge">${t.type||'задача'}</div><div style="margin-left:auto;color:var(--muted);font-size:13px">${t.budget? t.budget + ' ₽':''}</div></div>
+                          <div class="title">${t.title||t.id}</div>
+                          <div style="margin-top:10px;color:var(--muted);font-size:13px">${t.link? t.link:''}</div>`;
+        node.addEventListener('click', ()=> openTaskModal(t));
+        tasksGrid.appendChild(node);
       });
-    } catch(e){ console.warn(e); }
-  }
-
-  // Init
-  document.addEventListener('DOMContentLoaded', ()=> {
-    loadTasks();
-    // show wrap after animation declared in CSS (already animated)
-    // Optionally, connect to socket for real-time notifications (if admin token provided)
-    if(token){
-      try {
-        const sock = io({ auth: { token }, transports: ['websocket'] });
-        sock.on('connect', ()=> console.log('socket connected'));
-        sock.on('new_topup', data => { alert('Новый топап (админ): ' + (data.amount || '')); });
-        sock.on('new_support', data => { alert('Новый запрос в поддержку (админ)'); });
-      } catch(e){
-        console.warn('Socket init failed', e);
-      }
     }
-  });
+    statRequests.textContent = tasks.length;
+    addActivity('Задания загружены');
+  } catch(e){
+    console.error(e);
+    tasksGrid.innerHTML = `<div style="color:var(--muted)">Ошибка загрузки заданий</div>`;
+    addActivity('Ошибка при загрузке задач');
+  }
+}
 
-})();
+/* Open Task modal (quick view) */
+function openTaskModal(t){
+  const html = `<p style="margin:0 0 8px 0">${t.title||t.id}</p>
+                <p style="color:var(--muted);margin:0 0 12px 0">Бюджет: <strong>${t.budget? t.budget+' ₽':'—'}</strong></p>
+                <p><a href="${t.link||'#'}" target="_blank" style="color:var(--accentA)">Перейти</a></p>
+                <div style="text-align:right"><button class="btn" id="doTask">Выполнить</button></div>`;
+  openModal('Задание', html, async ()=>{
+    showToast('Функция выполнения задания откроется в WebApp (или будет реализована позже)');
+  });
+}
+
+/* Very small modal helper */
+const modalBackdrop = document.createElement('div');
+modalBackdrop.style.position='fixed';
+modalBackdrop.style.left=0;modalBackdrop.style.top=0;modalBackdrop.style.width='100%';modalBackdrop.style.height='100%';
+modalBackdrop.style.display='none';modalBackdrop.style.alignItems='center';modalBackdrop.style.justifyContent='center';
+modalBackdrop.style.zIndex=2500;
+document.body.appendChild(modalBackdrop);
+function openModal(title, innerHTML, onSubmit){
+  modalBackdrop.innerHTML = '';
+  modalBackdrop.style.display = 'flex';
+  modalBackdrop.style.background = 'rgba(0,0,0,0.45)';
+  const box = document.createElement('div');
+  box.style.width='560px';box.style.maxWidth='94%';box.style.borderRadius='12px';box.style.background='linear-gradient(180deg,#06212a,#041622)';box.style.padding='18px';
+  box.style.border='1px solid rgba(255,255,255,0.04)';
+  box.innerHTML = `<h3 style="margin:0 0 8px 0">${title}</h3><div style="margin-bottom:12px">${innerHTML}</div>
+                   <div style="text-align:right"><button id="modalCancel" style="margin-right:8px" class="btn ghost">Отмена</button><button id="modalOk" class="btn">OK</button></div>`;
+  modalBackdrop.appendChild(box);
+  box.querySelector('#modalCancel').onclick = ()=> closeModal();
+  box.querySelector('#modalOk').onclick = async ()=>{
+    try{
+      await onSubmit();
+      closeModal();
+    }catch(e){ alert(e.message||e) }
+  };
+}
+function closeModal(){ modalBackdrop.style.display='none'; modalBackdrop.innerHTML=''; }
+
+/* Chat support logic */
+const supportFab = document.getElementById('supportFab');
+const chatBackdrop = document.getElementById('chatBackdrop');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+document.getElementById('closeChat').onclick = ()=> chatBackdrop.style.display='none';
+supportFab.onclick = ()=> chatBackdrop.style.display='flex';
+
+chatSend.onclick = async ()=>{
+  const text = chatInput.value && chatInput.value.trim();
+  if(!text) return;
+  appendChatMsg('me', text);
+  chatInput.value='';
+  showToast('Отправка в поддержку...');
+  try{
+    const res = await fetch('/api/support', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:text})});
+    const j = await res.json();
+    if(j.ok){
+      appendChatMsg('bot', 'Ваше сообщение отправлено. Мы свяжемся с вами.');
+      addActivity('Отправлено сообщение в поддержку');
+      showToast('Сообщение отправлено');
+    } else {
+      appendChatMsg('bot', 'Ошибка отправки: ' + (j.reason||''));
+      showToast('Ошибка отправки');
+    }
+  }catch(e){ appendChatMsg('bot','Ошибка сети'); showToast('Ошибка сети') }
+};
+
+function appendChatMsg(cls, text){
+  const d = document.createElement('div');
+  d.className = 'msg ' + (cls==='me'?'me':'');
+  d.textContent = text;
+  chatMessages.appendChild(d);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/* Admin socket notifications (if token present) */
+const token = new URLSearchParams(location.search).get('token') || '';
+if(token){
+  try {
+    const sock = io({ auth: { token }, transports: ['websocket'] });
+    sock.on('connect', ()=> {
+      addActivity('Socket connected');
+      showToast('Socket connected');
+    });
+    sock.on('new_topup', data => { addActivity('Новый топап: ' + (data.amount||'')); showToast('Новый топап'); });
+    sock.on('new_support', data => { addActivity('Новый запрос в поддержку'); showToast('Новый запрос'); });
+    sock.on('disconnect', ()=> addActivity('Socket disconnected'));
+  } catch(e){ console.warn('socket error', e) }
+}
+
+/* Buttons */
+document.getElementById('refreshBtn').onclick = ()=> { loadTasks(); showToast('Обновление...') }
+document.getElementById('openProfile').onclick = ()=> { document.getElementById('tabProfile').click() }
+document.getElementById('openTasks').onclick = ()=> { document.getElementById('tabTasks').click() }
+document.getElementById('adminBtn').onclick = ()=> {
+  if(token) window.open('/mainadmin?token='+encodeURIComponent(token),'_blank');
+  else alert('Откройте админку через Telegram (получите token)');
+};
+document.getElementById('quickTopup').onclick = ()=> document.getElementById('supportFab').click();
+
+/* Tabs */
+document.getElementById('tabTasks').onclick = () => {
+  document.getElementById('tasksSection').style.display='block';
+  document.getElementById('tabTasks').classList.add('active');
+  document.getElementById('tabProfile').classList.remove('active');
+};
+document.getElementById('tabProfile').onclick = () => {
+  document.getElementById('tasksSection').style.display='none';
+  document.getElementById('tabProfile').classList.add('active');
+  document.getElementById('tabTasks').classList.remove('active');
+  showToast('Профиль пока упрощен');
+};
+
+/* Init */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  loadTasks();
+  addActivity('Интерфейс загружен');
+  // Try to fetch basic stats
+  try{
+    const res = await fetch('/api/works_pending');
+    const arr = await res.json();
+    statUsers.textContent = arr.length || '—';
+  }catch(e){}
+});
+
 </script>
 </body>
 </html>
