@@ -10,105 +10,47 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <style>
-/* ===========================
-   Theme variables (light/dark) — improved stability for light theme
-   =========================== */
 :root{
-  --bg-1: #061426; /* dark primary */
-  --bg-2: #031827;
-  --card-bg: rgba(255,255,255,0.03);
-  --glass: rgba(255,255,255,0.04);
-  --muted: #9fb6c6;
-  --accentA: #00c7d7;
-  --accentB: #00e08a;
-  --neon: rgba(0,200,255,0.12);
-  --radius: 14px;
-  --text: #eaf7fb;
-  --shadow-1: 0 8px 24px rgba(0,0,0,0.35);
+  --bg-1:#061426; --bg-2:#031827; --card-bg:rgba(255,255,255,0.03); --glass:rgba(255,255,255,0.04);
+  --muted:#9fb6c6; --accentA:#00c7d7; --accentB:#00e08a; --text:#eaf7fb; --radius:14px;
 }
 :root[data-theme="light"]{
-  --bg-1: #f4f7fb; /* light primary — more neutral, stable contrast */
-  --bg-2: #eef4fa;
-  --card-bg: rgba(255,255,255,0.98);
-  --glass: rgba(12,20,28,0.06);
-  --muted: #5b6b76;
-  --text: #071426;
-  --accentA: #0079c8;
-  --accentB: #00a86b;
-  --neon: rgba(0,120,255,0.06);
-  --shadow-1: 0 8px 24px rgba(2,8,20,0.06);
+  --bg-1:#f4f7fb; --bg-2:#eef4fa; --card-bg:#fff; --glass:rgba(12,20,28,0.06);
+  --muted:#5b6b76; --accentA:#0079c8; --accentB:#00a86b; --text:#071426;
 }
-
-/* Base */
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:var(--text);
-  -webkit-font-smoothing:antialiased;
-}
-
-/* Layout */
-.app{max-width:1100px;margin:20px auto;padding:16px;display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:var(--text)}
+.app{max-width:1100px;margin:20px auto;padding:16px;display:grid;grid-template-columns:1fr 360px;gap:18px}
 .header{grid-column:1/-1;display:flex;align-items:center;gap:12px}
 .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900}
-.title h1{margin:0;font-size:20px}
-.title p{margin:0;color:var(--muted);font-size:13px}
-.header-actions{margin-left:auto;display:flex;gap:8px}
-
-/* Panels */
-.panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid var(--glass);box-shadow:var(--shadow-1);transition:transform .28s,box-shadow .28s}
-.panel:hover{transform:translateY(-6px)}
-
+.title h1{margin:0} .title p{margin:0;color:var(--muted);font-size:13px}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid var(--glass);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
 .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
-
-/* Task */
 .task{padding:12px;border-radius:12px;background:var(--card-bg);border:1px solid rgba(0,0,0,0.04);cursor:pointer;transition:transform .22s,box-shadow .22s}
-.task:hover{transform:translateY(-8px) scale(1.02);box-shadow:0 24px 60px rgba(0,0,0,0.45)}
-.task .title{font-weight:700}
-.task .meta{color:var(--muted);font-size:13px}
-
-/* Buttons */
-.btn{padding:10px 12px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;font-weight:700;cursor:pointer;transition:transform .12s,box-shadow .12s}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px;border-radius:10px}
-
-/* Bottom nav */
-.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:360px;max-width:94%;height:68px;border-radius:14px;display:flex;align-items:center;justify-content:space-around;gap:8px;padding:8px;background:linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.12));border:1px solid rgba(255,255,255,0.03);box-shadow:0 18px 60px rgba(0,0,0,0.5);z-index:2000}
+.task:hover{transform:translateY(-8px);box-shadow:0 24px 60px rgba(0,0,0,0.45)}
+.btn{padding:10px 12px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;font-weight:700;cursor:pointer}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:10px;color:var(--text)}
+.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:360px;height:68px;border-radius:14px;display:flex;align-items:center;justify-content:space-around;gap:8px;padding:8px;background:linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.12));border:1px solid rgba(255,255,255,0.03);z-index:2000}
 .nav-button{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);cursor:pointer;padding:6px;border-radius:10px;transition:all .25s}
 .nav-button.active{color:var(--accentA);transform:translateY(-6px);background:linear-gradient(90deg,rgba(0,200,255,0.05),rgba(0,200,140,0.02))}
-
-/* Modal for create task */
 .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:3000}
 .modal{background:linear-gradient(180deg,#061426,#041726);padding:16px;border-radius:12px;width:720px;max-width:94%;border:1px solid rgba(255,255,255,0.04)}
 .input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)}
-
-/* Skeleton */
 .skeleton{height:12px;border-radius:8px;background:linear-gradient(90deg,#ffffff06,#ffffff02,#ffffff06);animation: pulse 1.6s infinite}
 @keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
-
-/* Parallax */
-.parallax{position:fixed;inset:0;pointer-events:none;z-index:-1}
-.blob{position:absolute;border-radius:50%;filter:blur(30px) saturate(120%);opacity:.12}
-
-/* Responsive adjustments */
-@media(max-width:1000px){ .app{grid-template-columns:1fr;padding-bottom:100px} .bottom-nav{display:flex} }
+@media(max-width:1000px){ .app{grid-template-columns:1fr;padding-bottom:96px} .bottom-nav{display:flex} }
 @media(min-width:1001px){ .bottom-nav{display:none} }
-
-/* Accessibility */
-button:focus{outline:2px dashed var(--accentA);outline-offset:4px}
+small{color:var(--muted)}
 </style>
 </head>
 <body>
-  <div class="parallax" id="parallax">
-    <div class="blob" id="b1" style="left:-220px;top:-220px;width:800px;height:800px;background:radial-gradient(circle at 30% 30%, var(--accentA), transparent 30%);"></div>
-    <div class="blob" id="b2" style="right:-260px;bottom:-240px;width:600px;height:600px;background:radial-gradient(circle at 70% 70%, var(--accentB), transparent 30%);"></div>
-  </div>
-
   <div class="app" id="app">
     <div class="header">
       <div class="logo">RC</div>
-      <div class="title"><h1>ReviewCash</h1><p>Задания и профиль — теперь с созданием задач</p></div>
-      <div class="header-actions">
-        <button id="createTaskBtn" class="btn" title="Создать задачу" style="display:none">Создать задачу</button>
+      <div class="title"><h1>ReviewCash</h1><p>Задания и профиль — создание типов заданий прямо в приложении</p></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="createTaskBtn" class="btn" style="display:none">Создать задачу</button>
+        <button id="createTypeBtn" class="btn-ghost" style="display:none">Добавить тип</button>
         <button id="themeToggle" class="btn-ghost">Тема</button>
       </div>
     </div>
@@ -117,8 +59,8 @@ button:focus{outline:2px dashed var(--accentA);outline-offset:4px}
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div><h2 style="margin:0">Задания</h2><div class="muted">Список доступных задач</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input id="search" placeholder="Поиск..." class="input" style="max-width:220px"/>
-          <button id="refresh" class="btn">Обновить</button>
+          <input id="search" class="input" placeholder="Поиск..." style="max-width:220px"/>
+          <button id="refreshBtn" class="btn">Обновить</button>
         </div>
       </div>
       <div id="tasksGrid" class="tasks-grid">
@@ -134,16 +76,18 @@ button:focus{outline:2px dashed var(--accentA);outline-offset:4px}
           <div id="avatar" style="width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#04202a,#05202a);display:flex;align-items:center;justify-content:center;font-weight:800">RC</div>
           <div>
             <div id="fullname" style="font-weight:800">Профиль скрыт</div>
-            <div id="handle" class="muted">Нажмите показать профиль</div>
+            <div id="handle" class="muted">Нажмите «Показать профиль»</div>
             <div style="margin-top:8px"><button id="revealProfile" class="btn-ghost">Показать профиль</button></div>
           </div>
         </div>
         <div><button id="supportBtn" class="btn-ghost">🎧</button></div>
       </div>
+
       <div style="margin-top:12px">
         <h3 style="margin:6px 0">История</h3>
         <div id="history" style="max-height:260px;overflow:auto"><div class="muted">Скрыто</div></div>
       </div>
+
       <div style="margin-top:12px;display:flex;gap:8px">
         <button id="topupBtn" class="btn">Пополнить</button>
         <button id="withdrawBtn" class="btn-ghost">Вывести</button>
@@ -151,30 +95,27 @@ button:focus{outline:2px dashed var(--accentA);outline-offset:4px}
     </aside>
   </div>
 
-  <!-- Bottom nav (mobile) -->
   <nav class="bottom-nav" id="bottomNav">
     <div class="nav-button active" id="navTasks" data-view="tasks"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M7 8h10v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8z" stroke="currentColor" stroke-width="1.4"/></svg><div style="font-size:13px">Задания</div></div>
     <div class="nav-button" id="navProfile" data-view="profile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.4"/></svg><div style="font-size:13px">Профиль</div></div>
   </nav>
 
-  <!-- Create Task modal -->
-  <div id="createModal" class="modal-backdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Создать задачу</strong>
-        <button id="closeCreate" class="btn-ghost">Закрыть</button>
-      </div>
+  <!-- Create Task Modal -->
+  <div id="createModal" class="modal-backdrop" style="display:none;align-items:center;justify-content:center">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center"><strong>Создать задачу</strong><button id="closeCreate" class="btn-ghost">Закрыть</button></div>
       <div style="margin-top:10px">
-        <label>Название</label>
-        <input id="taskTitle" class="input" placeholder="Короткое название"/>
+        <label>Тип задачи</label>
+        <select id="taskTypeSelect" class="input"></select>
+      </div>
+      <div style="margin-top:8px"><label>Название</label><input id="taskTitle" class="input"/></div>
+      <div style="margin-top:8px"><label>Описание</label><textarea id="taskDesc" class="input" style="min-height:100px"></textarea></div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <input id="taskLink" class="input" placeholder="Ссылка (опционально)"/>
+        <input id="taskBudget" class="input" placeholder="Бюджет ₽ (опционально)" style="max-width:160px"/>
       </div>
       <div style="margin-top:8px">
-        <label>Описание</label>
-        <textarea id="taskDesc" class="input" style="min-height:100px"></textarea>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:8px">
-        <input id="taskLink" class="input" placeholder="Ссылка (опционально)" />
-        <input id="taskBudget" class="input" placeholder="Бюджет ₽ (опционально)" style="max-width:160px"/>
+        <small id="budgetInfo">—</small>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
         <button id="submitTask" class="btn">Создать</button>
@@ -184,18 +125,29 @@ button:focus{outline:2px dashed var(--accentA);outline-offset:4px}
     </div>
   </div>
 
+  <!-- Add Type Modal -->
+  <div id="createTypeModal" class="modal-backdrop" style="display:none;align-items:center;justify-content:center">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center"><strong>Добавить тип задачи</strong><button id="closeType" class="btn-ghost">Закрыть</button></div>
+      <div style="margin-top:10px"><label>ID (латиница, без пробелов)</label><input id="typeId" class="input"/></div>
+      <div style="margin-top:8px"><label>Название</label><input id="typeName" class="input"/></div>
+      <div style="margin-top:8px"><label>Цена за 1 выполнение (₽)</label><input id="typePrice" class="input" /></div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="submitType" class="btn">Добавить</button>
+        <button id="cancelType" class="btn-ghost">Отмена</button>
+      </div>
+      <div id="typeFeedback" style="margin-top:8px;color:var(--muted)"></div>
+    </div>
+  </div>
+
 <script>
-/* ----------------
-   Helpers
-   ---------------- */
-function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
-function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+/* Helper utilities */
 function qs(name){ return new URLSearchParams(location.search).get(name); }
+function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 const adminToken = qs('token') || '';
 
-/* ----------------
-   Theme
-   ---------------- */
+/* Theme toggle */
 (function(){
   const root = document.documentElement;
   const stored = localStorage.getItem('rc_theme');
@@ -204,29 +156,45 @@ const adminToken = qs('token') || '';
   document.getElementById('themeToggle').addEventListener('click', ()=>{
     const cur = root.getAttribute('data-theme');
     const next = (cur === 'light') ? null : 'light';
-    if(next) root.setAttribute('data-theme', next), localStorage.setItem('rc_theme', next);
-    else root.removeAttribute('data-theme'), localStorage.removeItem('rc_theme');
+    if(next){ root.setAttribute('data-theme', next); localStorage.setItem('rc_theme', next); } else { root.removeAttribute('data-theme'); localStorage.removeItem('rc_theme'); }
   });
 })();
 
-/* ----------------
-   Parallax
-   ---------------- */
+/* Bottom nav behaviour */
 (function(){
-  const blob1 = document.getElementById('b1');
-  const blob2 = document.getElementById('b2');
-  document.addEventListener('mousemove', e=>{
-    const cx = e.clientX - window.innerWidth/2;
-    const cy = e.clientY - window.innerHeight/2;
-    if(blob1) blob1.style.transform = `translate(${cx*0.02}px, ${cy*0.02}px)`;
-    if(blob2) blob2.style.transform = `translate(${cx*-0.03}px, ${cy*-0.03}px)`;
-  });
-  window.addEventListener('scroll', ()=>{ const s=window.scrollY; const p=document.getElementById('parallax'); if(p) p.style.transform=`translateY(${s*0.06}px)`; }, {passive:true});
+  const navTasks=document.getElementById('navTasks'), navProfile=document.getElementById('navProfile'), tasksView=document.getElementById('tasksView'), profileView=document.getElementById('profileView');
+  function setActive(view){
+    if(window.innerWidth>1000){ tasksView.style.display=''; profileView.style.display=''; return; }
+    if(view==='tasks'){ tasksView.style.display=''; profileView.style.display='none'; navTasks.classList.add('active'); navProfile.classList.remove('active'); }
+    else { profileView.style.display=''; tasksView.style.display='none'; navProfile.classList.add('active'); navTasks.classList.remove('active'); }
+  }
+  navTasks.addEventListener('click', ()=> setActive('tasks'));
+  navProfile.addEventListener('click', ()=> setActive('profile'));
+  window.addEventListener('resize', ()=> { if(window.innerWidth>1000){ tasksView.style.display=''; profileView.style.display=''; } else setActive('tasks'); });
+  if(window.innerWidth<=1000) setActive('tasks');
 })();
 
-/* ----------------
-   Tasks loading (progressive)
-   ---------------- */
+/* Load existing task types into select */
+async function loadTaskTypesIntoSelect(){
+  try {
+    const res = await fetch('/api/task_types');
+    const types = await res.json();
+    const sel = document.getElementById('taskTypeSelect');
+    sel.innerHTML = '';
+    types.forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.name} — ${t.unit_price} ₽`;
+      sel.appendChild(opt);
+    });
+    return types;
+  } catch(e){
+    console.error('loadTaskTypes', e);
+    return [];
+  }
+}
+
+/* Load tasks */
 async function loadTasks(){
   const grid = document.getElementById('tasksGrid');
   grid.innerHTML = '';
@@ -237,130 +205,276 @@ async function loadTasks(){
     grid.innerHTML = '';
     if(!Array.isArray(tasks) || tasks.length === 0){ grid.innerHTML = '<div class="muted">Нет активных заданий</div>'; return; }
     for(let t of tasks){
-      const el = document.createElement('div'); el.className='fadeIn';
-      el.innerHTML = `<div class="task"><div class="title">${escapeHtml(t.title||t.id)}</div><div class="meta">${escapeHtml(t.description||'')}</div><div style="margin-top:8px;color:var(--muted)">${t.budget? t.budget+' ₽':''} ${t.link? '• '+escapeHtml(t.link):''}</div></div>`;
+      const el = document.createElement('div'); el.className = 'fadeIn';
+      el.innerHTML = `<div class="task"><div style="font-weight:700">${escapeHtml(t.title)}</div><div class="muted">${escapeHtml(t.description||'')}</div><div style="margin-top:8px;color:var(--muted)">${t.count? t.count + '×' + (t.unit_price||'') + ' ₽ • ' + (t.budget||0)+' ₽': (t.budget? t.budget+' ₽':'')}</div>${t.link? '<div style="margin-top:6px"><a href="'+escapeHtml(t.link)+'" target="_blank" rel="noopener noreferrer">Перейти по ссылке</a></div>':''}</div>`;
       grid.appendChild(el);
       el.querySelector('.task').addEventListener('click', ()=> alert('Открыто: '+(t.title||t.id)));
       await sleep(40);
     }
-  } catch(e){ console.error(e); grid.innerHTML = '<div class="muted">Ошибка загрузки</div>'; }
+  } catch(e){
+    console.error('loadTasks error', e);
+    grid.innerHTML = '<div class="muted">Ошибка загрузки</div>';
+  }
 }
 
-/* ----------------
-   Bottom nav (mobile)
-   ---------------- */
+/* Profile toggle (fixed, multi-toggle, persisted in sessionStorage) */
 (function(){
-  const navTasks = document.getElementById('navTasks'), navProfile = document.getElementById('navProfile'), tasksView=document.getElementById('tasksView'), profileView=document.getElementById('profileView');
-  function setActive(view){
-    if(window.innerWidth > 1000){ tasksView.style.display=''; profileView.style.display=''; navTasks.classList.remove('active'); navProfile.classList.remove('active'); return; }
-    if(view==='tasks'){ tasksView.style.display=''; profileView.style.display='none'; navTasks.classList.add('active'); navProfile.classList.remove('active'); }
-    else { profileView.style.display=''; tasksView.style.display='none'; navProfile.classList.add('active'); navTasks.classList.remove('active'); }
+  const btn = document.getElementById('revealProfile');
+  let shown = sessionStorage.getItem('rc_profile_shown') === '1';
+  async function renderProfile(show){
+    const fullname = document.getElementById('fullname'), handle = document.getElementById('handle'), avatar = document.getElementById('avatar');
+    if(!show){
+      fullname.textContent = 'Профиль скрыт';
+      handle.textContent = 'Нажмите «Показать профиль»';
+      btn.textContent = 'Показать профиль';
+      sessionStorage.setItem('rc_profile_shown', '0');
+      return;
+    }
+    const tgInit = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) ? Telegram.WebApp.initData : null;
+    if(!tgInit){
+      fullname.textContent = 'Гость';
+      handle.textContent = 'Профиль открыт локально';
+      btn.textContent = 'Скрыть профиль';
+      sessionStorage.setItem('rc_profile_shown', '1');
+      return;
+    }
+    try {
+      const res = await fetch('/api/profile_me', { headers: { 'X-Tg-InitData': tgInit }});
+      const j = await res.json();
+      if(j.ok){
+        fullname.textContent = j.user.first_name || 'Пользователь';
+        handle.textContent = j.user.username ? '@'+j.user.username : 'UID: '+j.user.id;
+        if(j.photo_url){
+          avatar.innerHTML = ''; const img=document.createElement('img'); img.src=j.photo_url; img.style.width='72px'; img.style.height='72px'; img.style.borderRadius='12px'; avatar.appendChild(img);
+        }
+        btn.textContent = 'Скрыть профиль';
+        sessionStorage.setItem('rc_profile_shown', '1');
+        // load history
+        const list = document.getElementById('history'); list.innerHTML='';
+        const res2 = await fetch(`/api/user_history?uid=${encodeURIComponent(j.user.id)}&page=1&page_size=6`);
+        const j2 = await res2.json();
+        if(j2.ok && j2.items && j2.items.length>0){
+          for(let it of j2.items){
+            const row=document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='8px 0'; row.style.borderBottom='1px dashed rgba(0,0,0,0.06)';
+            row.innerHTML = `<div><div style="font-weight:700">${escapeHtml((it.type||'').toUpperCase())} — ${escapeHtml(it.id||'')}</div><div class="muted" style="font-size:13px">${escapeHtml(it.summary||'')}</div></div><div style="text-align:right"><div style="font-weight:800">${it.amount? it.amount+' ₽': ''}</div><div class="muted" style="font-size:12px">${escapeHtml(it.created_at||'')}</div></div>`;
+            list.appendChild(row);
+          }
+        } else { list.innerHTML = '<div class="muted">Нет записей</div>'; }
+      } else {
+        fullname.textContent = 'Профиль скрыт';
+        handle.textContent = 'Ошибка получения профиля';
+      }
+    } catch(e){
+      console.error('profile fetch', e);
+      fullname.textContent = 'Профиль скрыт';
+      handle.textContent = 'Ошибка сети';
+    }
   }
-  navTasks.addEventListener('click', ()=> setActive('tasks'));
-  navProfile.addEventListener('click', ()=> setActive('profile'));
-  window.addEventListener('resize', ()=> { if(window.innerWidth>1000){ tasksView.style.display=''; profileView.style.display=''; } else setActive('tasks'); });
-  if(window.innerWidth<=1000) setActive('tasks');
+  (async ()=>{ shown = sessionStorage.getItem('rc_profile_shown') === '1'; await renderProfile(shown); })();
+  btn.addEventListener('click', async ()=> { shown = !shown; await renderProfile(shown); });
 })();
 
-/* ----------------
-   Create Task (UI + API call)
-   - Button is shown only when admin token present in URL
-   ---------------- */
+/* Support (works from browser and WebApp) */
+document.getElementById('supportBtn').addEventListener('click', async ()=>{
+  const text = prompt('Опишите проблему:'); if(!text) return;
+  try {
+    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
+    const res = await fetch('/api/support', { method:'POST', headers, body: JSON.stringify({ message: text })});
+    const j = await res.json();
+    if(!j.ok) alert('Ошибка: '+(j.reason||'')); else alert('Сообщение отправлено в поддержку');
+  } catch(e){ alert('Ошибка сети'); }
+});
+
+/* Create task modal + autoadjust budget logic (0.8s debounce) */
 (function(){
   const createBtn = document.getElementById('createTaskBtn');
-  const modal = document.getElementById('createModal');
-  const closeBtn = document.getElementById('closeCreate');
-  const cancelBtn = document.getElementById('cancelCreate');
-  const submitBtn = document.getElementById('submitTask');
+  const createModal = document.getElementById('createModal');
+  const closeCreate = document.getElementById('closeCreate');
+  const cancelCreate = document.getElementById('cancelCreate');
+  const submitTask = document.getElementById('submitTask');
+  const typeSelect = document.getElementById('taskTypeSelect');
+  const budgetInput = document.getElementById('taskBudget');
+  const budgetInfo = document.getElementById('budgetInfo');
   const feedback = document.getElementById('createFeedback');
 
-  function showModal(){ modal.style.display = 'flex'; modal.setAttribute('aria-hidden','false'); feedback.textContent=''; }
-  function hideModal(){ modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); }
+  let typesCache = [];
+  async function refreshTypes(){
+    typesCache = await loadTaskTypes();
+    typeSelect.innerHTML = '';
+    typesCache.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.name} — ${t.unit_price} ₽`;
+      typeSelect.appendChild(opt);
+    });
+    updateBudgetInfo(); // recompute
+  }
 
+  async function loadTaskTypes(){
+    try {
+      const res = await fetch('/api/task_types');
+      const json = await res.json();
+      return Array.isArray(json)? json : [];
+    } catch(e){
+      console.error('loadTaskTypes', e);
+      return [];
+    }
+  }
+
+  // Debounce 0.8s
+  let debounceTimer = null;
+  function scheduleAdjust(){
+    if(debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(adjustBudget, 800);
+  }
+
+  function updateBudgetInfo(){
+    // compute unit price and show info
+    const sel = typeSelect.value;
+    const unit = (typesCache.find(t=>t.id===sel)?.unit_price) || 1;
+    budgetInfo.textContent = `Цена за 1 выполнение: ${unit} ₽`;
+  }
+
+  function adjustBudget(){
+    const val = Number(String(budgetInput.value || '').replace(',', '.')) || 0;
+    const sel = typeSelect.value;
+    const unit = (typesCache.find(t=>t.id===sel)?.unit_price) || 1;
+    if(unit <= 0){
+      budgetInfo.textContent = 'Некорректная цена в типе';
+      return;
+    }
+    // desiredCount = round(val / unit)
+    let desiredCount = Math.round(val / unit);
+    if(desiredCount * unit > val){
+      desiredCount = Math.floor(val / unit);
+    }
+    const finalBudget = desiredCount * unit;
+    budgetInfo.textContent = `После округления: ${desiredCount} шт. × ${unit} ₽ = ${finalBudget} ₽ (вниз, если превысит ввод)`;
+    // reflect in input (optional) — show final budget but keep original if admin wants to edit
+    // We'll not overwrite user's input automatically; show adjusted value beside it.
+  }
+
+  // wire events
+  typeSelect.addEventListener('change', ()=>{ updateBudgetInfo(); scheduleAdjust(); });
+  budgetInput.addEventListener('input', ()=> scheduleAdjust());
+
+  // show modal only if adminToken present
   if(adminToken){
     createBtn.style.display = '';
-    createBtn.addEventListener('click', showModal);
-    closeBtn.addEventListener('click', hideModal);
-    cancelBtn.addEventListener('click', hideModal);
-    submitBtn.addEventListener('click', async ()=>{
+    document.getElementById('createTypeBtn').style.display = '';
+    createBtn.addEventListener('click', async ()=> {
+      createModal.style.display = 'flex';
+      createModal.setAttribute('aria-hidden', 'false');
+      typesCache = await loadTaskTypesIntoSelect();
+      await refreshTypes();
+      budgetInfo.textContent = 'Вводите сумму — через 0.8с она будет округлена к ближайшему количеству и округлена вниз при необходимости.';
+    });
+    closeCreate.addEventListener('click', ()=> { createModal.style.display = 'none'; createModal.setAttribute('aria-hidden', 'true'); });
+    cancelCreate.addEventListener('click', ()=> { createModal.style.display = 'none'; createModal.setAttribute('aria-hidden', 'true'); });
+    submitTask.addEventListener('click', async ()=>{
       const title = document.getElementById('taskTitle').value.trim();
       const desc = document.getElementById('taskDesc').value.trim();
       const link = document.getElementById('taskLink').value.trim();
-      const budget = document.getElementById('taskBudget').value.trim();
-      if(!title){ feedback.textContent='Введите название задачи'; return; }
-      feedback.textContent = 'Создаю задачу...';
+      let budget = Number(String(document.getElementById('taskBudget').value || '').replace(',', '.')) || 0;
+      const type_id = document.getElementById('taskTypeSelect').value;
+      if(!title){ feedback.textContent = 'Введите название задачи'; return; }
+      // link validation
+      if(link){
+        try { const u = new URL(link); if(u.protocol !== 'http:' && u.protocol !== 'https:'){ feedback.textContent = 'Ссылка должна быть http/https'; return; } } catch(e){ feedback.textContent = 'Некорректная ссылка'; return; }
+      }
+      // compute adjusted final budget based on selected type unit price
+      const unit = (typesCache.find(t=>t.id===type_id)?.unit_price) || 1;
+      let desiredCount = Math.round(budget / unit);
+      if(desiredCount * unit > budget) desiredCount = Math.floor(budget / unit);
+      const finalBudget = desiredCount * unit;
+      if(desiredCount <= 0 && unit > 0){
+        feedback.textContent = `Бюджет слишком мал — минимум ${unit} ₽ за 1 выполнение`;
+        return;
+      }
+      feedback.textContent = 'Создание...';
       try {
-        const res = await fetch('/api/tasks_create?token='+encodeURIComponent(adminToken), { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title, description: desc, link, budget })});
+        const res = await fetch('/api/tasks_create?token=' + encodeURIComponent(adminToken), {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ title, description: desc, link, budget: finalBudget, type_id })
+        });
         const j = await res.json();
-        if(!j.ok){ feedback.textContent = 'Ошибка: ' + (j.reason||''); return; }
-        feedback.textContent = 'Задача создана';
-        hideModal();
-        loadTasks(); // reload
-      } catch(e){ feedback.textContent = 'Ошибка сети'; console.error(e); }
+        if(!j.ok){
+          feedback.textContent = 'Ошибка: ' + (j.reason || '');
+        } else {
+          feedback.textContent = 'Задача создана';
+          createModal.style.display = 'none';
+          loadTasks();
+        }
+      } catch(e){
+        feedback.textContent = 'Ошибка сети';
+        console.error(e);
+      }
     });
   } else {
     createBtn.style.display = 'none';
+    document.getElementById('createTypeBtn').style.display = 'none';
   }
 })();
 
-/* ----------------
-   Profile reveal
-   ---------------- */
-document.getElementById('revealProfile').addEventListener('click', async ()=>{
-  try {
-    const tgInit = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData ? Telegram.WebApp.initData : null;
-    if(!tgInit){ document.getElementById('fullname').textContent='Гость'; document.getElementById('handle').textContent='Профиль открыт локально'; return; }
-    const res = await fetch('/api/profile_me', { headers: { 'X-Tg-InitData': tgInit } });
-    const j = await res.json();
-    if(!j.ok){ alert('Ошибка: '+(j.reason||'')); return; }
-    document.getElementById('fullname').textContent = j.user.first_name || 'Пользователь';
-    document.getElementById('handle').textContent = j.user.username ? '@'+j.user.username : 'UID: '+j.user.id;
-    if(j.photo_url){ const av=document.getElementById('avatar'); av.innerHTML=''; const img=document.createElement('img'); img.src=j.photo_url; img.style.width='72px'; img.style.height='72px'; img.style.borderRadius='12px'; av.appendChild(img); }
-    // load history
-    const uid = j.user.id;
-    const list = document.getElementById('history'); list.innerHTML='';
-    const res2 = await fetch(`/api/user_history?uid=${encodeURIComponent(uid)}&page=1&page_size=6`);
-    const j2 = await res2.json();
-    if(!j2.ok || !j2.items || j2.items.length===0) { list.innerHTML='<div class="muted">Нет записей</div>'; return; }
-    for(let it of j2.items){
-      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='8px 0'; row.style.borderBottom='1px dashed rgba(0,0,0,0.06)';
-      row.innerHTML = `<div><div style="font-weight:700">${escapeHtml((it.type||'').toUpperCase())} — ${escapeHtml(it.id||'')}</div><div class="muted" style="font-size:13px">${escapeHtml(it.summary||'')}</div></div><div style="text-align:right"><div style="font-weight:800">${it.amount? it.amount+' ₽': ''}</div><div class="muted" style="font-size:12px">${escapeHtml(it.created_at||'')}</div></div>`;
-      list.appendChild(row);
-    }
-  } catch(e){ console.error(e); alert('Ошибка получения профиля'); }
-});
+/* Add type modal (admin only) */
+(function(){
+  const createTypeBtn = document.getElementById('createTypeBtn');
+  const modal = document.getElementById('createTypeModal');
+  const closeType = document.getElementById('closeType');
+  const submitType = document.getElementById('submitType');
+  const cancelType = document.getElementById('cancelType');
+  const feedback = document.getElementById('typeFeedback');
 
-/* ----------------
-   socket.io - listen for new_task and refresh
-   ---------------- */
+  if(adminToken){
+    createTypeBtn.addEventListener('click', ()=> { modal.style.display = 'flex'; modal.setAttribute('aria-hidden','false'); feedback.textContent=''; });
+    closeType.addEventListener('click', ()=> { modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); });
+    cancelType.addEventListener('click', ()=> { modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); });
+    submitType.addEventListener('click', async ()=>{
+      const id = document.getElementById('typeId').value.trim();
+      const name = document.getElementById('typeName').value.trim();
+      const price = Number(String(document.getElementById('typePrice').value || '').replace(',', '.')) || 0;
+      if(!id || !name || price <= 0){ feedback.textContent = 'Заполните все поля корректно'; return; }
+      feedback.textContent = 'Добавление...';
+      try {
+        const res = await fetch('/api/task_types_add?token=' + encodeURIComponent(adminToken), {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ id, name, unit_price: Math.round(price) })
+        });
+        const j = await res.json();
+        if(!j.ok){ feedback.textContent = 'Ошибка: ' + (j.reason || ''); }
+        else { feedback.textContent = 'Тип добавлен'; modal.style.display='none'; document.getElementById('createTaskBtn').click(); } // reopen create task to refresh types
+      } catch(e){ feedback.textContent = 'Ошибка сети'; console.error(e); }
+    });
+  }
+})();
+
+/* socket.io listen new_task */
 try {
   const sock = io();
   sock.on('connect', ()=> console.log('socket connected'));
   sock.on('new_task', ()=> loadTasks());
 } catch(e){ console.warn('socket fail', e); }
 
-/* ----------------
-   Topup/Withdraw/Support (simple)
-   ---------------- */
+/* Support, topup, withdraw quick handlers */
 document.getElementById('topupBtn').addEventListener('click', async ()=>{
-  const s=prompt('Сумма (мин.100 ₽):'); if(!s) return;
-  const amount=parseFloat(s.replace(',','.')); if(isNaN(amount)||amount<100){ alert('Мин.100 ₽'); return; }
+  const s = prompt('Сумма (мин.100 ₽):'); if(!s) return;
+  const amount = parseFloat(s.replace(',', '.')); if(isNaN(amount) || amount < 100){ alert('Мин.100 ₽'); return; }
   try {
-    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData']=Telegram.WebApp.initData;
+    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
     const res = await fetch('/api/topups_public', { method:'POST', headers, body: JSON.stringify({ amount })});
     const j = await res.json();
-    if(!j.ok) alert('Ошибка: '+(j.reason||'')); else alert(`Код: ${j.topup.code}. Переведите ${amount} ₽ на ${j.bank.phone}`);
-    loadTasks();
+    if(!j.ok) alert('Ошибка: '+(j.reason||'')); else alert(`Создано. Код: ${j.topup.code}. Инструкции отправлены админам.`);
   } catch(e){ alert('Ошибка сети'); }
 });
-
 document.getElementById('withdrawBtn').addEventListener('click', async ()=>{
-  const s=prompt('Сумма (мин.250 ₽):'); if(!s) return;
-  const amount=parseFloat(s.replace(',','.')); if(isNaN(amount)||amount<250){ alert('Мин.250 ₽'); return; }
-  const name=prompt('ФИО/ник:'); if(!name) return;
-  const bank=prompt('Банк/реквизиты:'); if(!bank) return;
+  const s = prompt('Сумма (мин.250 ₽):'); if(!s) return;
+  const amount = parseFloat(s.replace(',', '.')); if(isNaN(amount) || amount < 250){ alert('Мин.250 ₽'); return; }
+  const name = prompt('ФИО/ник:'); if(!name) return;
+  const bank = prompt('Банк/реквизиты:'); if(!bank) return;
   try {
-    const headers={'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData']=Telegram.WebApp.initData;
+    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
     const res = await fetch('/api/withdraw_public', { method:'POST', headers, body: JSON.stringify({ amount, name, bank })});
     const j = await res.json();
     if(!j.ok){ if(j.reason==='insufficient_balance') alert('Недостаточно средств: '+(j.balance||0)); else alert('Ошибка: '+(j.reason||'')); return; }
@@ -368,10 +482,8 @@ document.getElementById('withdrawBtn').addEventListener('click', async ()=>{
   } catch(e){ alert('Ошибка сети'); }
 });
 
-/* ----------------
-   Init
-   ---------------- */
-document.getElementById('refresh').addEventListener('click', ()=> loadTasks());
+/* Init */
+document.getElementById('refreshBtn').addEventListener('click', ()=> loadTasks());
 loadTasks();
 </script>
 </body>
