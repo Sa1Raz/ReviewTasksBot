@@ -1,192 +1,139 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash — Задания и Профиль</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<style>
-  :root{
-    --bg: #0a1d24;
-    --card: rgba(10, 35, 45, 0.65);
-    --glass: rgba(255,255,255,0.04);
-    --border: rgba(255,255,255,0.08);
-    --text: #e0f2f8;
-    --muted: #94b5c9;
-    --accent: #00e7c0;
-    --accent2: #00d4ff;
-    --success: #00e7a0;
-    --radius: 18px;
-    --shadow: 0 20px 60px rgba(0,0,0,0.6);
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{
-    font-family:'Inter',sans-serif;
-    background: linear-gradient(135deg, #0a1d24 0%, #05171e 100%);
-    color:var(--text);
-    min-height:100vh;
-    overflow-x:hidden;
-  }
-  .container{max-width:1280px;margin:0 auto;padding:16px}
-  
-  /* Header */
-  header{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:16px 0;margin-bottom:24px;
-    backdrop-filter:blur(12px);
-    position:sticky;top:0;z-index:1000;
-    background:rgba(10,35,45,0.4);
-    border-bottom:1px solid var(--border);
-  }
-  .logo{
-    width:56px;height:56px;border-radius:16px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    display:flex;align-items:center;justify-content:center;
-    font-size:24px;font-weight:900;color:#000;
-    box-shadow:0 8px 32px rgba(0,231,192,0.3);
-  }
-  .title h1{font-size:22px;font-weight:800;margin:0}
-  .title p{font-size:13px;color:var(--muted);margin-top:4px}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReviewCash — Заработок на отзывах</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1e26;
+      --card: rgba(15, 40, 52, 0.7);
+      --glass: rgba(255,255,255,0.05);
+      --border: rgba(0,231,192,0.2);
+      --text: #e0f8ff;
+      --muted: #94c9e0;
+      --accent: #00e7c0;
+      --accent2: #00d4ff;
+      --radius: 20px;
+      --shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0b1e26 0%, #05171e 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+    .container { max-width: 1280px; margin: 0 auto; padding: 16px; }
 
-  /* Tabs */
-  .tabs{
-    display:flex;gap:8px;margin-bottom:20px;
-    border-bottom:1px solid var(--border);
-    overflow-x:auto;
-    padding-bottom:8px;
-  }
-  .tab{
-    padding:12px 20px;border-radius:12px;
-    background:transparent;color:var(--muted);
-    cursor:pointer;transition:all .3s;
-    white-space:nowrap;font-weight:600;
-  }
-  .tab.active{
-    background:linear-gradient(90deg,var(--accent),var(--accent2));
-    color:#000;box-shadow:0 8px 25px rgba(0,231,192,0.35);
-  }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 0; margin-bottom: 24px;
+      background: var(--card); backdrop-filter: blur(16px);
+      border-radius: var(--radius); border: 1px solid var(--glass);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 24px; color: #000;
+      box-shadow: 0 8px 32px rgba(0,231,192,0.4);
+    }
+    .title h1 { font-size: 22px; font-weight: 800; }
+    .title p { font-size: 13px; color: var(--muted); }
 
-  /* Cards */
-  .card{
-    background:var(--card);
-    backdrop-filter:blur(16px);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:20px;
-    box-shadow:var(--shadow);
-    transition:transform .4s ease,box-shadow .4s ease;
-  }
-  .card:hover{transform:translateY(-8px);box-shadow:0 30px 80px rgba(0,0,0,0.7)}
+    .tabs {
+      display: flex; gap: 12px; margin-bottom: 24px; overflow-x: auto;
+      padding-bottom: 8px; border-bottom: 1px solid var(--glass);
+    }
+    .tab {
+      padding: 12px 24px; border-radius: 12px; cursor: pointer;
+      background: transparent; color: var(--muted); font-weight: 600;
+      transition: all 0.3s;
+    }
+    .tab.active {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #000; font-weight: 700; box-shadow: 0 8px 25px rgba(0,231,192,0.4);
+    }
 
-  /* Skeleton */
-  @keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
-  .skeleton{background:#0f2f3a;height:20px;border-radius:8px;animation:pulse 1.5s infinite}
+    .card {
+      background: var(--card); backdrop-filter: blur(16px);
+      border: 1px solid var(--glass); border-radius: var(--radius);
+      padding: 24px; box-shadow: var(--shadow);
+      transition: transform 0.4s;
+    }
+    .card:hover { transform: translateY(-6px); }
 
-  /* Tasks Grid */
-  .tasks-grid{
-    display:grid;gap:18px;
-    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  }
-  .task{
-    cursor:pointer;
-    overflow:hidden;
-    animation:fadeUp .6s ease backwards;
-  }
-  @keyframes fadeUp{
-    from{opacity:0;transform:translateY(30px)}
-    to{opacity:1;transform:none}
-  }
-  .task .header{
-    display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
-  }
-  .task-title{font-weight:800;font-size:18px}
-  .task-price{font-weight:900;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .progress{
-    height:10px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin:12px 0;
-  }
-  .bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width 1s ease}
+    .btn {
+      position: relative; overflow: hidden; padding: 14px 28px;
+      border: none; border-radius: 14px; font-weight: 700; cursor: pointer;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #000; box-shadow: 0 8px 25px rgba(0,231,192,0.35);
+      transition: all 0.3s;
+    }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(0,231,192,0.5); }
+    .btn-ghost { background: transparent; border: 1px solid var(--glass); color: var(--text); }
 
-  /* Profile */
-  .profile-grid{
-    display:grid;gap:20px;
-    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  }
-  .balance-card{
-    background:linear-gradient(135deg,rgba(0,231,192,0.15),rgba(0,212,255,0.1));
-    border:1px solid rgba(0,231,192,0.2);
-    text-align:center;padding:32px 20px;
-  }
-  .balance{font-size:42px;font-weight:900;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  
-  /* Buttons */
-  .btn{
-    position:relative;overflow:hidden;
-    padding:14px 24px;border:none;border-radius:14px;
-    font-weight:700;cursor:pointer;
-    background:linear-gradient(90deg,var(--accent),var(--accent2));
-    color:#000;transition:all .3s;
-    box-shadow:0 8px 25px rgba(0,231,192,0.3);
-  }
-  .btn:hover{transform:translateY(-3px);box-shadow:0 15px 35px rgba(0,231,192,0.45)}
-  .btn-ghost{
-    background:transparent;border:1px solid var(--border);color:var(--text);
-  }
-  .ripple{
-    position:absolute;border-radius:50%;background:rgba(255,255,255,0.4);
-    transform:scale(0);animation:ripple 0.6s linear;
-  }
-  @keyframes ripple{to{transform:scale(4);opacity:0}}
+    .input {
+      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--glass);
+      background: rgba(255,255,255,0.05); color: white; font-size: 16px;
+      margin-bottom: 12px; outline: none; transition: 0.3s;
+    }
+    .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,231,192,0.2); }
 
-  /* Modals */
-  .modal{
-    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-    background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);z-index:9999;
-    padding:16px;
-  }
-  .modal.active{display:flex;animation:fadeIn .4s}
-  .modal-card{
-    width:100%;max-width:540px;
-    animation:slideUp .5s ease;
-  }
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  @keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:none;opacity:1}}
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+      display: none; align-items: center; justify-content: center; z-index: 9999; padding: 16px;
+    }
+    .modal.active { display: flex; }
+    .modal-card {
+      width: 100%; max-width: 520px; animation: slideUp 0.5s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-  /* Mobile Bottom Nav */
-  .bottom-nav{
-    position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
-    background:var(--card);backdrop-filter:blur(20px);
-    border:1px solid var(--border);border-radius:60px;
-    padding:12px 20px;display:flex;gap:40px;z-index:1000;
-    box-shadow:0 20px 50px rgba(0,0,0,0.5);
-  }
-  .nav-item{
-    color:var(--muted);cursor:pointer;transition:all .3s;
-  }
-  .nav-item.active{color:var(--accent);transform:scale(1.15)}
-  .nav-item svg{width:26px;height:26px}
+    .bottom-nav {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--glass);
+      border-radius: 60px; padding: 14px 40px; display: flex; gap: 50px; z-index: 1000;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+    .nav-item { color: var(--muted); cursor: pointer; transition: 0.3s; }
+    .nav-item.active { color: var(--accent); transform: scale(1.2); }
 
-  @media(max-width:768px){
-    .container{padding:12px}
-    .tabs{justify-content:center}
-    .tasks-grid{grid-template-columns:1fr}
-    .profile-grid{grid-template-columns:1fr}
-  }
-</style>
+    .task-types {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 20px 0;
+    }
+    .task-type {
+      padding: 20px; border-radius: 16px; background: rgba(255,255,255,0.04);
+      border: 1px solid var(--glass); cursor: pointer; transition: all 0.3s;
+      text-align: center;
+    }
+    .task-type:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .task-type.selected { border-color: var(--accent); background: rgba(0,231,192,0.15); }
+    .price { font-size: 28px; font-weight: 900; background: linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .total-price {
+      font-size: 24px; font-weight: 800; text-align: center; margin: 24px 0;
+      color: var(--accent);
+    }
+  </style>
 </head>
 <body>
 
 <div class="container">
   <header>
-    <div style="display:flex;align-items:center;gap:16px">
+    <div style="display:flex; align-items:center; gap:16px">
       <div class="logo">RC</div>
       <div class="title">
         <h1>ReviewCash</h1>
-        <p>Зарабатывай на простых заданиях</p>
+        <p>Создавай задания — плати за отзывы и подписки</p>
       </div>
     </div>
-    <div style="display:flex;gap:12px">
-      <button class="btn" id="createTaskBtn">+ Задача</button>
+    <div style="display:flex; gap:12px">
+      <button class="btn" id="createBtn">Создать задание</button>
       <button class="btn btn-ghost" id="topupBtn">Пополнить</button>
     </div>
   </header>
@@ -198,169 +145,263 @@
 
   <!-- Задания -->
   <div id="tasksTab" class="tab-content">
-    <div class="tasks-grid" id="tasksGrid">
-      <div class="card skeleton" style="height:180px"></div>
-      <div class="card skeleton" style="height:180px"></div>
-      <div class="card skeleton" style="height:180px"></div>
+    <div class="card">
+      <h2 style="margin-bottom:16px">Активные задания</h2>
+      <div id="activeTasks">Нет активных заданий</div>
     </div>
   </div>
 
   <!-- Профиль -->
   <div id="profileTab" class="tab-content" style="display:none">
-    <div class="profile-grid">
-      <div class="card balance-card">
-        <div style="font-size:18px;color:var(--muted)">Баланс</div>
-        <div class="balance" id="balance">0 ₽</div>
-        <div style="display:flex;gap:12px;margin-top:20px;justify-content:center">
-          <button class="btn" id="topupBtn2">Пополнить</button>
-          <button class="btn btn-ghost" id="withdrawBtn">Вывести</button>
-        </div>
+    <div class="card" style="text-align:center">
+      <h2>Ваш баланс</h2>
+      <div style="font-size:48px; font-weight:900; margin:20px 0; background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent" id="balance">
+        0 ₽
       </div>
-      <div class="card">
-        <div style="display:flex;gap:16px;align-items:center">
-          <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:#000" id="avatar">Г</div>
-          <div>
-            <div style="font-weight:800;font-size:20px" id="fullname">Гость</div>
-            <div style="color:var(--muted)" id="handle">@guest</div>
-          </div>
-        </div>
-        <div style="margin-top:20px" id="history">
-          <div style="text-align:center;color:var(--muted);padding:20px">История пуста</div>
-        </div>
+      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap">
+        <button class="btn" id="topupBtn2">Пополнить</button>
+        <button class="btn btn-ghost" id="withdrawBtn">Вывести</button>
+      </div>
+      <div style="margin-top:32px; text-align:left">
+        <h3>История операций</h3>
+        <div id="history" style="color:var(--muted); margin-top:12px">История пуста</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Модальные окна -->
+<!-- Модалка: Создать задание -->
 <div id="createModal" class="modal">
   <div class="card modal-card">
-    <h2 style="margin-bottom:20px">Создать задачу</h2>
-    <input class="input" placeholder="Название" id="taskTitle" style="width:100%;padding:14px;margin-bottom:12px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:white">
-    <textarea class="input" placeholder="Описание" id="taskDesc" style="min-height:120px;margin-bottom:12px"></textarea>
-    <input class="input" placeholder="Ссылка (необязательно)" id="taskLink">
-    <div style="display:flex;gap:12px;margin-top:20px">
-      <button class="btn" id="saveTask">Создать</button>
+    <h2 style="margin-bottom:20px">Новое задание</h2>
+    <div class="task-types">
+      <div class="task-type" data-type="yandex" data-price="100">
+        <div style="font-weight:700; font-size:18px">Яндекс.Карты</div>
+        <div class="price">100 ₽</div>
+        <div style="font-size:14px; color:var(--muted)">за 1 отзыв</div>
+      </div>
+      <div class="task-type" data-type="google" data-price="65">
+        <div style="font-weight:700; font-size:18px">Google Maps</div>
+        <div class="price">65 ₽</div>
+        <div style="font-size:14px; color:var(--muted)">за 1 отзыв</div>
+      </div>
+      <div class="task-type" data-type="tg" data-price="10">
+        <div style="font-weight:700; font-size:18px">Подписка TG</div>
+        <div class="price">10 ₽</div>
+        <div style="font-size:14px; color:var(--muted)">за 1 подписку</div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <label style="color:var(--muted); font-size:14px">Количество выполнений</label>
+      <input type="number" id="taskCount" class="input" value="10" min="1" style="font-size:20px; text-align:center">
+    </div>
+
+    <div class="total-price" id="totalPrice">Итого: 1 000 ₽</div>
+
+    <div style="display:flex; gap:12px">
+      <button class="btn" id="createTaskFinal">Создать за <span id="finalPrice">1 000 ₽</span></button>
       <button class="btn btn-ghost" onclick="closeModal('createModal')">Отмена</button>
     </div>
   </div>
 </div>
 
+<!-- Модалка: Пополнение -->
 <div id="topupModal" class="modal">
   <div class="card modal-card">
-    <h2>Пополнение</h2>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:20px 0">
+    <h2>Пополнить баланс</h2>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:20px 0">
       <button class="btn btn-ghost topup-preset" data-amount="300">300 ₽</button>
       <button class="btn btn-ghost topup-preset" data-amount="500">500 ₽</button>
       <button class="btn btn-ghost topup-preset" data-amount="1000">1000 ₽</button>
       <button class="btn btn-ghost topup-preset" data-amount="3000">3000 ₽</button>
     </div>
-    <div id="qrBlock" style="display:none;text-align:center">
-      <div style="font-size:32px;font-weight:900;margin-bottom:16px" id="qrAmount">0 ₽</div>
-      <img id="qrImg" src="" style="width:280px;height:280px;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.6)">
-      <div style="margin-top:16px;color:var(--accent);font-weight:800" id="payCode">RC123456</div>
-    </div>
-    <button class="btn" id="generateQr" style="margin-top:20px">Создать QR</button>
+    <input type="number" id="customAmount" class="input" placeholder="Или введите свою сумму (мин. 100 ₽)" min="100">
+    <button class="btn" id="payBtn">Оплатить <span id="payAmount">300 ₽</span></button>
   </div>
 </div>
 
-<!-- Нижняя навигация (мобила) -->
+<!-- Модалка: Вывод -->
+<div id="withdrawModal" class="modal">
+  <div class="card modal-card">
+    <h2>Вывод средств</h2>
+    <input class="input" id="wAmount" placeholder="Сумма (мин. 250 ₽)" type="number" min="250">
+    <input class="input" id="wName" placeholder="ФИО или ник в банке">
+    <input class="input" id="wBank" placeholder="Банк / карта / телефон">
+    <div style="margin-top:20px; display:flex; gap:12px">
+      <button class="btn" id="sendWithdraw">Отправить заявку</button>
+      <button class="btn btn-ghost" onclick="closeModal('withdrawModal')">Отмена</button>
+    </div>
+    <div id="withdrawMsg" style="margin-top:12px; font-weight:600"></div>
+  </div>
+</div>
+
+<!-- Нижняя навигация -->
 <div class="bottom-nav">
-  <div class="nav-item active" data-tab="tasks">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-  </div>
-  <div class="nav-item" data-tab="profile">
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-  </div>
+  <div class="nav-item active" data-tab="tasks">Tasks</div>
+  <div class="nav-item" data-tab="profile">Profile</div>
 </div>
 
 <script>
-// Ripple эффект
-document.addEventListener('click', e => {
-  if(!e.target.classList.contains('btn')) return;
-  const btn = e.target;
-  const ripple = document.createElement('span');
-  const rect = btn.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  const x = e.clientX - rect.left - size/2;
-  const y = e.clientY - rect.top - size/2;
-  ripple.style.width = ripple.style.height = size + 'px';
-  ripple.style.left = x + 'px';
-  ripple.style.top = y + 'px';
-  ripple.classList.add('ripple');
-  btn.appendChild(ripple);
-  setTimeout(()=>ripple.remove(),600);
+// === Хранилище (имитация бэкенда) ===
+let balance = parseInt(localStorage.getItem('rc_balance') || '0');
+let history = JSON.parse(localStorage.getItem('rc_history') || '[]');
+let tasks = JSON.parse(localStorage.getItem('rc_tasks') || '[]');
+
+function saveData() {
+  localStorage.setItem('rc_balance', balance);
+  localStorage.setItem('rc_history', JSON.stringify(history));
+  localStorage.setItem('rc_tasks', JSON.stringify(tasks));
+}
+
+function updateBalance() {
+  document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
+  renderHistory();
+  renderTasks();
+}
+
+function addHistory(text, amount = null) {
+  const date = new Date().toLocaleString('ru');
+  history.unshift({ text, amount, date });
+  if (history.length > 50) history.pop();
+  saveData();
+  renderHistory();
+}
+
+// === Рендер ===
+function renderTasks() {
+  const container = document.getElementById('activeTasks');
+  if (tasks.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:40px">Нет активных заданий</div>';
+    return;
+  }
+  container.innerHTML = tasks.map(t => `
+    <div style="padding:16px; background:rgba(255,255,255,0.03); border-radius:16px; margin-bottom:12px">
+      <div style="font-weight:700">${t.title}</div>
+      <div style="color:var(--muted); font-size:14px">${t.count} × ${t.price} ₽ = ${t.total} ₽</div>
+    </div>
+  `).join('');
+}
+
+function renderHistory() {
+  const el = document.getElementById('history');
+  if (history.length === 0) {
+    el.innerHTML = '<div style="text-align:center; color:var(--muted)">История пуста</div>';
+    return;
+  }
+  el.innerHTML = history.slice(0, 15).map(h => `
+    <div style="padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.1)">
+      <div style="font-weight:600">${h.text} ${h.amount ? '· ' + h.amount + ' ₽' : ''}</div>
+      <div style="font-size:12px; color:var(--muted)">${h.date}</div>
+    </div>
+  `).join('');
+}
+
+// === Модалки ===
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// === Создание задания ===
+let selectedType = null;
+let selectedPrice = 0;
+
+document.querySelectorAll('.task-type').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.task-type').forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedType = el.dataset.type;
+    selectedPrice = +el.dataset.price;
+    updateTotal();
+  });
 });
 
-// Табы
+document.getElementById('taskCount').addEventListener('input', updateTotal);
+
+function updateTotal() {
+  const count = +document.getElementById('taskCount').value || 0;
+  const total = count * selectedPrice;
+  document.getElementById('totalPrice').textContent = `Итого: ${total.toLocaleString()} ₽`;
+  document.getElementById('finalPrice').textContent = total.toLocaleString() + ' ₽';
+}
+
+document.getElementById('createTaskFinal').addEventListener('click', () => {
+  const count = +document.getElementById('taskCount').value;
+  const total = count * selectedPrice;
+  if (!selectedType) return alert('Выберите тип задания');
+  if (total > balance) return alert('Недостаточно средств на балансе');
+
+  balance -= total;
+  const titles = { yandex: 'Отзыв в Яндекс.Картах', google: 'Отзыв в Google Maps', tg: 'Подписка на Telegram-канал' };
+  tasks.push({ title: titles[selectedType], count, price: selectedPrice, total });
+  addHistory(`Создано задание: ${titles[selectedType]} (${count} шт.)`, -total);
+  updateBalance();
+  closeModal('createModal');
+  alert('Задание успешно создано!');
+});
+
+// === Пополнение ===
+let topupAmount = 300;
+document.querySelectorAll('.topup-preset').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.topup-preset').forEach(x => x.style.background = '');
+    b.style.background = 'rgba(0,231,192,0.2)';
+    topupAmount = +b.dataset.amount;
+    document.getElementById('payAmount').textContent = topupAmount + ' ₽';
+  });
+});
+document.getElementById('customAmount').addEventListener('input', e => {
+  const val = +e.target.value;
+  if (val >= 100) {
+    topupAmount = val;
+    document.getElementById('payAmount').textContent = val + ' ₽';
+  }
+});
+document.getElementById('payBtn').addEventListener('click', () => {
+  if (topupAmount < 100) return alert('Минимум 100 ₽');
+  balance += topupAmount;
+  addHistory('Пополнение баланса', '+' + topupAmount);
+  updateBalance();
+  closeModal('topupModal');
+  alert(`Баланс пополнен на ${topupAmount} ₽`);
+});
+
+// === Вывод ===
+document.getElementById('sendWithdraw').addEventListener('click', () => {
+  const amount = +document.getElementById('wAmount').value;
+  const name = document.getElementById('wName').value.trim();
+  const bank = document.getElementById('wBank').value.trim();
+
+  if (amount < 250) return document.getElementById('withdrawMsg').textContent = 'Минимум 250 ₽';
+  if (amount > balance) return document.getElementById('withdrawMsg').textContent = 'Недостаточно средств';
+  if (!name || !bank) return document.getElementById('withdrawMsg').textContent = 'Заполните все поля';
+
+  balance -= amount;
+  addHistory(`Заявка на вывод ${amount} ₽`, -amount);
+  updateBalance();
+  closeModal('withdrawModal');
+  document.getElementById('withdrawMsg').textContent = '';
+  alert(`Заявка на вывод ${amount} ₽ отправлена!\nДеньги придут в течение 24 часов.`);
+});
+
+// === Навигация ===
 document.querySelectorAll('.tab, .nav-item').forEach(el => {
   el.addEventListener('click', () => {
     const tab = el.dataset.tab;
-    document.querySelectorAll('.tab, .nav-item').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab, .nav-item').forEach(x => x.classList.remove('active'));
     el.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
-    document.getElementById(tab+'Tab').style.display='block';
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById(tab + 'Tab').style.display = 'block';
   });
 });
 
-// Модалки
-function openModal(id){ document.getElementById(id).classList.add('active'); }
-function closeModal(id){ document.getElementById(id).classList.remove('active'); }
-document.querySelectorAll('[onclick*="closeModal"]').forEach(b=>b.addEventListener('click',()=>closeModal(b.closest('.modal').id)));
+// === Кнопки ===
+document.getElementById('createBtn').addEventListener('click', () => openModal('createModal'));
+document.getElementById('topupBtn').addEventListener('click', () => openModal('topupModal'));
+document.getElementById('topupBtn2').addEventListener('click', () => openModal('topupModal'));
+document.getElementById('withdrawBtn').addEventListener('click', () => openModal('withdrawModal'));
 
-// Создание задачи
-document.getElementById('createTaskBtn').addEventListener('click', ()=>openModal('createModal'));
-document.getElementById('saveTask').addEventListener('click', ()=>{
-  alert('Задача будет создана на сервере (подключи backend)');
-  closeModal('createModal');
-});
-
-// Пополнение
-let selectedAmount = 0;
-document.querySelectorAll('.topup-preset').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('.topup-preset').forEach(x=>x.style.background='');
-    b.style.background='rgba(0,231,192,0.2)';
-    selectedAmount = +b.dataset.amount;
-  });
-});
-document.getElementById('generateQr').addEventListener('click', ()=>{
-  if(!selectedAmount) return alert('Выберите сумму');
-  document.getElementById('qrAmount').textContent = selectedAmount + ' ₽';
-  document.getElementById('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=ReviewCash_Pay_'+selectedAmount+'_'+Date.now();
-  document.getElementById('payCode').textContent = 'RC'+Math.random().toString(36).substr(2,8).toUpperCase();
-  document.getElementById('qrBlock').style.display = 'block';
-});
-
-document.getElementById('topupBtn').addEventListener('click', ()=>openModal('topupModal'));
-document.getElementById('topupBtn2').addEventListener('click', ()=>openModal('topupModal'));
-
-// Заглушка задач
-setTimeout(()=>{
-  document.getElementById('tasksGrid').innerHTML = `
-    <div class="card task" style="animation-delay:0.1s">
-      <div class="header"><div class="task-title">Отзыв в Google Maps</div><div class="task-price">120 ₽</div></div>
-      <div style="color:var(--muted);font-size:14px">Оставьте честный отзыв 5★ с фото</div>
-      <div class="progress"><div class="bar" style="width:68%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>34 / 50</span><span>Активно</span></div>
-    </div>
-    <div class="card task" style="animation-delay:0.2s">
-      <div class="header"><div class="task-title">Подписка + лайк</div><div class="task-price">45 ₽</div></div>
-      <div style="color:var(--muted);font-size:14px">Instagram / TikTok</div>
-      <div class="progress"><div class="bar" style="width:92%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>184 / 200</span><span>Скоро закончится</span></div>
-    </div>
-  `.repeat(6);
-}, 800);
-
-// Баланс анимация
-setInterval(()=>{
-  const b = document.getElementById('balance');
-  if(Math.random()>0.9){
-    b.style.transform = 'scale(1.05)';
-    setTimeout(()=>b.style.transform='',300);
-  }
-},3000);
+// Инициализация
+updateBalance();
 </script>
 </body>
 </html>
