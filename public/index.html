@@ -39,7 +39,9 @@
       margin-bottom: 20px;
     }
 
-    .tabs { display: flex; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--glass); padding-bottom: 12px; }
+    .tabs {
+      display: flex; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--glass); padding-bottom: 12px;
+    }
     .tab {
       padding: 14px 32px; border-radius: 20px; font-weight: 700; font-size: 17px; cursor: pointer;
       background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid var(--glass);
@@ -50,8 +52,10 @@
       color: #000; transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,231,192,0.4);
     }
 
-    .task-card { background: rgba(255,255,255,0.08); border-radius: 24px; padding: 28px; margin-bottom: 20px;
-      border: 1px solid var(--glass); transition: all 0.5s ease; }
+    .task-card {
+      background: rgba(255,255,255,0.08); border-radius: 24px; padding: 28px; margin-bottom: 20px;
+      border: 1px solid var(--glass); transition: all 0.5s ease;
+    }
     .task-card:hover { transform: translateY(-12px); border-color: var(--accent); box-shadow: 0 30px 80px rgba(0,231,192,0.3); }
 
     .task-title { font-size: 22px; font-weight: 800; margin-bottom: 12px; }
@@ -74,10 +78,35 @@
       transform: scale(1.03); box-shadow: 0 20px 50px rgba(0,231,192,0.5);
     }
 
+    /* КНОПКИ ПОПОЛНЕНИЯ — КРАСИВЫЕ, КОМПАКТНЫЕ, ПЛАВНЫЕ */
+    .topup-container {
+      display: flex; gap: 12px; overflow-x: auto; padding: 20px 0 30px;
+      scrollbar-width: none; -ms-overflow-style: none;
+      scroll-snap-type: x mandatory; justify-content: center; align-items: center;
+      position: relative;
+    }
+    .topup-container::-webkit-scrollbar { display: none; }
+
+    .topup-preset {
+      min-width: 100px; padding: 16px 20px; border-radius: 50px; font-weight: 800; font-size: 18px;
+      background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.15);
+      color: white; cursor: pointer; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      scroll-snap-align: center; flex-shrink: 0; position: relative; z-index: 1;
+      backdrop-filter: blur(10px);
+    }
+    .topup-preset:hover { background: rgba(255,255,255,0.15); transform: translateY(-4px); }
+    .topup-preset.selected {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #000; transform: scale(1.25) !important; z-index: 10;
+      font-weight: 900; box-shadow: 0 20px 50px rgba(0,231,192,0.6);
+      border: 2px solid var(--accent);
+    }
+
     .btn {
-      padding: 18px 20px; border: none; border-radius: 24px; font-weight: 700; font-size: 18px; cursor: pointer;
-      background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #000;
-      box-shadow: 0 15px 40px rgba(0,231,192,0.5); transition: all 0.4s ease; flex: 1;
+      padding: 18px; border: none; border-radius: 24px; font-weight: 700; font-size: 18px;
+      cursor: pointer; background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #000; box-shadow: 0 15px 40px rgba(0,231,192,0.5);
+      transition: all 0.4s ease; flex: 1; text-align: center;
     }
     .btn:hover { transform: translateY(-6px); }
     .btn:active { transform: scale(0.96); }
@@ -85,30 +114,6 @@
       background: rgba(255,255,255,0.1); border: 2px solid var(--glass); color: var(--text);
     }
     .btn-full { width: 100%; margin-top: 20px; }
-
-    /* КНОПКИ ПОПОЛНЕНИЯ — ОДНА ЛИНИЯ + ЦЕНТРИРОВАНИЕ */
-    .topup-container {
-      display: flex; gap: 16px; overflow-x: auto; padding: 20px 0; margin: 20px 0;
-      scrollbar-width: none; -ms-overflow-style: none;
-      scroll-snap-type: x mandatory; justify-content: flex-start;
-    }
-    .topup-container::-webkit-scrollbar { display: none; }
-
-    .topup-preset {
-      min-width: 130px; padding: 20px 12px; border-radius: 30px; font-weight: 800; font-size: 21px;
-      background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2));
-      border: 2px solid rgba(0,231,192,0.4); color: white; cursor: pointer;
-      transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); scroll-snap-align: center;
-      flex-shrink: 0; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .topup-preset:hover { transform: translateY(-6px); }
-    .topup-preset.selected {
-      transform: scale(1.35) translateY(-12px) !important;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #000; font-weight: 900; z-index: 10;
-      box-shadow: 0 35px 90px rgba(0,231,192,0.8);
-      border-color: var(--accent);
-    }
 
     .fab {
       position: fixed; bottom: 100px; right: 20px; width: 80px; height: 80px; border-radius: 50%;
@@ -140,11 +145,11 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
 
-    /* КНОПКА ПОДДЕРЖКИ — РАБОЧАЯ + НАСТОЯЩИЕ НАУШНИКИ */
+    /* ПОДДЕРЖКА — РАБОЧАЯ + ИКОНКА НАУШНИКОВ */
     .support-btn {
       position: absolute; top: 20px; right: 20px; width: 56px; height: 56px;
       background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center;
-      justify-content: center; font-size: 28px; cursor: pointer; border: 1px solid var(--glass);
+      justify-content: center; font-size: 26px; cursor: pointer; border: 1px solid var(--glass);
       transition: all 0.4s; backdrop-filter: blur(10px);
     }
     .support-btn:hover {
@@ -187,8 +192,8 @@
 
   <div id="profileTab" style="display:none">
     <div class="card" style="position:relative">
-      <!-- ПОДДЕРЖКА — РАБОЧАЯ + НАУШНИКИ -->
-      <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')"></div>
+      <!-- ПОДДЕРЖКА — РАБОЧАЯ -->
+      <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')">Headphones</div>
       
       <div style="text-align:center">
         <div class="avatar" id="userAvatar">R</div>
@@ -236,13 +241,13 @@
           <div class="task-price">10 ₽</div>
         </div>
       </div>
-      <input type="number" id="taskCount" class="input" value="10" min="1" placeholder="Количество">
+      <input type="number" id="taskCount" class="input" value="10" min="1">
       <div style="font-size:38px; font-weight:900; text-align:center; margin:28px 0; color:var(--accent)" id="totalPrice">Итого: 1 000 ₽</div>
       <button class="btn btn-full" id="createTaskFinal">Создать задание</button>
     </div>
   </div>
 
-  <!-- ПОПОЛНЕНИЕ -->
+  <!-- ПОПОЛНЕНИЕ — САМАЯ КРАСИВАЯ ВЕРСИЯ -->
   <div id="topupModal" class="modal">
     <div class="modal-card">
       <div class="close-btn" onclick="closeModal('topupModal')">×</div>
@@ -262,8 +267,8 @@
         <button class="topup-preset" data-amount="5000">5000 ₽</button>
       </div>
 
-      <input type="number" id="customAmount" class="input" placeholder="Сумма появится здесь" value="">
-      
+      <input type="number" id="customAmount" class="input" placeholder="Выбранная сумма" value="">
+
       <div id="qrBlock" style="display:none; text-align:center; margin-top:28px">
         <img id="qrCode" src="" style="width:280px; height:280px; background:white; padding:20px; border-radius:28px">
         <div style="margin-top:24px; padding:24px; background:rgba(0,231,192,0.15); border-radius:24px; border:2px dashed var(--accent)">
@@ -350,17 +355,21 @@ if (tg?.initDataUnsafe?.user) {
   if (u.photo_url) document.getElementById('userAvatar').innerHTML = `<img src="${u.photo_url}">`;
 }
 
-// КНОПКИ ПОПОЛНЕНИЯ — ЦЕНТРИРОВАНИЕ
+// САМАЯ ПЛАВНАЯ АНИМАЦИЯ КНОПОК
 document.querySelectorAll('.topup-preset').forEach(btn => {
-  btn.onclick = () => {
+  btn.addEventListener('click', function() {
     document.querySelectorAll('.topup-preset').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    topupAmount = +btn.dataset.amount;
+    this.classList.add('selected');
+    topupAmount = +this.dataset.amount;
     document.getElementById('customAmount').value = topupAmount;
 
     const container = document.getElementById('topupContainer');
-    container.scrollLeft = btn.offsetLeft - (container.offsetWidth / 2) + (btn.offsetWidth / 2);
-  };
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = this.getBoundingClientRect();
+    
+    const scrollTarget = btnRect.left - containerRect.left - (containerRect.width / 2) + (btnRect.width / 2);
+    container.scrollTo({ left: scrollTarget + container.scrollLeft, behavior: 'smooth' });
+  });
 });
 
 document.getElementById('customAmount').oninput = e => {
