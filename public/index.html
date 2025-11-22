@@ -25,7 +25,7 @@
       color: var(--text);
       min-height: 100dvh;
       padding: 16px;
-      padding-bottom: 110px;
+      padding-bottom: 130px;
       overflow-x: hidden;
     }
 
@@ -47,38 +47,40 @@
       padding-bottom: 12px;
     }
     .tab {
-      padding: 12px 28px;
-      border-radius: 16px;
+      padding: 14px 32px;
+      border-radius: 20px;
       font-weight: 700;
       font-size: 17px;
       cursor: pointer;
       transition: all 0.4s ease;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.08);
       color: var(--muted);
+      border: 1px solid var(--glass);
     }
     .tab.active {
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       color: #000;
-      transform: scale(1.06);
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(0,231,192,0.4);
     }
 
     .task-card {
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.08);
       border-radius: 24px;
-      padding: 26px;
+      padding: 28px;
       margin-bottom: 20px;
       border: 1px solid var(--glass);
       transition: all 0.5s ease;
     }
     .task-card:hover {
-      transform: translateY(-10px);
+      transform: translateY(-12px);
       border-color: var(--accent);
       box-shadow: 0 30px 80px rgba(0,231,192,0.3);
     }
 
-    .task-title { font-size: 21px; font-weight: 800; margin-bottom: 10px; }
+    .task-title { font-size: 22px; font-weight: 800; margin-bottom: 12px; }
     .task-price {
-      font-size: 40px;
+      font-size: 42px;
       font-weight: 900;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       -webkit-background-clip: text;
@@ -86,76 +88,107 @@
     }
 
     .progress {
-      height: 14px;
-      background: rgba(255,255,255,0.1);
+      height: 16px;
+      background: rgba(255,255,255,0.12);
       border-radius: 99px;
       overflow: hidden;
-      margin: 18px 0;
+      margin: 20px 0;
     }
     .bar {
       height: 100%;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       width: 0%;
-      transition: width 1.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transition: width 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* КНОПКИ СОЗДАНИЯ ЗАДАНИЙ — КРАСИВЫЕ КАРТОЧКИ */
+    .task-type {
+      padding: 26px;
+      border-radius: 26px;
+      border: 2px solid var(--glass);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: all 0.4s ease;
+      text-align: center;
+    }
+    .task-type:hover {
+      border-color: var(--accent);
+      background: rgba(0,231,192,0.15);
+      transform: translateY(-8px);
+      box-shadow: 0 25px 60px rgba(0,231,192,0.35);
+    }
+    .task-type.selected {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.18));
+      transform: scale(1.03);
+      box-shadow: 0 20px 50px rgba(0,231,192,0.5);
     }
 
     .btn {
-      padding: 16px 32px;
+      padding: 18px 36px;
       border: none;
-      border-radius: 20px;
+      border-radius: 24px;
       font-weight: 700;
-      font-size: 17px;
+      font-size: 18px;
       cursor: pointer;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       color: #000;
       box-shadow: 0 15px 40px rgba(0,231,192,0.5);
       transition: all 0.4s ease;
     }
-    .btn:hover { transform: translateY(-5px); }
+    .btn:hover { transform: translateY(-6px); box-shadow: 0 25px 60px rgba(0,231,192,0.6); }
     .btn:active { transform: scale(0.96); }
     .btn-ghost {
       background: transparent;
-      border: 1.5px solid var(--glass);
+      border: 2px solid var(--glass);
       color: var(--text);
     }
-    .btn-full { width: 100%; margin-top: 16px; }
+    .btn-full { width: 100%; margin-top: 20px; }
 
-    /* КНОПКА + — КРАСИВАЯ */
+    /* АНИМАЦИЯ ПУЛЬСАЦИИ ПРИ НАЖАТИИ */
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 15px 40px rgba(0,231,192,0.5); }
+      50% { transform: scale(1.08); box-shadow: 0 30px 80px rgba(0,231,192,0.8); }
+      100% { transform: scale(1); box-shadow: 0 15px 40px rgba(0,231,192,0.5); }
+    }
+    .topup-preset:active {
+      animation: pulse 0.6s ease;
+    }
+
     .fab {
       position: fixed;
       bottom: 100px;
       right: 20px;
-      width: 76px;
-      height: 76px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 48px;
-      font-weight: 300;
+      font-size: 52px;
+      font-weight: 100;
       color: white;
-      box-shadow: 0 30px 80px rgba(0,231,192,0.7);
+      box-shadow: 0 35px 90px rgba(0,231,192,0.7);
       cursor: pointer;
       z-index: 999;
       animation: float 4s infinite ease-in-out;
     }
-    .fab:hover { transform: scale(1.2); box-shadow: 0 40px 100px rgba(0,231,192,0.9); }
-    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+    .fab:hover { transform: scale(1.2); }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
 
-    /* НИЖНЯЯ НАВИГАЦИЯ — ЧИСТАЯ, БЕЗ ДУБЛЕЙ */
     .bottom-nav {
       position: fixed;
       bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--card);
-      backdrop-filter: blur(24px);
+      backdrop-filter: blur(28px);
       border: 1px solid var(--glass);
       border-radius: 60px;
-      padding: 18px 80px;
+      padding: 22px 100px;
       display: flex;
-      gap: 100px;
+      gap: 130px;
       z-index: 1000;
       box-shadow: var(--shadow);
     }
@@ -164,26 +197,23 @@
       cursor: pointer;
       transition: all 0.4s ease;
       font-weight: 700;
-      font-size: 17px;
+      font-size: 19px;
       color: var(--muted);
     }
-    .nav-item.active {
-      color: var(--accent);
-      transform: scale(1.35);
-    }
+    .nav-item.active { color: var(--accent); transform: scale(1.45); }
 
     .avatar {
-      width: 92px; height: 92px; border-radius: 50%;
+      width: 96px; height: 96px; border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       display: flex; align-items: center; justify-content: center;
-      font-size: 40px; font-weight: 900; color: #000;
+      font-size: 44px; font-weight: 900; color: #000;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,231,192,0.5);
     }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
     .balance {
-      font-size: 58px;
+      font-size: 62px;
       font-weight: 900;
       text-align: center;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
@@ -195,33 +225,36 @@
       position: absolute;
       top: 20px;
       right: 20px;
-      width: 52px;
-      height: 52px;
-      background: rgba(255,255,255,0.12);
+      width: 56px;
+      height: 56px;
+      background: rgba(255,255,255,0.15);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
+      font-size: 28px;
       cursor: pointer;
       border: 1px solid var(--glass);
       transition: all 0.4s;
     }
-    .support-btn:hover { background: rgba(0,231,192,0.3); transform: scale(1.15); }
+    .support-btn:hover {
+      background: rgba(0,231,192,0.3);
+      transform: scale(1.15);
+    }
 
     .modal {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.96);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(24px);
       display: none; align-items: center; justify-content: center;
       z-index: 9999; padding: 16px;
     }
     .modal.active { display: flex; }
     .modal-card {
-      width: 100%; max-width: 560px;
+      width: 100%; max-width: 600px;
       background: var(--card);
       border-radius: var(--radius);
-      padding: 32px;
+      padding: 36px;
       max-height: 92dvh;
       overflow-y: auto;
       position: relative;
@@ -231,48 +264,39 @@
 
     .close-btn {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 44px;
-      height: 44px;
+      top: 18px;
+      right: 18px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 30px;
       cursor: pointer;
       color: var(--muted);
       z-index: 10;
       transition: all 0.3s;
     }
     .close-btn:hover {
-      background: rgba(255,0,0,0.2);
+      background: rgba(255,0,0,0.25);
       color: #ff6b6b;
       transform: scale(1.15);
     }
 
     .input {
       width: 100%;
-      padding: 18px;
-      border-radius: 20px;
+      padding: 20px;
+      border-radius: 24px;
       border: 1px solid var(--glass);
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.08);
       color: white;
-      font-size: 18px;
+      font-size: 20px;
       text-align: center;
-      margin: 12px 0;
+      margin: 16px 0;
+      font-weight: 600;
     }
-
-    .selected-amount {
-      font-size: 46px;
-      font-weight: 900;
-      text-align: center;
-      margin: 20px 0;
-      color: var(--accent);
-      animation: pop 0.6s ease;
-    }
-    @keyframes pop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
@@ -299,7 +323,7 @@
         <div style="font-size:20px; color:var(--muted)">Баланс</div>
         <div class="balance" id="balance">0 ₽</div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:16px">
         <button class="btn" id="topupBtn">Пополнить</button>
         <button class="btn btn-ghost" id="withdrawBtn">Вывести</button>
       </div>
@@ -312,62 +336,67 @@
 
   <div class="fab" id="createFab">+</div>
 
-  <!-- НИЖНЯЯ НАВИГАЦИЯ — ЧИСТО, БЕЗ ПОВТОРОВ -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="showTab('tasksTab')">Задания</div>
     <div class="nav-item" onclick="showTab('profileTab')">Профиль</div>
   </div>
 
-  <!-- МОДАЛКИ С КРЕСТИКОМ -->
+  <!-- СОЗДАНИЕ ЗАДАНИЯ -->
   <div id="createModal" class="modal">
     <div class="modal-card">
       <div class="close-btn" onclick="closeModal('createModal')">×</div>
       <h2 style="text-align:center; margin-bottom:32px">Создать задание</h2>
-      <div style="display:grid; gap:20px">
+      <div style="display:grid; gap:24px">
         <div class="task-type selected" data-price="100" data-title="Отзыв в Яндекс.Картах">
-          <div style="font-size:21px; font-weight:800">Отзыв в Яндекс.Картах</div>
+          <div style="font-size:22px; font-weight:800; margin-bottom:8px">Отзыв в Яндекс.Картах</div>
           <div class="task-price">100 ₽</div>
         </div>
         <div class="task-type" data-price="65" data-title="Отзыв в Google Maps">
-          <div style="font-size:21px; font-weight:800">Отзыв в Google Maps</div>
+          <div style="font-size:22px; font-weight:800; margin-bottom:8px">Отзыв в Google Maps</div>
           <div class="task-price">65 ₽</div>
         </div>
         <div class="task-type" data-price="10" data-title="Подписка на TG-канал">
-          <div style="font-size:21px; font-weight:800">Подписка на TG-канал</div>
+          <div style="font-size:22px; font-weight:800; margin-bottom:8px">Подписка на TG-канал</div>
           <div class="task-price">10 ₽</div>
         </div>
       </div>
       <input type="number" id="taskCount" class="input" value="10" min="1" placeholder="Количество">
-      <div style="font-size:36px; font-weight:900; text-align:center; margin:24px 0; color:var(--accent)" id="totalPrice">Итого: 1 000 ₽</div>
-      <button class="btn btn-full" id="createTaskFinal">Создать</button>
+      <div style="font-size:38px; font-weight:900; text-align:center; margin:28px 0; color:var(--accent)" id="totalPrice">Итого: 1 000 ₽</div>
+      <button class="btn btn-full" id="createTaskFinal">Создать задание</button>
     </div>
   </div>
 
+  <!-- ПОПОЛНЕНИЕ — В ОДНУ СТРОЧКУ + АНИМАЦИЯ -->
   <div id="topupModal" class="modal">
     <div class="modal-card">
       <div class="close-btn" onclick="closeModal('topupModal')">×</div>
       <h2 style="text-align:center">Пополнить баланс</h2>
-      <div id="selectedAmountDisplay" class="selected-amount" style="display:none"></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin:24px 0">
+      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:28px 0; max-width:100%; overflow-x:auto; padding:10px 0">
         <button class="btn topup-preset" data-amount="300">300 ₽</button>
         <button class="btn topup-preset" data-amount="500">500 ₽</button>
         <button class="btn topup-preset" data-amount="1000">1000 ₽</button>
         <button class="btn topup-preset" data-amount="1500">1500 ₽</button>
         <button class="btn topup-preset" data-amount="2000">2000 ₽</button>
+        <button class="btn topup-preset" data-amount="2500">2500 ₽</button>
         <button class="btn topup-preset" data-amount="3000">3000 ₽</button>
+        <button class="btn topup-preset" data-amount="3500">3500 ₽</button>
+        <button class="btn topup-preset" data-amount="4000">4000 ₽</button>
+        <button class="btn topup-preset" data-amount="4500">4500 ₽</button>
+        <button class="btn topup-preset" data-amount="5000">5000 ₽</button>
       </div>
-      <input type="number" id="customAmount" class="input" placeholder="Своя сумма (мин. 100 ₽)">
-      <div id="qrBlock" style="display:none; text-align:center; margin-top:24px">
-        <img id="qrCode" src="" style="width:260px; height:260px; background:white; padding:16px; border-radius:24px">
-        <div style="margin-top:20px; padding:20px; background:rgba(0,231,192,0.15); border-radius:20px; border:2px dashed var(--accent)">
-          <div style="font-size:17px; color:var(--muted)">Код в комментарии:</div>
-          <div id="paymentCode" style="font-size:42px; font-weight:900; letter-spacing:10px; color:var(--accent)">000000</div>
+      <input type="number" id="customAmount" class="input" placeholder="Выбранная сумма появится здесь" value="">
+      <div id="qrBlock" style="display:none; text-align:center; margin-top:28px">
+        <img id="qrCode" src="" style="width:280px; height:280px; background:white; padding:20px; border-radius:28px">
+        <div style="margin-top:24px; padding:24px; background:rgba(0,231,192,0.15); border-radius:24px; border:2px dashed var(--accent)">
+          <div style="font-size:18px; color:var(--muted)">Код в комментарии:</div>
+          <div id="paymentCode" style="font-size:46px; font-weight:900; letter-spacing:12px; color:var(--accent)">000000</div>
         </div>
       </div>
       <button class="btn btn-full" id="generateQrBtn">Показать QR-код</button>
     </div>
   </div>
 
+  <!-- ВЫВОД -->
   <div id="withdrawModal" class="modal">
     <div class="modal-card">
       <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
@@ -441,17 +470,20 @@ if (tg?.initDataUnsafe?.user) {
 }
 
 let topupAmount = 0;
+
+// КНОПКИ ПОПОЛНЕНИЯ — В ОДНУ СТРОЧКУ + АНИМАЦИЯ + ЧИСЛО В ПОЛЕ
 document.querySelectorAll('.topup-preset').forEach(btn => {
   btn.onclick = () => {
+    topupAmount = +btn.dataset.amount;
+    document.getElementById('customAmount').value = topupAmount;
     document.querySelectorAll('.topup-preset').forEach(b => b.style.opacity = '0.7');
     btn.style.opacity = '1';
-    topupAmount = +btn.dataset.amount;
-    document.getElementById('selectedAmountDisplay').textContent = topupAmount + ' ₽';
-    document.getElementById('selectedAmountDisplay').style.display = 'block';
   };
 });
 
-document.getElementById('customAmount').oninput = e => { if (e.target.value >= 100) topupAmount = +e.target.value; };
+document.getElementById('customAmount').oninput = e => {
+  if (e.target.value >= 100) topupAmount = +e.target.value;
+};
 
 document.getElementById('generateQrBtn').onclick = () => {
   if (topupAmount < 100) return alert('Минимум 100 ₽');
