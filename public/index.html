@@ -1,490 +1,176 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash — Интерфейс</title>
-
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Пополнение — ReviewCash</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lottie-web@5.8.1/build/player/lottie.min.js"></script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
 <style>
-:root{
-  --bg-1:#061426; --bg-2:#031827; --card-bg:rgba(255,255,255,0.03); --glass:rgba(255,255,255,0.04);
-  --muted:#9fb6c6; --accentA:#00c7d7; --accentB:#00e08a; --text:#eaf7fb; --radius:14px;
-}
-:root[data-theme="light"]{
-  --bg-1:#f4f7fb; --bg-2:#eef4fa; --card-bg:#fff; --glass:rgba(12,20,28,0.06);
-  --muted:#5b6b76; --accentA:#0079c8; --accentB:#00a86b; --text:#071426;
-}
-*{box-sizing:border-box} html{scroll-behavior:smooth}
-body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:var(--text)}
-.app{max-width:1100px;margin:20px auto;padding:16px;display:grid;grid-template-columns:1fr 360px;gap:18px}
-.header{grid-column:1/-1;display:flex;align-items:center;gap:12px}
-.logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900}
-.title h1{margin:0} .title p{margin:0;color:var(--muted);font-size:13px}
-.panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border-radius:12px;padding:14px;border:1px solid var(--glass);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
-.tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
-.task{padding:12px;border-radius:12px;background:var(--card-bg);border:1px solid rgba(0,0,0,0.04);cursor:pointer;transition:transform .22s,box-shadow .22s}
-.task:hover{transform:translateY(-8px);box-shadow:0 24px 60px rgba(0,0,0,0.45)}
-.btn{padding:10px 12px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;font-weight:700;cursor:pointer}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:10px;color:var(--text)}
-.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:360px;height:68px;border-radius:14px;display:flex;align-items:center;justify-content:space-around;gap:8px;padding:8px;background:linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.12));border:1px solid rgba(255,255,255,0.03);z-index:2000}
-.nav-button{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);cursor:pointer;padding:6px;border-radius:10px;transition:all .25s}
-.nav-button.active{color:var(--accentA);transform:translateY(-6px);background:linear-gradient(90deg,rgba(0,200,255,0.05),rgba(0,200,140,0.02))}
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:3000}
-.modal{background:linear-gradient(180deg,#061426,#041726);padding:16px;border-radius:12px;width:720px;max-width:94%;border:1px solid rgba(255,255,255,0.04)}
-.input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)}
-.skeleton{height:12px;border-radius:8px;background:linear-gradient(90deg,#ffffff06,#ffffff02,#ffffff06);animation: pulse 1.6s infinite}
-@keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
-@media(max-width:1000px){ .app{grid-template-columns:1fr;padding-bottom:96px} .bottom-nav{display:flex} }
-@media(min-width:1001px){ .bottom-nav{display:none} }
-small{color:var(--muted)}
+  body{font-family:Inter,Arial,Helvetica,sans-serif;background:#061426;color:#eaf7fb;margin:0;padding:20px}
+  .panel{max-width:920px;margin:16px auto;background:linear-gradient(180deg,#071a2b,#041324);padding:18px;border-radius:12px}
+  h2{margin:0 0 8px}
+  .muted{color:#9fb6c6;font-size:14px}
+  .amounts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .preset{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;cursor:pointer}
+  .preset.active{box-shadow:0 12px 40px rgba(0,240,255,0.06);transform:translateY(-4px)}
+  .btn{padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,#00c7d7,#00e08a);color:#012226;font-weight:700;cursor:pointer}
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999}
+  .card{background:#0a1b23;padding:18px;border-radius:12px;max-width:520px;width:100%;text-align:center}
+  img.qr{width:260px;height:260px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+  .manual-code{font-size:20px;font-weight:800;color:#00ffd0;margin-top:8px}
+  .warn{color:#ffb4b4;margin-top:12px;font-weight:700}
+  .note{color:#cfece6;margin-top:8px}
+  .close{margin-top:14px;padding:8px 12px;border-radius:8px;border:none;background:#22333b;color:#eaf7fb;cursor:pointer}
 </style>
 </head>
 <body>
-  <div class="app" id="app">
-    <div class="header">
-      <div class="logo">RC</div>
-      <div class="title"><h1>ReviewCash</h1><p>Задания и профиль — создание типов заданий прямо в приложении</p></div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <button id="createTaskBtn" class="btn" style="display:none">Создать задачу</button>
-        <button id="createTypeBtn" class="btn-ghost" style="display:none">Добавить тип</button>
-        <button id="themeToggle" class="btn-ghost">Тема</button>
-      </div>
+  <div class="panel">
+    <h2>Пополнение баланса</h2>
+    <div class="muted">Выберите сумму или введите свою. Минимум 100 ₽.</div>
+
+    <div class="amounts" aria-hidden="false">
+      <button class="preset" data-amount="100">100 ₽</button>
+      <button class="preset" data-amount="500">500 ₽</button>
+      <button class="preset" data-amount="1000">1000 ₽</button>
+      <button class="preset" data-amount="3000">3000 ₽</button>
+      <button id="otherBtn" class="preset">Другая сумма</button>
     </div>
 
-    <main id="tasksView" class="panel" aria-live="polite">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><h2 style="margin:0">Задания</h2><div class="muted">Список доступных задач</div></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="search" class="input" placeholder="Поиск..." style="max-width:220px"/>
-          <button id="refreshBtn" class="btn">Обновить</button>
-        </div>
-      </div>
-      <div id="tasksGrid" class="tasks-grid">
-        <div><div class="task skeleton" style="height:84px"></div></div>
-        <div><div class="task skeleton" style="height:84px"></div></div>
-        <div><div class="task skeleton" style="height:84px"></div></div>
-      </div>
-    </main>
+    <div style="margin-top:12px">
+      <button id="doTopup" class="btn">Пополнить</button>
+    </div>
 
-    <aside id="profileView" class="panel">
-      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
-        <div style="display:flex;gap:12px;align-items:center">
-          <div id="avatar" style="width:72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#04202a,#05202a);display:flex;align-items:center;justify-content:center;font-weight:800">RC</div>
-          <div>
-            <div id="fullname" style="font-weight:800">Профиль скрыт</div>
-            <div id="handle" class="muted">Нажмите «Показать профиль»</div>
-            <div style="margin-top:8px"><button id="revealProfile" class="btn-ghost">Показать профиль</button></div>
-          </div>
-        </div>
-        <div><button id="supportBtn" class="btn-ghost">🎧</button></div>
+    <div id="status" style="margin-top:12px"></div>
+  </div>
+
+  <!-- payment modal -->
+  <div id="payModal" class="modal" role="dialog" aria-hidden="true">
+    <div class="card">
+      <h3>Оплатите переводом через приложение банка</h3>
+      <div class="muted" id="payInfo">Откройте приложение банка и осуществите перевод</div>
+      <div id="payAmount" style="font-size:18px;font-weight:800;margin-top:8px"></div>
+
+      <div style="margin-top:12px">
+        <img id="payQR" class="qr" src="" alt="QR для оплаты (SBP)"/>
       </div>
 
       <div style="margin-top:12px">
-        <h3 style="margin:6px 0">История</h3>
-        <div id="history" style="max-height:260px;overflow:auto"><div class="muted">Скрыто</div></div>
+        <a id="payLink" href="#" target="_blank" rel="noopener noreferrer" style="color:#00ffd0">Открыть платёжную ссылку</a>
       </div>
 
-      <div style="margin-top:12px;display:flex;gap:8px">
-        <button id="topupBtn" class="btn">Пополнить</button>
-        <button id="withdrawBtn" class="btn-ghost">Вывести</button>
+      <div style="margin-top:14px;text-align:left">
+        <div class="muted">ВАЖНО:</div>
+        <div class="note">После открытия платежа в приложении банка сумма и получатель заполняются автоматически. Поле «Комментарий к переводу» часто остаётся пустым — это нормально.</div>
+        <div class="note">Пожалуйста, вручную введите в поле «Комментарий к переводу» следующий код (обязательно):</div>
+        <div class="manual-code" id="manualCode">RCXXXXXX</div>
+        <div class="note">Только после ввода кода нажмите оплатить в вашем банке — это единственный способ привязать платёж к вашему аккаунту.</div>
+        <div class="warn">Деньги не возвращаются, если вы перевели на неправильный код или неверного получателя — проверяйте код вручную!</div>
       </div>
-    </aside>
-  </div>
 
-  <nav class="bottom-nav" id="bottomNav">
-    <div class="nav-button active" id="navTasks" data-view="tasks"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M7 8h10v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8z" stroke="currentColor" stroke-width="1.4"/></svg><div style="font-size:13px">Задания</div></div>
-    <div class="nav-button" id="navProfile" data-view="profile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.4"/></svg><div style="font-size:13px">Профиль</div></div>
-  </nav>
-
-  <!-- Create Task Modal -->
-  <div id="createModal" class="modal-backdrop" style="display:none;align-items:center;justify-content:center">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center"><strong>Создать задачу</strong><button id="closeCreate" class="btn-ghost">Закрыть</button></div>
-      <div style="margin-top:10px">
-        <label>Тип задачи</label>
-        <select id="taskTypeSelect" class="input"></select>
+      <div style="margin-top:12px">
+        <button id="payClose" class="close">Закрыть</button>
       </div>
-      <div style="margin-top:8px"><label>Название</label><input id="taskTitle" class="input"/></div>
-      <div style="margin-top:8px"><label>Описание</label><textarea id="taskDesc" class="input" style="min-height:100px"></textarea></div>
-      <div style="margin-top:8px;display:flex;gap:8px">
-        <input id="taskLink" class="input" placeholder="Ссылка (опционально)"/>
-        <input id="taskBudget" class="input" placeholder="Бюджет ₽ (опционально)" style="max-width:160px"/>
-      </div>
-      <div style="margin-top:8px">
-        <small id="budgetInfo">—</small>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-        <button id="submitTask" class="btn">Создать</button>
-        <button id="cancelCreate" class="btn-ghost">Отмена</button>
-      </div>
-      <div id="createFeedback" style="margin-top:8px;color:var(--muted)"></div>
-    </div>
-  </div>
-
-  <!-- Add Type Modal -->
-  <div id="createTypeModal" class="modal-backdrop" style="display:none;align-items:center;justify-content:center">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center"><strong>Добавить тип задачи</strong><button id="closeType" class="btn-ghost">Закрыть</button></div>
-      <div style="margin-top:10px"><label>ID (латиница, без пробелов)</label><input id="typeId" class="input"/></div>
-      <div style="margin-top:8px"><label>Название</label><input id="typeName" class="input"/></div>
-      <div style="margin-top:8px"><label>Цена за 1 выполнение (₽)</label><input id="typePrice" class="input" /></div>
-      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
-        <button id="submitType" class="btn">Добавить</button>
-        <button id="cancelType" class="btn-ghost">Отмена</button>
-      </div>
-      <div id="typeFeedback" style="margin-top:8px;color:var(--muted)"></div>
+      <div id="payPollStatus" style="margin-top:8px" class="muted"></div>
     </div>
   </div>
 
 <script>
-/* Helper utilities */
 function qs(name){ return new URLSearchParams(location.search).get(name); }
-function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
-const adminToken = qs('token') || '';
-
-/* Theme toggle */
-(function(){
-  const root = document.documentElement;
-  const stored = localStorage.getItem('rc_theme');
-  if(stored) root.setAttribute('data-theme', stored);
-  else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) root.setAttribute('data-theme','light');
-  document.getElementById('themeToggle').addEventListener('click', ()=>{
-    const cur = root.getAttribute('data-theme');
-    const next = (cur === 'light') ? null : 'light';
-    if(next){ root.setAttribute('data-theme', next); localStorage.setItem('rc_theme', next); } else { root.removeAttribute('data-theme'); localStorage.removeItem('rc_theme'); }
+let selectedAmount = null;
+document.querySelectorAll('.preset').forEach(btn=>{
+  btn.addEventListener('click', ()=> {
+    document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    const a = btn.dataset.amount;
+    if(a) selectedAmount = Number(a);
+    else selectedAmount = null;
   });
-})();
+});
 
-/* Bottom nav behaviour */
-(function(){
-  const navTasks=document.getElementById('navTasks'), navProfile=document.getElementById('navProfile'), tasksView=document.getElementById('tasksView'), profileView=document.getElementById('profileView');
-  function setActive(view){
-    if(window.innerWidth>1000){ tasksView.style.display=''; profileView.style.display=''; return; }
-    if(view==='tasks'){ tasksView.style.display=''; profileView.style.display='none'; navTasks.classList.add('active'); navProfile.classList.remove('active'); }
-    else { profileView.style.display=''; tasksView.style.display='none'; navProfile.classList.add('active'); navTasks.classList.remove('active'); }
+document.getElementById('otherBtn').addEventListener('click', async ()=>{
+  const s = prompt('Введите сумму в рублях (целое число >= 100):');
+  if(!s) return;
+  const v = Math.round(Number(String(s).replace(',','.')));
+  if(isNaN(v) || v < 100){ alert('Сумма должна быть целым числом >= 100'); return; }
+  selectedAmount = v;
+  // mark selection visually
+  document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+  document.getElementById('otherBtn').classList.add('active');
+  document.getElementById('otherBtn').textContent = v + ' ₽';
+});
+
+document.getElementById('doTopup').addEventListener('click', async ()=>{
+  if(!selectedAmount || selectedAmount < 100){
+    alert('Выберите сумму не менее 100 ₽');
+    return;
   }
-  navTasks.addEventListener('click', ()=> setActive('tasks'));
-  navProfile.addEventListener('click', ()=> setActive('profile'));
-  window.addEventListener('resize', ()=> { if(window.innerWidth>1000){ tasksView.style.display=''; profileView.style.display=''; } else setActive('tasks'); });
-  if(window.innerWidth<=1000) setActive('tasks');
-})();
-
-/* Load existing task types into select */
-async function loadTaskTypesIntoSelect(){
-  try {
-    const res = await fetch('/api/task_types');
-    const types = await res.json();
-    const sel = document.getElementById('taskTypeSelect');
-    sel.innerHTML = '';
-    types.forEach(t=>{
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = `${t.name} — ${t.unit_price} ₽`;
-      sel.appendChild(opt);
-    });
-    return types;
+  document.getElementById('status').textContent = 'Создаём платёжную сессию...';
+  try{
+    const res = await fetch('/api/topups_public', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ amount: selectedAmount })});
+    const j = await res.json();
+    if(!j.ok){ alert('Ошибка: '+(j.reason||'')); document.getElementById('status').textContent=''; return; }
+    const topup = j.topup;
+    // show modal
+    document.getElementById('payAmount').textContent = (topup.amount || selectedAmount) + ' ₽';
+    const manualCode = j.manual_code || topup.manual_code || 'RCXXXXXX';
+    document.getElementById('manualCode').textContent = manualCode;
+    // set QR/link if present
+    const pay = topup.payment || {};
+    if(pay.qr) document.getElementById('payQR').src = pay.qr; else document.getElementById('payQR').src = '';
+    if(pay.url) { document.getElementById('payLink').href = pay.url; document.getElementById('payLink').style.display = 'inline'; }
+    else document.getElementById('payLink').style.display = 'none';
+    // show instruction more prominently
+    document.getElementById('status').textContent = '';
+    const modal = document.getElementById('payModal');
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden','false');
+    // Optionally start polling for topup status (if webhook will update it)
+    pollTopupStatus(topup.id, 2*60*1000);
   } catch(e){
-    console.error('loadTaskTypes', e);
-    return [];
+    console.error(e);
+    alert('Ошибка сети при создании платежа');
+    document.getElementById('status').textContent = '';
   }
-}
+});
 
-/* Load tasks */
-async function loadTasks(){
-  const grid = document.getElementById('tasksGrid');
-  grid.innerHTML = '';
-  for(let i=0;i<6;i++){ const sk=document.createElement('div'); sk.innerHTML='<div class="task skeleton" style="height:84px"></div>'; grid.appendChild(sk); }
-  try {
-    const res = await fetch('/api/tasks_public');
-    const tasks = await res.json();
-    grid.innerHTML = '';
-    if(!Array.isArray(tasks) || tasks.length === 0){ grid.innerHTML = '<div class="muted">Нет активных заданий</div>'; return; }
-    for(let t of tasks){
-      const el = document.createElement('div'); el.className = 'fadeIn';
-      el.innerHTML = `<div class="task"><div style="font-weight:700">${escapeHtml(t.title)}</div><div class="muted">${escapeHtml(t.description||'')}</div><div style="margin-top:8px;color:var(--muted)">${t.count? t.count + '×' + (t.unit_price||'') + ' ₽ • ' + (t.budget||0)+' ₽': (t.budget? t.budget+' ₽':'')}</div>${t.link? '<div style="margin-top:6px"><a href="'+escapeHtml(t.link)+'" target="_blank" rel="noopener noreferrer">Перейти по ссылке</a></div>':''}</div>`;
-      grid.appendChild(el);
-      el.querySelector('.task').addEventListener('click', ()=> alert('Открыто: '+(t.title||t.id)));
-      await sleep(40);
-    }
-  } catch(e){
-    console.error('loadTasks error', e);
-    grid.innerHTML = '<div class="muted">Ошибка загрузки</div>';
-  }
-}
+document.getElementById('payClose').addEventListener('click', ()=>{
+  const modal = document.getElementById('payModal');
+  modal.style.display = 'none';
+  modal.setAttribute('aria-hidden','true');
+});
 
-/* Profile toggle (fixed, multi-toggle, persisted in sessionStorage) */
-(function(){
-  const btn = document.getElementById('revealProfile');
-  let shown = sessionStorage.getItem('rc_profile_shown') === '1';
-  async function renderProfile(show){
-    const fullname = document.getElementById('fullname'), handle = document.getElementById('handle'), avatar = document.getElementById('avatar');
-    if(!show){
-      fullname.textContent = 'Профиль скрыт';
-      handle.textContent = 'Нажмите «Показать профиль»';
-      btn.textContent = 'Показать профиль';
-      sessionStorage.setItem('rc_profile_shown', '0');
-      return;
-    }
-    const tgInit = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) ? Telegram.WebApp.initData : null;
-    if(!tgInit){
-      fullname.textContent = 'Гость';
-      handle.textContent = 'Профиль открыт локально';
-      btn.textContent = 'Скрыть профиль';
-      sessionStorage.setItem('rc_profile_shown', '1');
-      return;
-    }
-    try {
-      const res = await fetch('/api/profile_me', { headers: { 'X-Tg-InitData': tgInit }});
+let pollTimer = null;
+async function pollTopupStatus(topupId, timeoutMs){
+  const statusEl = document.getElementById('payPollStatus');
+  const start = Date.now();
+  statusEl.textContent = 'Ожидание подтверждения платежа...';
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{
+    try{
+      const res = await fetch('/api/topups/' + encodeURIComponent(topupId));
       const j = await res.json();
-      if(j.ok){
-        fullname.textContent = j.user.first_name || 'Пользователь';
-        handle.textContent = j.user.username ? '@'+j.user.username : 'UID: '+j.user.id;
-        if(j.photo_url){
-          avatar.innerHTML = ''; const img=document.createElement('img'); img.src=j.photo_url; img.style.width='72px'; img.style.height='72px'; img.style.borderRadius='12px'; avatar.appendChild(img);
-        }
-        btn.textContent = 'Скрыть профиль';
-        sessionStorage.setItem('rc_profile_shown', '1');
-        // load history
-        const list = document.getElementById('history'); list.innerHTML='';
-        const res2 = await fetch(`/api/user_history?uid=${encodeURIComponent(j.user.id)}&page=1&page_size=6`);
-        const j2 = await res2.json();
-        if(j2.ok && j2.items && j2.items.length>0){
-          for(let it of j2.items){
-            const row=document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='8px 0'; row.style.borderBottom='1px dashed rgba(0,0,0,0.06)';
-            row.innerHTML = `<div><div style="font-weight:700">${escapeHtml((it.type||'').toUpperCase())} — ${escapeHtml(it.id||'')}</div><div class="muted" style="font-size:13px">${escapeHtml(it.summary||'')}</div></div><div style="text-align:right"><div style="font-weight:800">${it.amount? it.amount+' ₽': ''}</div><div class="muted" style="font-size:12px">${escapeHtml(it.created_at||'')}</div></div>`;
-            list.appendChild(row);
-          }
-        } else { list.innerHTML = '<div class="muted">Нет записей</div>'; }
-      } else {
-        fullname.textContent = 'Профиль скрыт';
-        handle.textContent = 'Ошибка получения профиля';
-      }
-    } catch(e){
-      console.error('profile fetch', e);
-      fullname.textContent = 'Профиль скрыт';
-      handle.textContent = 'Ошибка сети';
-    }
-  }
-  (async ()=>{ shown = sessionStorage.getItem('rc_profile_shown') === '1'; await renderProfile(shown); })();
-  btn.addEventListener('click', async ()=> { shown = !shown; await renderProfile(shown); });
-})();
-
-/* Support (works from browser and WebApp) */
-document.getElementById('supportBtn').addEventListener('click', async ()=>{
-  const text = prompt('Опишите проблему:'); if(!text) return;
-  try {
-    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
-    const res = await fetch('/api/support', { method:'POST', headers, body: JSON.stringify({ message: text })});
-    const j = await res.json();
-    if(!j.ok) alert('Ошибка: '+(j.reason||'')); else alert('Сообщение отправлено в поддержку');
-  } catch(e){ alert('Ошибка сети'); }
-});
-
-/* Create task modal + autoadjust budget logic (0.8s debounce) */
-(function(){
-  const createBtn = document.getElementById('createTaskBtn');
-  const createModal = document.getElementById('createModal');
-  const closeCreate = document.getElementById('closeCreate');
-  const cancelCreate = document.getElementById('cancelCreate');
-  const submitTask = document.getElementById('submitTask');
-  const typeSelect = document.getElementById('taskTypeSelect');
-  const budgetInput = document.getElementById('taskBudget');
-  const budgetInfo = document.getElementById('budgetInfo');
-  const feedback = document.getElementById('createFeedback');
-
-  let typesCache = [];
-  async function refreshTypes(){
-    typesCache = await loadTaskTypes();
-    typeSelect.innerHTML = '';
-    typesCache.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = `${t.name} — ${t.unit_price} ₽`;
-      typeSelect.appendChild(opt);
-    });
-    updateBudgetInfo(); // recompute
-  }
-
-  async function loadTaskTypes(){
-    try {
-      const res = await fetch('/api/task_types');
-      const json = await res.json();
-      return Array.isArray(json)? json : [];
-    } catch(e){
-      console.error('loadTaskTypes', e);
-      return [];
-    }
-  }
-
-  // Debounce 0.8s
-  let debounceTimer = null;
-  function scheduleAdjust(){
-    if(debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(adjustBudget, 800);
-  }
-
-  function updateBudgetInfo(){
-    // compute unit price and show info
-    const sel = typeSelect.value;
-    const unit = (typesCache.find(t=>t.id===sel)?.unit_price) || 1;
-    budgetInfo.textContent = `Цена за 1 выполнение: ${unit} ₽`;
-  }
-
-  function adjustBudget(){
-    const val = Number(String(budgetInput.value || '').replace(',', '.')) || 0;
-    const sel = typeSelect.value;
-    const unit = (typesCache.find(t=>t.id===sel)?.unit_price) || 1;
-    if(unit <= 0){
-      budgetInfo.textContent = 'Некорректная цена в типе';
-      return;
-    }
-    // desiredCount = round(val / unit)
-    let desiredCount = Math.round(val / unit);
-    if(desiredCount * unit > val){
-      desiredCount = Math.floor(val / unit);
-    }
-    const finalBudget = desiredCount * unit;
-    budgetInfo.textContent = `После округления: ${desiredCount} шт. × ${unit} ₽ = ${finalBudget} ₽ (вниз, если превысит ввод)`;
-    // reflect in input (optional) — show final budget but keep original if admin wants to edit
-    // We'll not overwrite user's input automatically; show adjusted value beside it.
-  }
-
-  // wire events
-  typeSelect.addEventListener('change', ()=>{ updateBudgetInfo(); scheduleAdjust(); });
-  budgetInput.addEventListener('input', ()=> scheduleAdjust());
-
-  // show modal only if adminToken present
-  if(adminToken){
-    createBtn.style.display = '';
-    document.getElementById('createTypeBtn').style.display = '';
-    createBtn.addEventListener('click', async ()=> {
-      createModal.style.display = 'flex';
-      createModal.setAttribute('aria-hidden', 'false');
-      typesCache = await loadTaskTypesIntoSelect();
-      await refreshTypes();
-      budgetInfo.textContent = 'Вводите сумму — через 0.8с она будет округлена к ближайшему количеству и округлена вниз при необходимости.';
-    });
-    closeCreate.addEventListener('click', ()=> { createModal.style.display = 'none'; createModal.setAttribute('aria-hidden', 'true'); });
-    cancelCreate.addEventListener('click', ()=> { createModal.style.display = 'none'; createModal.setAttribute('aria-hidden', 'true'); });
-    submitTask.addEventListener('click', async ()=>{
-      const title = document.getElementById('taskTitle').value.trim();
-      const desc = document.getElementById('taskDesc').value.trim();
-      const link = document.getElementById('taskLink').value.trim();
-      let budget = Number(String(document.getElementById('taskBudget').value || '').replace(',', '.')) || 0;
-      const type_id = document.getElementById('taskTypeSelect').value;
-      if(!title){ feedback.textContent = 'Введите название задачи'; return; }
-      // link validation
-      if(link){
-        try { const u = new URL(link); if(u.protocol !== 'http:' && u.protocol !== 'https:'){ feedback.textContent = 'Ссылка должна быть http/https'; return; } } catch(e){ feedback.textContent = 'Некорректная ссылка'; return; }
-      }
-      // compute adjusted final budget based on selected type unit price
-      const unit = (typesCache.find(t=>t.id===type_id)?.unit_price) || 1;
-      let desiredCount = Math.round(budget / unit);
-      if(desiredCount * unit > budget) desiredCount = Math.floor(budget / unit);
-      const finalBudget = desiredCount * unit;
-      if(desiredCount <= 0 && unit > 0){
-        feedback.textContent = `Бюджет слишком мал — минимум ${unit} ₽ за 1 выполнение`;
+      if(!j.ok){ statusEl.textContent = 'Ошибка проверки статуса'; clearInterval(pollTimer); return; }
+      const t = j.topup;
+      if(t.status === 'paid'){
+        statusEl.textContent = 'Платёж принят — баланс обновлён';
+        clearInterval(pollTimer);
+        setTimeout(()=>{ document.getElementById('payClose').click(); }, 1200);
         return;
-      }
-      feedback.textContent = 'Создание...';
-      try {
-        const res = await fetch('/api/tasks_create?token=' + encodeURIComponent(adminToken), {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ title, description: desc, link, budget: finalBudget, type_id })
-        });
-        const j = await res.json();
-        if(!j.ok){
-          feedback.textContent = 'Ошибка: ' + (j.reason || '');
-        } else {
-          feedback.textContent = 'Задача создана';
-          createModal.style.display = 'none';
-          loadTasks();
+      } else {
+        const elapsed = Date.now() - start;
+        if(elapsed > timeoutMs){
+          statusEl.textContent = 'Время ожидания истекло. Если вы уже оплатили — дождитесь обновления (может занять несколько минут).';
+          clearInterval(pollTimer);
+          return;
         }
-      } catch(e){
-        feedback.textContent = 'Ошибка сети';
-        console.error(e);
       }
-    });
-  } else {
-    createBtn.style.display = 'none';
-    document.getElementById('createTypeBtn').style.display = 'none';
-  }
-})();
-
-/* Add type modal (admin only) */
-(function(){
-  const createTypeBtn = document.getElementById('createTypeBtn');
-  const modal = document.getElementById('createTypeModal');
-  const closeType = document.getElementById('closeType');
-  const submitType = document.getElementById('submitType');
-  const cancelType = document.getElementById('cancelType');
-  const feedback = document.getElementById('typeFeedback');
-
-  if(adminToken){
-    createTypeBtn.addEventListener('click', ()=> { modal.style.display = 'flex'; modal.setAttribute('aria-hidden','false'); feedback.textContent=''; });
-    closeType.addEventListener('click', ()=> { modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); });
-    cancelType.addEventListener('click', ()=> { modal.style.display = 'none'; modal.setAttribute('aria-hidden','true'); });
-    submitType.addEventListener('click', async ()=>{
-      const id = document.getElementById('typeId').value.trim();
-      const name = document.getElementById('typeName').value.trim();
-      const price = Number(String(document.getElementById('typePrice').value || '').replace(',', '.')) || 0;
-      if(!id || !name || price <= 0){ feedback.textContent = 'Заполните все поля корректно'; return; }
-      feedback.textContent = 'Добавление...';
-      try {
-        const res = await fetch('/api/task_types_add?token=' + encodeURIComponent(adminToken), {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ id, name, unit_price: Math.round(price) })
-        });
-        const j = await res.json();
-        if(!j.ok){ feedback.textContent = 'Ошибка: ' + (j.reason || ''); }
-        else { feedback.textContent = 'Тип добавлен'; modal.style.display='none'; document.getElementById('createTaskBtn').click(); } // reopen create task to refresh types
-      } catch(e){ feedback.textContent = 'Ошибка сети'; console.error(e); }
-    });
-  }
-})();
-
-/* socket.io listen new_task */
-try {
-  const sock = io();
-  sock.on('connect', ()=> console.log('socket connected'));
-  sock.on('new_task', ()=> loadTasks());
-} catch(e){ console.warn('socket fail', e); }
-
-/* Support, topup, withdraw quick handlers */
-document.getElementById('topupBtn').addEventListener('click', async ()=>{
-  const s = prompt('Сумма (мин.100 ₽):'); if(!s) return;
-  const amount = parseFloat(s.replace(',', '.')); if(isNaN(amount) || amount < 100){ alert('Мин.100 ₽'); return; }
-  try {
-    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
-    const res = await fetch('/api/topups_public', { method:'POST', headers, body: JSON.stringify({ amount })});
-    const j = await res.json();
-    if(!j.ok) alert('Ошибка: '+(j.reason||'')); else alert(`Создано. Код: ${j.topup.code}. Инструкции отправлены админам.`);
-  } catch(e){ alert('Ошибка сети'); }
-});
-document.getElementById('withdrawBtn').addEventListener('click', async ()=>{
-  const s = prompt('Сумма (мин.250 ₽):'); if(!s) return;
-  const amount = parseFloat(s.replace(',', '.')); if(isNaN(amount) || amount < 250){ alert('Мин.250 ₽'); return; }
-  const name = prompt('ФИО/ник:'); if(!name) return;
-  const bank = prompt('Банк/реквизиты:'); if(!bank) return;
-  try {
-    const headers = {'Content-Type':'application/json'}; if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) headers['X-Tg-InitData'] = Telegram.WebApp.initData;
-    const res = await fetch('/api/withdraw_public', { method:'POST', headers, body: JSON.stringify({ amount, name, bank })});
-    const j = await res.json();
-    if(!j.ok){ if(j.reason==='insufficient_balance') alert('Недостаточно средств: '+(j.balance||0)); else alert('Ошибка: '+(j.reason||'')); return; }
-    alert('Заявка отправлена. В течение 24 часов.');
-  } catch(e){ alert('Ошибка сети'); }
-});
-
-/* Init */
-document.getElementById('refreshBtn').addEventListener('click', ()=> loadTasks());
-loadTasks();
+    } catch(e){
+      console.error('poll error', e);
+      statusEl.textContent = 'Ошибка проверки статуса';
+      clearInterval(pollTimer);
+    }
+  }, 3000);
+}
 </script>
 </body>
 </html>
