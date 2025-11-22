@@ -1,302 +1,147 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash — Admin</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Входящие переводы</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="https://unpkg.com/lottie-web@5.8.1/build/player/lottie.min.js"></script>
 <style>
-:root{
-  --bg1:#061025; --bg2:#04162a;
-  --card:#071a2b;
-  --muted:#9fb6c6;
-  --accentA:#00f0ff; --accentB:#00ff9d;
-  --neon: rgba(0,240,255,0.14);
-  --radius:14px;
-  --glass: rgba(255,255,255,0.03);
-  --glass-strong: rgba(255,255,255,0.06);
-  --glass-blur: blur(8px);
-}
-
-/* Reset */
-*{box-sizing:border-box}
-body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#eaf7fb;min-height:100vh}
-.container{max-width:1200px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
-
-/* Header */
-.header{display:flex;align-items:center;gap:12px}
-.logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(90deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;color:#012226;font-weight:900}
-.title h1{margin:0;font-size:20px}
-.title p{margin:0;color:var(--muted);font-size:13px}
-
-/* Panels */
-.panel{
-  background:linear-gradient(180deg,rgba(255,255,255,0.015),rgba(255,255,255,0.01));
-  border-radius:var(--radius);padding:14px;border:1px solid var(--glass);box-shadow: 0 12px 40px rgba(2,8,20,0.6);
-  transform-style: preserve-3d;
-  transition: transform .35s cubic-bezier(.2,.9,.25,1), box-shadow .35s;
-}
-.panel:hover{ transform: translateY(-6px); box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
-
-/* Neon accent header */
-.header-accent{ padding:10px;border-radius:10px;background:linear-gradient(90deg,rgba(0,240,255,0.06),rgba(0,255,157,0.03));box-shadow:0 8px 40px var(--neon) }
-
-/* Tables */
-.table-wrap{max-height:320px;overflow:auto;margin-top:10px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:14px}
-th{color:var(--muted);font-weight:600}
-.row-actions button{margin-right:6px;padding:8px;border-radius:10px;border:none;cursor:pointer;transition:transform .12s ease}
-.row-actions button:active{transform:scale(.98)}
-
-/* Buttons */
-.btn{padding:10px 12px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#012226;font-weight:700;cursor:pointer;box-shadow:0 8px 30px rgba(0,240,255,0.06)}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
-.btn-approve{background:linear-gradient(90deg,#00ff9d,#6cffb6);color:#02221a}
-.btn-reject{background:linear-gradient(90deg,#ff6b80,#ff8fa2);color:#fff}
-
-/* Microinteractions */
-.btn:hover{ transform: translateY(-3px) scale(1.01); box-shadow:0 14px 40px rgba(0,0,0,0.45) }
-.btn:active{ transform: translateY(-1px) scale(.99); }
-
-/* Neon glow on hover for important items */
-.task-glow:hover{ box-shadow: 0 12px 30px rgba(0,240,255,0.08), 0 0 40px rgba(0,255,157,0.04) }
-
-/* Parallax background */
-.bg-parallax{
-  position:fixed;left:0;right:0;top:0;bottom:0;z-index:-1;pointer-events:none;overflow:hidden;
-  background: radial-gradient(800px 400px at 10% 10%, rgba(0,240,255,0.03), transparent),
-              radial-gradient(600px 300px at 90% 90%, rgba(0,255,157,0.02), transparent);
-  filter: blur(18px) saturate(110%);
-  transform: translateZ(0);
-}
-
-/* Skeleton loading */
-.skeleton{background:linear-gradient(90deg,#ffffff06,#ffffff02,#ffffff06);height:12px;border-radius:8px;animation: pulsePlaceholder 1.6s ease-in-out infinite}
-@keyframes pulsePlaceholder{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
-
-/* Fade and slide transitions */
-.fade-slide{opacity:0;transform:translateY(8px);animation: fadeSlideIn .42s ease forwards}
-@keyframes fadeSlideIn{to{opacity:1;transform:none}}
-
-/* Admin list */
-.admins-list{display:flex;flex-direction:column;gap:10px}
-.admin-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02)}
-
-/* Responsive */
-@media(max-width:980px){
-  .container{grid-template-columns:1fr;padding:12px}
-}
+  body{font-family:Inter,Arial;background:#061426;color:#eaf7fb;margin:0;padding:18px}
+  .container{max-width:1200px;margin:0 auto}
+  .panel{background:linear-gradient(180deg,#071a2b,#041324);padding:14px;border-radius:10px;margin-bottom:12px}
+  input[type="text"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px}
+  .muted{color:#9fb6c6}
+  .btn{padding:8px 10px;border-radius:8px;border:none;background:linear-gradient(90deg,#00c7d7,#00e08a);color:#012226;font-weight:700;cursor:pointer}
+  .btn-ghost{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  .warn{color:#ffb4b4;font-weight:700}
+  .status-pending{color:#ffd36a}
+  .status-paid{color:#8ef2c9}
+  .manual-unverified{background:rgba(255,80,80,0.06);padding:4px;border-radius:6px}
+  .manual-verified{background:rgba(0,240,200,0.06);padding:4px;border-radius:6px}
+  .actions > button{margin-right:6px}
 </style>
 </head>
 <body>
-  <div class="bg-parallax" aria-hidden="true"></div>
-
   <div class="container">
-    <div class="header">
-      <div class="logo">RC</div>
-      <div class="title">
-        <h1>Админ-панель ReviewCash</h1>
-        <p class="sub">Живые события • Управление выплатами и поддержкой</p>
-      </div>
-      <div style="margin-left:auto" class="header-accent">
-        <button id="reloadAll" class="btn">Обновить</button>
+    <div class="panel">
+      <h2>Входящие переводы</h2>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <input id="filterComment" type="text" placeholder="Фильтр по комментарию или коду" style="flex:1"/>
+        <select id="filterStatus">
+          <option value="">Все статусы</option>
+          <option value="pending">pending</option>
+          <option value="paid">paid</option>
+          <option value="refunded">refunded</option>
+        </select>
+        <label style="display:flex;align-items:center"><input id="manualOnly" type="checkbox" style="margin-right:6px"/> Только ручные (неподтверждённые)</label>
+        <button id="btnFilter" class="btn-ghost">Применить</button>
+        <button id="btnRefresh" class="btn">Обновить</button>
       </div>
     </div>
 
-    <main>
-      <div class="panel fade-slide">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Заявки & Support</strong><div style="color:var(--muted);font-size:13px">Отвечайте и обрабатывайте</div></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="globalSearch" class="btn-ghost" placeholder="Поиск..." style="padding:8px 10px;border-radius:10px"/>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 360px;gap:12px;margin-top:12px">
-          <div class="panel" style="padding:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <strong>Пополнения</strong><div class="muted">Всего: <span id="statTopups">0</span></div>
-            </div>
-            <div class="table-wrap"><table id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table></div>
-          </div>
-
-          <div class="panel" style="padding:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <strong>Выводы</strong><div class="muted">Всего: <span id="statWithdraws">0</span></div>
-            </div>
-            <div class="table-wrap"><table id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Действия</th></tr></thead><tbody></tbody></table></div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px" class="panel">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <strong>Поддержка</strong><div class="muted">Ответы и закрытия</div>
-          </div>
-          <div class="table-wrap" style="margin-top:8px"><table id="supportsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сообщение</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table></div>
-        </div>
-      </div>
-    </main>
-
-    <aside>
-      <div class="panel fade-slide">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Статистика</strong><div class="muted">Live</div>
-        </div>
-        <div style="margin-top:12px">
-          <div class="muted">Топапов: <span id="statTopups2" style="font-weight:800;color:var(--accentA)">0</span></div>
-          <div class="muted" style="margin-top:6px">Выводов: <span id="statWithdraws2" style="font-weight:800;color:var(--accentB)">0</span></div>
-          <div class="muted" style="margin-top:6px">Support: <span id="statSupports2" style="font-weight:800;color:var(--neon)">0</span></div>
-        </div>
-      </div>
-
-      <div class="panel fade-slide" style="margin-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Админы</strong><div class="muted">Кто и сколько support обработал</div>
-        </div>
-        <div id="adminsPanel" class="admins-list" style="margin-top:10px">
-          <div class="center">
-            <div id="admLottie" style="width:100px;height:100px"></div>
-            <div class="muted">Загрузка админов...</div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  </div>
-
-  <!-- Reply Modal -->
-  <div id="replyModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999">
-    <div style="background:linear-gradient(180deg,#041726,#02131a);padding:16px;border-radius:12px;width:720px;max-width:95%;border:1px solid rgba(255,255,255,0.04)">
-      <h3 id="replyTitle">Ответ пользователю</h3>
-      <div id="replyOrig" class="muted" style="margin-bottom:8px"></div>
-      <textarea id="replyText" style="width:100%;min-height:120px;padding:10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:#eaf7fb"></textarea>
-      <div style="margin-top:12px;text-align:right">
-        <button id="replySend" class="btn">Отправить</button>
-        <button id="replyClose" class="btn-ghost" style="margin-left:8px">Отмена</button>
-      </div>
+    <div class="panel" id="incomingPanel">
+      <table id="incomingTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Пользователь</th>
+            <th>Сумма</th>
+            <th>Код</th>
+            <th>Комментарий / webhook</th>
+            <th>Статус</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="noResults" class="muted" style="display:none;margin-top:8px">Нет записей</div>
     </div>
   </div>
 
 <script>
-try { lottie.loadAnimation({ container: document.getElementById('admLottie'), renderer: 'svg', loop: true, autoplay: true, path: 'https://assets2.lottiefiles.com/packages/lf20_j2ka0eac.json' }); } catch(e){}
+const token = new URLSearchParams(location.search).get('token') || '';
+if(!token){ alert('Admin token не передан в URL. Откройте /mainadmin через бота (/mainadmin)'); }
 
-function qs(name){ return new URLSearchParams(location.search).get(name); }
-const token = qs('token') || '';
-if(!token){ alert('Admin token не передан в URL. Получите через бот (/mainadmin).'); }
+function apiGet(path){
+  return fetch(path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token)).then(r=>r.json());
+}
+function apiPost(path, body){
+  return fetch(path + '?token=' + encodeURIComponent(token), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{}) }).then(r=>r.json());
+}
 
-async function apiGet(path){ const res = await fetch(path + (path.includes('?')? '&':'?') + 'token=' + encodeURIComponent(token)); if(!res.ok) throw await res.text(); return res.json(); }
-async function apiPost(path, body){ const res = await fetch(path + '?token=' + encodeURIComponent(token), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})}); if(!res.ok) throw await res.text(); return res.json(); }
-
-async function loadTopups(){
-  try {
-    const data = await apiGet('/api/topups');
-    const tbody = document.querySelector('#topupsTable tbody'); tbody.innerHTML='';
-    data.forEach(t=>{
+async function loadIncoming(){
+  const status = document.getElementById('filterStatus').value;
+  const comment = document.getElementById('filterComment').value.trim();
+  const manualOnly = document.getElementById('manualOnly').checked;
+  const qp = [];
+  if(status) qp.push('status='+encodeURIComponent(status));
+  if(comment) qp.push('comment='+encodeURIComponent(comment));
+  if(manualOnly) qp.push('manual_only=1');
+  const url = '/api/admin/incoming_topups' + (qp.length ? '?'+qp.join('&') : '');
+  try{
+    const j = await apiGet(url);
+    if(!j.ok){ console.error(j); return; }
+    const items = j.items || [];
+    const tbody = document.querySelector('#incomingTable tbody');
+    tbody.innerHTML = '';
+    if(items.length === 0){
+      document.getElementById('noResults').style.display = 'block';
+      return;
+    } else document.getElementById('noResults').style.display = 'none';
+    items.forEach(t=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${t.id}</td><td>${t.user.username||t.user.id||'—'}</td><td>${t.amount||0} ₽</td><td>${t.status||''}</td><td class="row-actions"></td>`;
-      const actions = tr.querySelector('.row-actions');
-      if(t.status === 'pending'){
-        const ok = document.createElement('button'); ok.className='btn-approve'; ok.textContent='Одобрить';
-        ok.onclick = async ()=> { await apiPost(`/api/topups/${encodeURIComponent(t.id)}/approve`); loadAll(); };
-        const rej = document.createElement('button'); rej.className='btn-reject'; rej.textContent='Отклонить';
-        rej.onclick = async ()=> { await apiPost(`/api/topups/${encodeURIComponent(t.id)}/reject`, { reason: 'Отклонено' }); loadAll(); };
-        actions.appendChild(ok); actions.appendChild(rej);
-      } else { actions.textContent='—' }
+      const user = (t.user && t.user.id) ? t.user.id : '—';
+      const manual_code = t.manual_code || '';
+      const comment = (t.payment && t.payment.comment) ? t.payment.comment : (t.payment && t.payment.last_webhook ? JSON.stringify(t.payment.last_webhook) : '');
+      const manualVerified = (t.payment && t.payment.manual_code_verified) === true;
+      const status = t.status || 'pending';
+      tr.innerHTML = `
+        <td>${t.id}</td>
+        <td>${user}</td>
+        <td>${t.amount} ₽</td>
+        <td>${manual_code ? '<span class="'+(manualVerified?'manual-verified':'manual-unverified')+'">'+manual_code+'</span>' : ''}</td>
+        <td style="max-width:360px;white-space:pre-wrap;">${comment || ''}</td>
+        <td class="status-${status}">${status}</td>
+        <td class="actions"></td>
+      `;
+      const actionsCell = tr.querySelector('.actions');
+      if(t.status !== 'paid'){
+        const verifyBtn = document.createElement('button'); verifyBtn.className='btn-ghost'; verifyBtn.textContent='Отметить оплачен';
+        verifyBtn.onclick = async ()=> {
+          if(!confirm('Отметить как оплачено и зачислить баланс пользователю?')) return;
+          const res = await apiPost(`/api/admin/incoming_topups/${encodeURIComponent(t.id)}/mark_paid`, {});
+          if(res.ok){ alert('Отмечено как оплачено'); loadIncoming(); } else alert('Ошибка: '+(res.reason||''));
+        };
+        actionsCell.appendChild(verifyBtn);
+        const forceBtn = document.createElement('button'); forceBtn.className='btn-ghost'; forceBtn.textContent='Принудительно сопоставить';
+        forceBtn.onclick = async ()=> {
+          if(!confirm('Принудительно сопоставить и пометить как оплачено?')) return;
+          const res = await apiPost(`/api/admin/incoming_topups/${encodeURIComponent(t.id)}/force_match`, { verify_code: true });
+          if(res.ok){ alert('Принудительно сопоставлено'); loadIncoming(); } else alert('Ошибка: '+(res.reason||''));
+        };
+        actionsCell.appendChild(forceBtn);
+      }
+      const refundBtn = document.createElement('button'); refundBtn.className='btn'; refundBtn.textContent='Отметить возврат';
+      refundBtn.onclick = async ()=> {
+        const reason = prompt('Причина возврата (будет записана):') || '';
+        if(!confirm('Отметить как возврат? (реальный денежный возврат выполняется вручную)')) return;
+        const res = await apiPost(`/api/admin/incoming_topups/${encodeURIComponent(t.id)}/refund`, { reason });
+        if(res.ok){ alert('Отмечено как refund'); loadIncoming(); } else alert('Ошибка: '+(res.reason||''));
+      };
+      actionsCell.appendChild(refundBtn);
       tbody.appendChild(tr);
     });
-    document.getElementById('statTopups').textContent = data.length; document.getElementById('statTopups2').textContent = data.length;
-  } catch(e){ console.error('loadTopups', e); }
-}
-
-async function loadWithdraws(){
-  try {
-    const data = await apiGet('/api/withdraws');
-    const tbody = document.querySelector('#withdrawsTable tbody'); tbody.innerHTML='';
-    data.forEach(w=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${w.id}</td><td>${w.user.username||w.user.id||'—'}</td><td>${w.amount||0} ₽</td><td>${w.name||''} / ${w.bank||''}</td><td class="row-actions"></td>`;
-      const actions = tr.querySelector('.row-actions');
-      if(w.status === 'pending'){
-        const ok = document.createElement('button'); ok.className='btn-approve'; ok.textContent='Выплатить';
-        ok.onclick = async ()=> { await apiPost(`/api/withdraws/${encodeURIComponent(w.id)}/approve`); loadAll(); };
-        const rej = document.createElement('button'); rej.className='btn-reject'; rej.textContent='Отклонить';
-        rej.onclick = async ()=> { await apiPost(`/api/withdraws/${encodeURIComponent(w.id)}/reject`, { reason: 'Отклонено' }); loadAll(); };
-        actions.appendChild(ok); actions.appendChild(rej);
-      } else { actions.textContent='—' }
-      tbody.appendChild(tr);
-    });
-    document.getElementById('statWithdraws').textContent = data.length; document.getElementById('statWithdraws2').textContent = data.length;
-  } catch(e){ console.error('loadWithdraws', e); }
-}
-
-let currentReplyId = null;
-function openReplyModal(id, message){
-  currentReplyId = id;
-  document.getElementById('replyOrig').textContent = message;
-  document.getElementById('replyText').value = '';
-  document.getElementById('replyModal').style.display = 'flex';
-}
-document.getElementById('replyClose').addEventListener('click', ()=> document.getElementById('replyModal').style.display='none');
-document.getElementById('replySend').addEventListener('click', async ()=>{
-  const txt = document.getElementById('replyText').value.trim();
-  if(!txt) return alert('Введите текст');
-  try { await apiPost(`/api/supports/${encodeURIComponent(currentReplyId)}/reply`, { message: txt }); alert('Ответ отправлен'); document.getElementById('replyModal').style.display='none'; loadAll(); }
-  catch(e){ alert('Ошибка: '+e); }
-});
-
-async function loadSupports(){
-  try {
-    const data = await apiGet('/api/supports');
-    const tbody = document.querySelector('#supportsTable tbody'); tbody.innerHTML='';
-    data.forEach(s=>{
-      const tr = document.createElement('tr');
-      const short = (s.message||'').slice(0,140) + ((s.message||'').length>140?'…':'');
-      tr.innerHTML = `<td>${s.id}</td><td>${s.user.username||s.user.id||'—'}</td><td title="${s.message||''}">${short}</td><td>${s.status||''}</td><td class="row-actions"></td>`;
-      const actions = tr.querySelector('.row-actions');
-      const rep = document.createElement('button'); rep.className='btn-approve'; rep.textContent='Ответить';
-      rep.onclick = ()=> openReplyModal(s.id, s.message || '');
-      const closeBtn = document.createElement('button'); closeBtn.className='btn-reject'; closeBtn.textContent='Закрыть';
-      closeBtn.onclick = async ()=> { await apiPost(`/api/supports/${encodeURIComponent(s.id)}/resolve`, { reason: 'Закрыто админом' }); loadAll(); };
-      actions.appendChild(rep); actions.appendChild(closeBtn);
-      tbody.appendChild(tr);
-    });
-    document.getElementById('statSupports2').textContent = data.length;
-  } catch(e){ console.error('loadSupports', e); }
-}
-
-async function loadAdmins(){
-  try {
-    const res = await apiGet('/api/admins');
-    if(!res || !res.ok) throw 'no';
-    const arr = res.admins || [];
-    const panel = document.getElementById('adminsPanel'); panel.innerHTML='';
-    if(arr.length === 0){ panel.innerHTML = '<div class="muted">Нет админов</div>'; return; }
-    arr.forEach(a=>{
-      const div = document.createElement('div'); div.className = 'admin-item';
-      div.innerHTML = `<div><strong>${a.id_or_username}</strong><div class="muted">${a.is_main ? 'Главный' : 'Обычный'}</div></div><div style="text-align:right"><div style="font-weight:800">${a.supports_handled||0}</div><div class="muted">support обработано</div></div>`;
-      panel.appendChild(div);
-    });
-  } catch(e){ console.error('loadAdmins', e); document.getElementById('adminsPanel').innerHTML='<div class="muted">Ошибка</div>'; }
-}
-
-async function loadAll(){ await Promise.all([loadTopups(), loadWithdraws(), loadSupports(), loadAdmins()]); }
-document.getElementById('reloadAll').addEventListener('click', loadAll);
-
-document.addEventListener('DOMContentLoaded', ()=> {
-  if(token) {
-    try {
-      const sock = io({ auth: { token }, transports: ['websocket'] });
-      sock.on('connect', ()=> console.log('socket connected', sock.id));
-      sock.on('new_topup', ()=> loadTopups());
-      sock.on('new_withdraw', ()=> loadWithdraws());
-      sock.on('new_support', ()=> loadSupports());
-      sock.on('admins_updated', ()=> loadAdmins());
-    } catch(e){ console.warn('socket fail', e); }
+  }catch(e){
+    console.error('loadIncoming error', e);
   }
-  loadAll();
-});
+}
+
+document.getElementById('btnRefresh').addEventListener('click', loadIncoming);
+document.getElementById('btnFilter').addEventListener('click', loadIncoming);
+
+loadIncoming();
 </script>
 </body>
 </html>
