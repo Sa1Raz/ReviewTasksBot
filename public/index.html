@@ -3,174 +3,276 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Пополнение — ReviewCash</title>
+<title>ReviewCash — Задания и профиль</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <style>
-  body{font-family:Inter,Arial,Helvetica,sans-serif;background:#061426;color:#eaf7fb;margin:0;padding:20px}
-  .panel{max-width:920px;margin:16px auto;background:linear-gradient(180deg,#071a2b,#041324);padding:18px;border-radius:12px}
-  h2{margin:0 0 8px}
-  .muted{color:#9fb6c6;font-size:14px}
-  .amounts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-  .preset{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;cursor:pointer}
-  .preset.active{box-shadow:0 12px 40px rgba(0,240,255,0.06);transform:translateY(-4px)}
-  .btn{padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,#00c7d7,#00e08a);color:#012226;font-weight:700;cursor:pointer}
+  :root{
+    --bg:#0b1720; --card:#0f2530; --accent1:#00d1d7; --accent2:#00e07a; --muted:#9fb6c6;
+    --radius:14px; --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui;background:linear-gradient(180deg,var(--bg),#031322);color:#eaf7fb;min-height:100vh;padding:20px}
+  .app{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 360px;gap:20px}
+  .header{grid-column:1/-1;display:flex;align-items:center;gap:12px}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#012226}
+  .title h1{margin:0;font-size:20px} .title p{margin:0;color:var(--muted);font-size:13px}
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:var(--radius);padding:16px;border:1px solid var(--glass);box-shadow:0 12px 40px rgba(0,0,0,0.45)}
+  .tasks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
+  .task{padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+  .task .title{font-weight:700}
+  .task .meta{color:var(--muted);font-size:13px}
+  .progress{height:8px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden;margin-top:8px}
+  .progress .bar{height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));width:0%;transition:width .4s}
+  .sidebar .avatar{width:72px;height:72px;border-radius:12px;overflow:hidden;background:#05202a;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .muted{color:var(--muted)}
+  .btn{padding:10px 12px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#012226;font-weight:700;cursor:pointer}
+  .link{color:var(--accent1);text-decoration:none}
   .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999}
-  .card{background:#0a1b23;padding:18px;border-radius:12px;max-width:520px;width:100%;text-align:center}
-  img.qr{width:260px;height:260px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
-  .manual-code{font-size:20px;font-weight:800;color:#00ffd0;margin-top:8px}
-  .warn{color:#ffb4b4;margin-top:12px;font-weight:700}
-  .note{color:#cfece6;margin-top:8px}
-  .close{margin-top:14px;padding:8px 12px;border-radius:8px;border:none;background:#22333b;color:#eaf7fb;cursor:pointer}
+  .modal .card{background:var(--card);padding:18px;border-radius:12px;max-width:720px;width:100%}
+  /* responsive */
+  @media(max-width:1000px){ .app{grid-template-columns:1fr;padding-bottom:120px} .sidebar{display:none} }
 </style>
 </head>
 <body>
-  <div class="panel">
-    <h2>Пополнение баланса</h2>
-    <div class="muted">Выберите сумму или введите свою. Минимум 100 ₽.</div>
-
-    <div class="amounts" aria-hidden="false">
-      <button class="preset" data-amount="100">100 ₽</button>
-      <button class="preset" data-amount="500">500 ₽</button>
-      <button class="preset" data-amount="1000">1000 ₽</button>
-      <button class="preset" data-amount="3000">3000 ₽</button>
-      <button id="otherBtn" class="preset">Другая сумма</button>
+  <div class="app">
+    <div class="header">
+      <div class="logo">RC</div>
+      <div class="title"><h1>ReviewCash</h1><p>Профиль, задания и баланс — современный интерфейс</p></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="openCreate" class="btn">Создать задачу</button>
+        <button id="openTopup" class="btn" style="background:transparent;border:1px solid var(--glass);color:var(--accent1)">Пополнить</button>
+      </div>
     </div>
 
-    <div style="margin-top:12px">
-      <button id="doTopup" class="btn">Пополнить</button>
-    </div>
+    <main class="panel" id="tasksPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="margin:0">Задания</h2>
+          <div class="muted">Список доступных заданий — видно прогресс в реальном времени</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="search" placeholder="Поиск..." style="padding:8px;border-radius:10px;border:1px solid var(--glass);background:transparent;color:inherit" />
+        </div>
+      </div>
 
-    <div id="status" style="margin-top:12px"></div>
+      <div id="tasksGrid" class="tasks-grid" aria-live="polite">
+        <!-- tasks appended here -->
+      </div>
+    </main>
+
+    <aside class="panel sidebar">
+      <div style="display:flex;gap:12px;align-items:center">
+        <div id="avatar" class="avatar">RC</div>
+        <div style="flex:1">
+          <div id="fullname" style="font-weight:800">Гость</div>
+          <div id="handle" class="muted">Профиль скрыт</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="muted">Баланс</div>
+          <div style="font-weight:800" id="balance">0 ₽</div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="btnTopup" class="btn">Пополнить</button>
+          <button id="btnWithdraw" class="btn" style="background:transparent;border:1px solid var(--glass);color:var(--accent1)">Вывести</button>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <h3 style="margin:0">История</h3>
+        <div id="historyList" style="margin-top:8px;max-height:260px;overflow:auto" class="muted">
+          Нет записей
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <!-- payment modal -->
-  <div id="payModal" class="modal" role="dialog" aria-hidden="true">
+  <!-- Create Task modal -->
+  <div id="createModal" class="modal">
     <div class="card">
-      <h3>Оплатите переводом через приложение банка</h3>
-      <div class="muted" id="payInfo">Откройте приложение банка и осуществите перевод</div>
-      <div id="payAmount" style="font-size:18px;font-weight:800;margin-top:8px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3>Создать задачу</h3><button id="closeCreate" class="btn" style="background:#22333b;color:#eaf7fb">Закрыть</button></div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 220px;gap:12px">
+        <div>
+          <label>Название</label>
+          <input id="taskTitle" class="input" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--glass);background:transparent;color:inherit" />
+          <label style="margin-top:8px;display:block">Описание</label>
+          <textarea id="taskDesc" style="width:100%;min-height:100px;padding:10px;border-radius:10px;border:1px solid var(--glass);background:transparent;color:inherit"></textarea>
+        </div>
+        <div>
+          <label>Тип</label>
+          <select id="taskType" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--glass);background:transparent;color:inherit"></select>
+          <label style="margin-top:8px;display:block">Количество</label>
+          <input id="taskCount" type="number" value="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--glass);background:transparent;color:inherit" />
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button id="submitTask" class="btn">Создать</button>
+            <button id="cancelCreate" class="btn" style="background:transparent;border:1px solid var(--glass);color:var(--accent1)">Отмена</button>
+          </div>
+        </div>
+      </div>
+      <div id="createFeedback" class="muted" style="margin-top:10px"></div>
+    </div>
+  </div>
 
+  <!-- Topup modal -->
+  <div id="topupModal" class="modal">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3>Пополнение</h3><button id="closeTopup" class="btn" style="background:#22333b;color:#eaf7fb">Закрыть</button></div>
       <div style="margin-top:12px">
-        <img id="payQR" class="qr" src="" alt="QR для оплаты (SBP)"/>
+        <div class="muted">Выберите сумму</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="preset" data-amount="100">100 ₽</button>
+          <button class="preset" data-amount="500">500 ₽</button>
+          <button class="preset" data-amount="1000">1000 ₽</button>
+          <button id="customAmount" class="btn" style="background:transparent;border:1px solid var(--glass);color:var(--accent1)">Другая</button>
+        </div>
+        <div id="topupQRWrap" style="margin-top:12px;display:none;text-align:center">
+          <div style="font-weight:800" id="topupAmount">0 ₽</div>
+          <img id="topupQR" src="" alt="QR" style="width:260px;height:260px;margin-top:8px;border-radius:8px"/>
+          <div style="margin-top:8px" class="muted" id="manualCodeText">Введите код RCXXXXXX в комментарии перевода</div>
+        </div>
       </div>
-
-      <div style="margin-top:12px">
-        <a id="payLink" href="#" target="_blank" rel="noopener noreferrer" style="color:#00ffd0">Открыть платёжную ссылку</a>
-      </div>
-
-      <div style="margin-top:14px;text-align:left">
-        <div class="muted">ВАЖНО:</div>
-        <div class="note">После открытия платежа в приложении банка сумма и получатель заполняются автоматически. Поле «Комментарий к переводу» часто остаётся пустым — это нормально.</div>
-        <div class="note">Пожалуйста, вручную введите в поле «Комментарий к переводу» следующий код (обязательно):</div>
-        <div class="manual-code" id="manualCode">RCXXXXXX</div>
-        <div class="note">Только после ввода кода нажмите оплатить в вашем банке — это единственный способ привязать платёж к вашему аккаунту.</div>
-        <div class="warn">Деньги не возвращаются, если вы перевели на неправильный код или неверного получателя — проверяйте код вручную!</div>
-      </div>
-
-      <div style="margin-top:12px">
-        <button id="payClose" class="close">Закрыть</button>
-      </div>
-      <div id="payPollStatus" style="margin-top:8px" class="muted"></div>
     </div>
   </div>
 
 <script>
-function qs(name){ return new URLSearchParams(location.search).get(name); }
-let selectedAmount = null;
-document.querySelectorAll('.preset').forEach(btn=>{
-  btn.addEventListener('click', ()=> {
-    document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
-    btn.classList.add('active');
-    const a = btn.dataset.amount;
-    if(a) selectedAmount = Number(a);
-    else selectedAmount = null;
+const socket = io();
+socket.on('connect', ()=> console.log('socket connected'));
+socket.on('new_task', data => { loadTasks(); })
+socket.on('topup_updated', data => { loadProfile(); })
+
+// Load types and tasks
+async function loadTaskTypes(){
+  const res = await fetch('/api/task_types').catch(()=>null);
+  if(!res) return [];
+  const json = await res.json();
+  return Array.isArray(json)?json:[];
+}
+
+async function loadTasks(){
+  const grid = document.getElementById('tasksGrid');
+  grid.innerHTML = '';
+  const res = await fetch('/api/tasks_public').catch(()=>null);
+  if(!res){ grid.innerHTML = '<div class="muted">Ошибка загрузки</div>'; return; }
+  const tasks = await res.json();
+  if(!Array.isArray(tasks) || tasks.length===0){ grid.innerHTML = '<div class="muted">Нет заданий</div>'; return; }
+  tasks.forEach(t=>{
+    const el = document.createElement('div'); el.className = 'task';
+    const ratio = t.count ? Math.min(100, Math.round((t.done||0)/t.count*100)) : 0;
+    el.innerHTML = `<div class="title">${t.title}</div><div class="meta">${t.description||''}</div>
+      <div class="progress"><div class="bar" style="width:${ratio}%"></div></div>
+      <div style="margin-top:6px;font-size:13px;color:var(--muted)">${t.done||0} / ${t.count} выполнено</div>`;
+    grid.appendChild(el);
   });
+}
+
+// Profile & balance
+async function loadProfile(){
+  // Try to use Telegram WebApp initData if available
+  const pay = window.Telegram && Telegram.WebApp && Telegram.WebApp.initData;
+  const headers = {};
+  if(pay){ headers['X-Tg-InitData'] = pay; }
+  const res = await fetch('/api/profile_me', { headers }).catch(()=>null);
+  if(!res){ document.getElementById('fullname').textContent='Гость'; return; }
+  const j = await res.json();
+  if(!j.ok){ document.getElementById('fullname').textContent='Гость'; return; }
+  const u = j.user;
+  document.getElementById('fullname').textContent = (u.first_name || 'Пользователь');
+  document.getElementById('handle').textContent = u.username ? '@'+u.username : 'UID:'+u.id;
+  document.getElementById('balance').textContent = (j.balance||0) + ' ₽';
+  if(j.photo_url){
+    const av = document.getElementById('avatar');
+    av.innerHTML = '';
+    const img = document.createElement('img'); img.src = j.photo_url; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover';
+    av.appendChild(img);
+  }
+  // history
+  const hist = document.getElementById('historyList'); hist.innerHTML = '';
+  if(j.history && j.history.length>0){
+    j.history.forEach(it=>{
+      const row = document.createElement('div'); row.style.padding='8px 0'; row.innerHTML = `<div style="font-weight:700">${it.type||''} ${it.amount? it.amount+' ₽':''}</div><div class="muted" style="font-size:13px">${it.created_at||''}</div>`;
+      hist.appendChild(row);
+    });
+  } else {
+    hist.innerHTML = '<div class="muted">Нет записей</div>';
+  }
+}
+
+document.getElementById('openCreate').addEventListener('click', async ()=>{
+  const modal = document.getElementById('createModal'); modal.style.display='flex';
+  modal.setAttribute('aria-hidden','false');
+  const types = await loadTaskTypes();
+  const sel = document.getElementById('taskType'); sel.innerHTML='';
+  types.forEach(t=>{ const opt=document.createElement('option'); opt.value=t.id; opt.textContent=`${t.name} — ${t.unit_price} ₽`; sel.appendChild(opt); });
 });
 
-document.getElementById('otherBtn').addEventListener('click', async ()=>{
-  const s = prompt('Введите сумму в рублях (целое число >= 100):');
-  if(!s) return;
-  const v = Math.round(Number(String(s).replace(',','.')));
-  if(isNaN(v) || v < 100){ alert('Сумма должна быть целым числом >= 100'); return; }
-  selectedAmount = v;
-  // mark selection visually
-  document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
-  document.getElementById('otherBtn').classList.add('active');
-  document.getElementById('otherBtn').textContent = v + ' ₽';
+document.getElementById('closeCreate').addEventListener('click', ()=>{ document.getElementById('createModal').style.display='none'; });
+document.getElementById('cancelCreate').addEventListener('click', ()=>{ document.getElementById('createModal').style.display='none'; });
+
+document.getElementById('submitTask').addEventListener('click', async ()=>{
+  const title = document.getElementById('taskTitle').value.trim();
+  const desc = document.getElementById('taskDesc').value.trim();
+  const type_id = document.getElementById('taskType').value;
+  const count = Number(document.getElementById('taskCount').value) || 1;
+  if(!title){ document.getElementById('createFeedback').textContent='Введите название'; return; }
+  const res = await fetch('/api/tasks_create?token='+encodeURIComponent(new URLSearchParams(location.search).get('token')||''), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, description: desc, type_id, count, unit_price: 0 }) }).catch(()=>null);
+  if(!res){ document.getElementById('createFeedback').textContent='Ошибка сети'; return; }
+  const j = await res.json();
+  if(!j.ok){ document.getElementById('createFeedback').textContent='Ошибка: '+(j.reason||''); return; }
+  document.getElementById('createFeedback').textContent='Задача создана';
+  document.getElementById('createModal').style.display='none';
+  loadTasks();
 });
+
+// Topup modal wiring
+document.querySelectorAll('.preset').forEach(b=> b.addEventListener('click', ()=> {
+  document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.getElementById('topupQRWrap').style.display='none';
+  selectedTop = Number(b.dataset.amount || 0);
+}));
+let selectedTop = null;
+document.getElementById('customAmount').addEventListener('click', ()=> {
+  const s = prompt('Введите сумму (руб):'); if(!s) return; const v=Math.round(Number(s.replace(',','.'))); if(isNaN(v)||v<100){ alert('>=100'); return; } selectedTop=v; document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active')); document.getElementById('customAmount').textContent=v+' ₽';
+});
+document.getElementById('btnTopup').addEventListener('click', ()=> document.getElementById('topupModal').style.display='flex');
+document.getElementById('closeTopup').addEventListener('click', ()=> document.getElementById('topupModal').style.display='none');
 
 document.getElementById('doTopup').addEventListener('click', async ()=>{
-  if(!selectedAmount || selectedAmount < 100){
-    alert('Выберите сумму не менее 100 ₽');
-    return;
-  }
-  document.getElementById('status').textContent = 'Создаём платёжную сессию...';
-  try{
-    const res = await fetch('/api/topups_public', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ amount: selectedAmount })});
-    const j = await res.json();
-    if(!j.ok){ alert('Ошибка: '+(j.reason||'')); document.getElementById('status').textContent=''; return; }
-    const topup = j.topup;
-    // show modal
-    document.getElementById('payAmount').textContent = (topup.amount || selectedAmount) + ' ₽';
-    const manualCode = j.manual_code || topup.manual_code || 'RCXXXXXX';
-    document.getElementById('manualCode').textContent = manualCode;
-    // set QR/link if present
-    const pay = topup.payment || {};
-    if(pay.qr) document.getElementById('payQR').src = pay.qr; else document.getElementById('payQR').src = '';
-    if(pay.url) { document.getElementById('payLink').href = pay.url; document.getElementById('payLink').style.display = 'inline'; }
-    else document.getElementById('payLink').style.display = 'none';
-    // show instruction more prominently
-    document.getElementById('status').textContent = '';
-    const modal = document.getElementById('payModal');
-    modal.style.display = 'flex';
-    modal.setAttribute('aria-hidden','false');
-    // Optionally start polling for topup status (if webhook will update it)
-    pollTopupStatus(topup.id, 2*60*1000);
-  } catch(e){
-    console.error(e);
-    alert('Ошибка сети при создании платежа');
-    document.getElementById('status').textContent = '';
-  }
-});
-
-document.getElementById('payClose').addEventListener('click', ()=>{
-  const modal = document.getElementById('payModal');
-  modal.style.display = 'none';
-  modal.setAttribute('aria-hidden','true');
+  if(!selectedTop || selectedTop < 100){ alert('Выберите сумму >= 100'); return; }
+  document.getElementById('status').textContent = 'Создаём платеж...';
+  const res = await fetch('/api/topups_public', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ amount: selectedTop }) });
+  const j = await res.json();
+  if(!j.ok){ alert('Ошибка: '+(j.reason||'')); document.getElementById('status').textContent=''; return; }
+  const top = j.topup;
+  document.getElementById('topupAmount').textContent = top.amount + ' ₽';
+  document.getElementById('topupQR').src = top.payment && top.payment.qr ? top.payment.qr : '';
+  document.getElementById('manualCodeText').textContent = 'Введите код в комментарии: ' + (j.manual_code || top.manual_code);
+  document.getElementById('topupQRWrap').style.display='block';
+  document.getElementById('status').textContent = '';
+  // poll status
+  pollTopupStatus(top.id, 2*60*1000);
 });
 
 let pollTimer = null;
-async function pollTopupStatus(topupId, timeoutMs){
-  const statusEl = document.getElementById('payPollStatus');
-  const start = Date.now();
-  statusEl.textContent = 'Ожидание подтверждения платежа...';
+async function pollTopupStatus(id, timeoutMs){
+  const start = Date.now(); const statusEl = document.getElementById('payPollStatus');
+  statusEl.textContent = 'Ожидание подтверждения...';
   if(pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(async ()=>{
-    try{
-      const res = await fetch('/api/topups/' + encodeURIComponent(topupId));
-      const j = await res.json();
-      if(!j.ok){ statusEl.textContent = 'Ошибка проверки статуса'; clearInterval(pollTimer); return; }
-      const t = j.topup;
-      if(t.status === 'paid'){
-        statusEl.textContent = 'Платёж принят — баланс обновлён';
-        clearInterval(pollTimer);
-        setTimeout(()=>{ document.getElementById('payClose').click(); }, 1200);
-        return;
-      } else {
-        const elapsed = Date.now() - start;
-        if(elapsed > timeoutMs){
-          statusEl.textContent = 'Время ожидания истекло. Если вы уже оплатили — дождитесь обновления (может занять несколько минут).';
-          clearInterval(pollTimer);
-          return;
-        }
-      }
-    } catch(e){
-      console.error('poll error', e);
-      statusEl.textContent = 'Ошибка проверки статуса';
-      clearInterval(pollTimer);
-    }
+    const res = await fetch('/api/topups/'+encodeURIComponent(id)).catch(()=>null);
+    if(!res){ statusEl.textContent='Ошибка проверки'; clearInterval(pollTimer); return; }
+    const j = await res.json();
+    if(!j.ok){ statusEl.textContent='Ошибка запроса'; clearInterval(pollTimer); return; }
+    const t = j.topup;
+    if(t.status === 'paid'){ statusEl.textContent='Платёж принят'; clearInterval(pollTimer); loadProfile(); setTimeout(()=>document.getElementById('topupModal').style.display='none', 1000); return; }
+    if(Date.now()-start > timeoutMs){ statusEl.textContent='Таймаут ожидания'; clearInterval(pollTimer); return; }
   }, 3000);
 }
+
+// Init loads
+loadTasks();
+loadProfile();
 </script>
 </body>
 </html>
