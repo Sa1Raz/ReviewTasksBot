@@ -8,33 +8,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a1d26;
-      --card: rgba(15, 45, 60, 0.85);
-      --glass: rgba(255,255,255,0.08);
+      --bg: #0a192f;
+      --card: rgba(15, 35, 60, 0.92);
+      --glass: rgba(255,255,255,0.09);
       --accent: #00e7c0;
-      --accent2: #00d0ff;
-      --text: #e5f8ff;
-      --muted: #a0d0e8;
-      --success: #00ff9d;
+      --accent2: #00d4ff;
+      --text: #e0f7ff;
+      --muted: #88c0d0;
       --radius: 28px;
-      --shadow: 0 30px 80px rgba(0,0,0,0.7);
+      --shadow: 0 25px 70px rgba(0,0,0,0.65);
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #0a1d26 0%, #05151e 100%);
+      background: linear-gradient(135deg, #0a192f 0%, #001528 100%);
       color: var(--text);
       min-height: 100dvh;
       padding: 16px;
-      padding-bottom: 100px;
+      padding-bottom: 110px;
       overflow-x: hidden;
     }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,231,192,0.4); border-radius: 3px; }
 
     .card {
       background: var(--card);
-      backdrop-filter: blur(24px);
+      backdrop-filter: blur(22px);
       border: 1px solid var(--glass);
       border-radius: var(--radius);
       padding: 28px;
@@ -42,7 +39,6 @@
       margin-bottom: 20px;
       transition: all 0.4s ease;
     }
-    .card:hover { transform: translateY(-8px); }
 
     h2 {
       font-size: 24px;
@@ -61,41 +57,44 @@
       padding-bottom: 12px;
     }
     .tab {
-      padding: 12px 24px;
+      padding: 12px 26px;
       border-radius: 16px;
       font-weight: 700;
       font-size: 16px;
       cursor: pointer;
-      transition: all 0.3s;
-      background: rgba(255,255,255,0.05);
+      transition: all 0.4s ease;
+      background: rgba(255,255,255,0.06);
       color: var(--muted);
     }
     .tab.active {
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       color: #000;
+      transform: scale(1.05);
     }
 
     .task-card {
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.06);
       border-radius: 24px;
       padding: 24px;
       margin-bottom: 18px;
       border: 1px solid var(--glass);
-      transition: all 0.4s ease;
+      transition: all 0.5s ease;
     }
     .task-card:hover {
       transform: translateY(-10px);
       border-color: var(--accent);
-      box-shadow: 0 25px 60px rgba(0,231,192,0.25);
+      box-shadow: 0 30px 80px rgba(0,231,192,0.28);
     }
-    .task-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+
+    .task-title { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
     .task-price {
-      font-size: 36px;
+      font-size: 38px;
       font-weight: 900;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+
     .progress {
       height: 14px;
       background: rgba(255,255,255,0.1);
@@ -107,13 +106,13 @@
       height: 100%;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       width: 0%;
-      transition: width 1.5s ease;
+      transition: width 1.6s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
     .btn {
       padding: 16px 32px;
       border: none;
-      border-radius: 18px;
+      border-radius: 20px;
       font-weight: 700;
       font-size: 17px;
       cursor: pointer;
@@ -123,6 +122,7 @@
       transition: all 0.4s ease;
     }
     .btn:hover { transform: translateY(-5px); }
+    .btn:active { transform: scale(0.96); }
     .btn-ghost {
       background: transparent;
       border: 1.5px solid var(--glass);
@@ -134,21 +134,23 @@
       position: fixed;
       bottom: 100px;
       right: 20px;
-      width: 72px;
-      height: 72px;
+      width: 76px;
+      height: 76px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 38px;
+      font-size: 42px;
       color: #000;
-      box-shadow: 0 25px 60px rgba(0,231,192,0.6);
+      box-shadow: 0 30px 80px rgba(0,231,192,0.7);
       cursor: pointer;
       z-index: 999;
-      animation: pulse 3s infinite;
+      animation: float 4s infinite ease-in-out;
+      transition: all 0.5s ease;
     }
-    @keyframes pulse { 0%, 100% { box-shadow: 0 25px 60px rgba(0,231,192,0.6); } 50% { box-shadow: 0 25px 60px rgba(0,231,192,0.8); } }
+    .fab:hover { transform: scale(1.2) rotate(90deg); box-shadow: 0 40px 100px rgba(0,231,192,0.9); }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
 
     .bottom-nav {
       position: fixed;
@@ -159,40 +161,35 @@
       backdrop-filter: blur(24px);
       border: 1px solid var(--glass);
       border-radius: 60px;
-      padding: 16px 40px;
+      padding: 16px 60px;
       display: flex;
-      gap: 50px;
+      gap: 80px;
       z-index: 1000;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+      box-shadow: var(--shadow);
     }
     .nav-item {
       text-align: center;
       cursor: pointer;
-      transition: 0.4s;
+      transition: all 0.4s ease;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 15px;
       color: var(--muted);
     }
-    .nav-item.active { color: var(--accent); transform: scale(1.15); }
-    .nav-item span { font-size: 28px; display: block; margin-bottom: 4px; }
+    .nav-item.active { color: var(--accent); transform: scale(1.25); }
+    .nav-item span { font-size: 30px; display: block; margin-bottom: 4px; }
 
     .avatar {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
+      width: 92px; height: 92px; border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 38px;
-      color: #000;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; font-weight: 900; color: #000;
       overflow: hidden;
-      box-shadow: 0 15px 40px rgba(0,231,192,0.5);
+      box-shadow: 0 20px 60px rgba(0,231,192,0.5);
     }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
     .balance {
-      font-size: 56px;
+      font-size: 58px;
       font-weight: 900;
       text-align: center;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
@@ -204,18 +201,19 @@
       position: absolute;
       top: 20px;
       right: 20px;
-      width: 48px;
-      height: 48px;
-      background: rgba(255,255,255,0.1);
+      width: 52px;
+      height: 52px;
+      background: rgba(255,255,255,0.12);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 26px;
       cursor: pointer;
-      backdrop-filter: blur(10px);
       border: 1px solid var(--glass);
+      transition: all 0.4s;
     }
+    .support-btn:hover { background: rgba(0,231,192,0.3); transform: scale(1.15); }
 
     .modal {
       position: fixed; inset: 0;
@@ -233,27 +231,43 @@
       max-height: 92dvh;
       overflow-y: auto;
       position: relative;
+      animation: modalIn 0.6s ease;
     }
+    @keyframes modalIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
     .back-btn {
       position: absolute;
       top: 16px;
       left: 16px;
-      font-size: 28px;
+      font-size: 32px;
       cursor: pointer;
       color: var(--muted);
       z-index: 10;
+      transition: all 0.3s;
     }
+    .back-btn:hover { color: var(--accent); transform: scale(1.2); }
+
     .input {
       width: 100%;
       padding: 18px;
-      border-radius: 18px;
+      border-radius: 20px;
       border: 1px solid var(--glass);
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.06);
       color: white;
       font-size: 18px;
       text-align: center;
       margin: 12px 0;
     }
+
+    .selected-amount {
+      font-size: 44px;
+      font-weight: 900;
+      text-align: center;
+      margin: 20px 0;
+      color: var(--accent);
+      animation: pop 0.6s ease;
+    }
+    @keyframes pop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
@@ -286,21 +300,22 @@
         <button class="btn" id="topupBtn">Пополнить</button>
         <button class="btn btn-ghost" id="withdrawBtn">Вывести</button>
       </div>
-      <div style="margin-top:36px; display:flex; align-items:center; justify-content:space-between">
+      <div style="margin-top:36px">
         <h3>История операций</h3>
-        <div style="font-size:14px; color:var(--muted); cursor:pointer; padding:8px 16px; border-radius:12px; background:rgba(255,255,255,0.08)" onclick="clearHistory()">Очистить</div>
+        <div id="history" style="margin-top:16px; color:var(--muted)">История пуста</div>
       </div>
-      <div id="history" style="margin-top:16px; color:var(--muted)">История пуста</div>
     </div>
   </div>
 
-  <div class="fab" id="createFab">+</div>
+  <!-- КНОПКА СОЗДАНИЯ -->
+  <div class="fab" id="createFab">Плюс</div>
 
+  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
   <div class="bottom-nav">
-    <div class="nav-item active" id="navTasks" onclick="showTab('tasksTab')">
+    <div class="nav-item active" onclick="showTab('tasksTab')">
       <span>Задания</span> Задания
     </div>
-    <div class="nav-item" id="navProfile" onclick="showTab('profileTab')">
+    <div class="nav-item" onclick="showTab('profileTab')">
       <span>Профиль</span> Профиль
     </div>
   </div>
@@ -310,13 +325,22 @@
     <div class="modal-card">
       <div class="back-btn" onclick="closeModal('createModal')">Назад</div>
       <h2 style="text-align:center">Создать задание</h2>
-      <div style="display:grid; gap:18px; margin:24px 0">
-        <div class="task-type selected" data-price="100" data-title="Отзыв в Яндекс.Картах"><div style="font-size:20px; font-weight:800">Отзыв в Яндекс Картах</div><div class="task-price">100 ₽</div></div>
-        <div class="task-type" data-price="65" data-title="Отзыв в Google Maps"><div style="font-size:20px; font-weight:800">Отзыв в Google Maps</div><div class="task-price">65 ₽</div></div>
-        <div class="task-type" data-price="10" data-title="Подписка на TG-канал"><div style="font-size:20px; font-weight:800">Подписка на TG-канал</div><div class="task-price">10 ₽</div></div>
+      <div style="display:grid; gap:20px; margin:24px 0">
+        <div class="task-type selected" data-price="100" data-title="Отзыв в Яндекс.Картах">
+          <div style="font-size:21px; font-weight:800">Отзыв в Яндекс.Картах</div>
+          <div class="task-price">100 ₽</div>
+        </div>
+        <div class="task-type" data-price="65" data-title="Отзыв в Google Maps">
+          <div style="font-size:21px; font-weight:800">Отзыв в Google Maps</div>
+          <div class="task-price">65 ₽</div>
+        </div>
+        <div class="task-type" data-price="10" data-title="Подписка на TG-канал">
+          <div style="font-size:21px; font-weight:800">Подписка на TG-канал</div>
+          <div class="task-price">10 ₽</div>
+        </div>
       </div>
       <input type="number" id="taskCount" class="input" value="10" min="1" placeholder="Количество">
-      <div style="font-size:34px; font-weight:800; text-align:center; margin:24px 0; color:var(--accent)" id="totalPrice">Итого: 1 000 ₽</div>
+      <div style="font-size:36px; font-weight:900; text-align:center; margin:24px 0; color:var(--accent)" id="totalPrice">Итого: 1 000 ₽</div>
       <button class="btn btn-full" id="createTaskFinal">Создать задание</button>
     </div>
   </div>
@@ -326,18 +350,21 @@
     <div class="modal-card">
       <div class="back-btn" onclick="closeModal('topupModal')">Назад</div>
       <h2 style="text-align:center">Пополнить баланс</h2>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; margin:20px 0">
-        <button class="btn btn-ghost topup-preset" data-amount="300">300 ₽</button>
-        <button class="btn btn-ghost topup-preset" data-amount="500">500 ₽</button>
-        <button class="btn btn-ghost topup-preset" data-amount="1000">1000 ₽</button>
-        <button class="btn btn-ghost topup-preset" data-amount="3000">3000 ₽</button>
+      <div id="selectedAmountDisplay" class="selected-amount" style="display:none"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin:24px 0">
+        <button class="btn topup-preset" data-amount="300">300 ₽</button>
+        <button class="btn topup-preset" data-amount="500">500 ₽</button>
+        <button class="btn topup-preset" data-amount="1000">1000 ₽</button>
+        <button class="btn topup-preset" data-amount="1500">1500 ₽</button>
+        <button class="btn topup-preset" data-amount="2000">2000 ₽</button>
+        <button class="btn topup-preset" data-amount="3000">3000 ₽</button>
       </div>
-      <input type="number" id="customAmount" placeholder="Своя сумма (мин. 100)" class="input" min="100">
-      <div id="qrBlock" style="display:none; text-align:center; padding:20px; background:rgba(255,255,255,0.04); border-radius:20px">
-        <img id="qrCode" src="" style="width:240px; height:240px; background:white; padding:16px; border-radius:20px">
-        <div style="margin-top:20px; padding:18px; background:rgba(0,231,192,0.15); border-radius:18px; border:2px dashed var(--accent)">
-          <div style="font-size:16px; color:var(--muted)">Код в комментарии:</div>
-          <div id="paymentCode" style="font-size:38px; font-weight:900; letter-spacing:8px; color:var(--success)">000000</div>
+      <input type="number" id="customAmount" class="input" placeholder="Своя сумма (мин. 100 ₽)" min="100">
+      <div id="qrBlock" style="display:none; text-align:center; margin-top:24px">
+        <img id="qrCode" src="" style="width:260px; height:260px; background:white; padding:16px; border-radius:24px; box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+        <div style="margin-top:20px; padding:20px; background:rgba(0,231,192,0.15); border-radius:20px; border:2px dashed var(--accent)">
+          <div style="font-size:17px; color:var(--muted)">Код для комментария:</div>
+          <div id="paymentCode" style="font-size:42px; font-weight:900; letter-spacing:10px; color:var(--accent)">000000</div>
         </div>
       </div>
       <button class="btn btn-full" id="generateQrBtn">Показать QR-код</button>
@@ -351,7 +378,7 @@
       <h2>Вывод средств</h2>
       <input class="input" id="wAmount" placeholder="Сумма (мин. 250 ₽)" type="number" min="250">
       <input class="input" id="wName" placeholder="ФИО или ник">
-      <input class="input" id="wBank" placeholder="Карта / телефон">
+      <input class="input" id="wBank" placeholder="Номер карты / телефона">
       <button class="btn btn-full" id="sendWithdraw">Отправить заявку</button>
     </div>
   </div>
@@ -382,10 +409,10 @@ function addHistory(text, amount = null) {
 
 function renderHistory() {
   const el = document.getElementById('history');
-  el.innerHTML = history.length === 0 ? '<div style="text-align:center; padding:40px">История пуста</div>' : history.slice(0,15).map(h => `
-    <div style="padding:14px 0; border-bottom:1px dashed var(--glass)">
+  el.innerHTML = history.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--muted)">История пуста</div>' : history.slice(0,15).map(h => `
+    <div style="padding:14px 0;border-bottom:1px dashed var(--glass)">
       <div style="font-weight:600">${h.text} ${h.amount ? '· ' + (h.amount > 0 ? '+' : '') + h.amount + ' ₽' : ''}</div>
-      <div style="font-size:13px; color:var(--muted)">${h.date}</div>
+      <div style="font-size:13px;color:var(--muted)">${h.date}</div>
     </div>
   `).join('');
 }
@@ -393,12 +420,12 @@ function renderHistory() {
 function renderTasks(myOnly) {
   const filtered = myOnly ? tasks.filter(t => t.creator === userId) : tasks.filter(t => t.creator !== userId && t.done < t.count);
   document.getElementById('tasksContainer').innerHTML = filtered.length === 0
-    ? `<div style="text-align:center; padding:80px; color:var(--muted); font-size:18px">${myOnly ? 'У вас нет заданий' : 'Нет заданий для выполнения'}</div>`
+    ? `<div style="text-align:center;padding:80px;color:var(--muted);font-size:18px">${myOnly ? 'У вас нет заданий' : 'Нет заданий для выполнения'}</div>`
     : filtered.map(t => `
       <div class="task-card">
         <div class="task-title">${t.title}</div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0">
-          <div style="color:var(--muted)">${t.done} из ${t.count} выполнено</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0">
+          <div style="color:var(--muted)">${t.done} из ${t.count}</div>
           <div class="task-price">${t.price} ₽</div>
         </div>
         <div class="progress"><div class="bar" style="width:${(t.done/t.count)*100}%"></div></div>
@@ -412,7 +439,6 @@ function showAvailableTasks() { document.querySelectorAll('.tab')[0].classList.r
 
 function updateBalance() { document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽'; }
 
-// Telegram профиль
 if (tg?.initDataUnsafe?.user) {
   const u = tg.initDataUnsafe.user;
   document.getElementById('userName').textContent = u.first_name + (u.last_name ? ' ' + u.last_name : '');
@@ -420,25 +446,36 @@ if (tg?.initDataUnsafe?.user) {
   if (u.photo_url) document.getElementById('userAvatar').innerHTML = `<img src="${u.photo_url}">`;
 }
 
-// ПОПОЛНЕНИЕ
 let topupAmount = 0;
 let currentCode = '';
-document.querySelectorAll('.topup-preset').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.topup-preset').forEach(x => x.style.background = ''); b.style.background = 'rgba(0,231,192,0.2)'; topupAmount = +b.dataset.amount;
+document.querySelectorAll('.topup-preset').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.topup-preset').forEach(b => b.style.opacity = '0.7');
+    btn.style.opacity = '1';
+    topupAmount = +btn.dataset.amount;
+    const display = document.getElementById('selectedAmountDisplay');
+    display.textContent = topupAmount + ' ₽';
+    display.style.display = 'block';
+  };
 });
-document.getElementById('customAmount').oninput = e => topupAmount = +e.target.value || 0;
+
+document.getElementById('customAmount').oninput = e => {
+  if (e.target.value >= 100) topupAmount = +e.target.value;
+};
+
 document.getElementById('generateQrBtn').onclick = () => {
   if (topupAmount < 100) return alert('Минимум 100 ₽');
   currentCode = Math.floor(100000 + Math.random() * 900000).toString();
   document.getElementById('paymentCode').textContent = currentCode;
-  document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent('https://qr.nspk.ru/...&sum=' + topupAmount + '00&comment=' + currentCode)}`;
+  document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+    `https://qr.nspk.ru/AD1000060000A0J0J0J0J0J0J0J0J0J0?type=01&bank=100000000004&sum=${topupAmount}00&cur=RUB&comment=${currentCode}`
+  )}`;
   document.getElementById('qrBlock').style.display = 'block';
   document.getElementById('generateQrBtn').style.display = 'none';
   pendingPayments.push({userId, amount: topupAmount, code: currentCode, paid: false});
   save();
 };
 
-// СОЗДАНИЕ ЗАДАНИЯ
 let selectedPrice = 100, selectedTitle = 'Отзыв в Яндекс.Картах';
 document.querySelectorAll('.task-type').forEach(el => el.onclick = () => {
   document.querySelectorAll('.task-type').forEach(x => x.classList.remove('selected'));
@@ -452,6 +489,7 @@ function updateTotal() {
   const count = +document.getElementById('taskCount').value || 1;
   document.getElementById('totalPrice').textContent = `Итого: ${(count * selectedPrice).toLocaleString()} ₽`;
 }
+
 document.getElementById('createTaskFinal').onclick = () => {
   const count = +document.getElementById('taskCount').value;
   const total = count * selectedPrice;
@@ -478,14 +516,14 @@ document.getElementById('sendWithdraw').onclick = () => {
   balance -= amount;
   addHistory('Заявка на вывод', -amount);
   save(); updateBalance(); closeModal('withdrawModal');
-  alert('Заявка отправлена!');
+  alert('Заявка отправлена! Выплата в течение 24ч');
 };
 
 function showTab(id) {
   document.getElementById('tasksTab').style.display = id === 'tasksTab' ? 'block' : 'none';
   document.getElementById('profileTab').style.display = id === 'profileTab' ? 'block' : 'none';
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(id === 'tasksTab' ? 'navTasks' : 'navProfile').classList.add('active');
+  document.querySelectorAll('.nav-item')[id === 'tasksTab' ? 0 : 1].classList.add('active');
   if (id === 'tasksTab') showMyTasks();
 }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
@@ -494,9 +532,6 @@ document.getElementById('createFab').onclick = () => document.getElementById('cr
 document.getElementById('topupBtn').onclick = () => document.getElementById('topupModal').classList.add('active');
 document.getElementById('withdrawBtn').onclick = () => document.getElementById('withdrawModal').classList.add('active');
 
-function clearHistory() { if (confirm('Очистить историю?')) { history = []; save(); renderHistory(); } }
-
-// Старт
 updateBalance(); renderTasks(true); renderHistory(); updateTotal();
 </script>
 </body>
