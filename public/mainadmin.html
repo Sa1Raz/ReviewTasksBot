@@ -62,7 +62,7 @@
 
 <script>
 const token = new URLSearchParams(location.search).get('token') || '';
-if(!token){ alert('Admin token не передан в URL. Откройте /mainadmin через бота (/mainadmin)'); }
+if(!token){ alert('Admin token not provided in URL (use /mainadmin from bot)'); }
 
 function apiGet(path){
   return fetch(path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token)).then(r=>r.json());
