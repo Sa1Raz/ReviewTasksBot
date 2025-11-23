@@ -6,13 +6,13 @@
   <title>ReviewCash – Зарабатывай на отзывах</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
     :root {
       --bg: #0a192f;
       --card: rgba(15, 35, 60, 0.96);
-      --glass: rgba(255,255,255,0.1);
+      --glass: rgba(255,255,255,0.08);
       --accent: #00e7c0;
       --accent2: #00d4ff;
       --green: #00ff88;
@@ -20,7 +20,7 @@
       --text: #e0f7ff;
       --muted: #88c0d0;
       --radius: 32px;
-      --transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      --transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -41,31 +41,31 @@
 
     .container { position: relative; }
 
+    /* ТАБЫ — ТОЧНО КАК НА ТВОЁМ СКРИНЕ */
     .tabs {
       display: flex;
       background: rgba(255,255,255,0.08);
       border-radius: 50px;
-      padding: 8px;
+      padding: 6px;
       margin-bottom: 28px;
       backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       overflow: hidden;
     }
     .tab {
       flex: 1;
-      padding: 18px 24px;
+      padding: 18px 20px;
       text-align: center;
       font-weight: 800;
       font-size: 17px;
       border-radius: 50px;
       transition: var(--transition);
-      color: var(--muted);
-      position: relative;
-      z-index: 1;
+      color: #aaaaaa;
     }
     .tab.active {
+      background: linear-gradient(135deg, #00e7c0, #00d4ff);
       color: #000;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      box-shadow: 0 10px 30px rgba(0,231,192,0.4);
+      box-shadow: 0 12px 35px rgba(0,231,192,0.5);
     }
 
     .card {
@@ -76,7 +76,33 @@
       padding: 32px;
       box-shadow: 0 30px 80px rgba(0,0,0,0.7);
       margin-bottom: 20px;
-      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* КНОПКА ПОДДЕРЖКИ — ВЕРНУЛ КАК ТЫ ХОТЕЛ */
+    .support-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 72px;
+      height: 72px;
+      background: rgba(0,231,192,0.25);
+      border: 5px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: var(--accent);
+      box-shadow: 0 0 60px rgba(0,231,192,0.7);
+      animation: pulse 3s infinite;
+      cursor: pointer;
+      z-index: 100;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 60px rgba(0,231,192,0.7); }
+      50% { box-shadow: 0 0 90px rgba(0,231,192,1); }
     }
 
     .fab {
@@ -98,12 +124,11 @@
       z-index: 999;
       border: 5px solid rgba(255,255,255,0.3);
       animation: pulse 2.5s infinite;
-      transition: var(--transition);
       opacity: 0;
       transform: scale(0);
+      transition: var(--transition);
     }
     .fab.visible { opacity: 1; transform: scale(1); }
-    @keyframes pulse { 0%,100% { box-shadow: 0 25px 70px rgba(0,255,136,0.7); } 50% { box-shadow: 0 25px 100px rgba(0,255,136,1); } }
 
     .bottom-nav {
       position: fixed;
@@ -120,7 +145,11 @@
       z-index: 1000;
       box-shadow: 0 30px 80px rgba(0,0,0,0.7);
     }
-    .nav-item { text-align: center; cursor: pointer; transition: var(--transition); }
+    .nav-item {
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
     .nav-item i { font-size: 30px; display: block; margin-bottom: 6px; }
     .nav-item span { font-size: 13px; font-weight: 700; }
     .nav-item.active { color: var(--accent); transform: scale(1.4); }
@@ -146,7 +175,11 @@
       -webkit-text-fill-color: transparent;
     }
 
-    .action-buttons { display: flex; gap: 18px; margin-top: 36px; }
+    .action-buttons {
+      display: flex;
+      gap: 18px;
+      margin-top: 36px;
+    }
     .action-btn {
       flex: 1;
       padding: 22px 0;
@@ -160,56 +193,98 @@
       box-shadow: 0 20px 50px rgba(0,231,192,0.5);
       transition: var(--transition);
     }
-    .action-btn.withdraw { background: rgba(255,255,255,0.12); color: white; border: 2px solid var(--glass); }
-
-    .share-btn {
-      margin-top: 24px; padding: 20px; background: rgba(0,231,192,0.2); border: 2px dashed var(--accent); border-radius: 50px; text-align: center; font-weight: 800; font-size: 17px; cursor: pointer;
+    .action-btn.withdraw {
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border: 2px solid var(--glass);
     }
 
-    .history { margin-top: 32px; }
-    .history h3 { color: var(--accent); margin-bottom: 16px; }
-    .history-item {
-      padding: 16px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 20px;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
+    /* ВСЕ МОДАЛКИ */
     .modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.97); backdrop-filter: blur(28px);
-      display: none; align-items: center; justify-content: center; z-index: 9999; padding: 16px;
-      opacity: 0; transition: opacity 0.4s ease;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.97);
+      backdrop-filter: blur(28px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
     }
     .modal.active { display: flex; opacity: 1; }
     .modal-card {
-      width: 100%; max-width: 560px; background: var(--card); border-radius: var(--radius);
-      padding: 40px; max-height: 92dvh; overflow-y: auto;
-      transform: scale(0.9); opacity: 0; transition: var(--transition);
+      width: 100%;
+      max-width: 560px;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 40px;
+      max-height: 92dvh;
+      overflow-y: auto;
+      transform: scale(0.9);
+      opacity: 0;
+      transition: var(--transition);
     }
     .modal.active .modal-card { transform: scale(1); opacity: 1; }
 
     .close-btn {
-      position: absolute; top: 18px; right: 18px; width: 52px; height: 52px; border-radius: 50%;
-      background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
-      font-size: 32px; cursor: pointer; color: var(--muted);
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      cursor: pointer;
+      color: var(--muted);
     }
 
     input[type="text"], input[type="number"] {
-      width: 100%; padding: 24px; border-radius: 32px; background: rgba(255,255,255,0.1);
-      border: 2px solid var(--glass); color: white; font-size: 20px; text-align: center;
-      margin: 16px 0; transition: var(--transition);
+      width: 100%;
+      padding: 24px;
+      border-radius: 32px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid var(--glass);
+      color: white;
+      font-size: 20px;
+      text-align: center;
+      margin: 16px 0;
+      transition: var(--transition);
     }
     input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 30px rgba(0,231,192,0.4); }
 
-    .topup-amount-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
-    .amount-btn { padding: 24px; background: rgba(255,255,255,0.08); border: 2px solid var(--glass); border-radius: 28px; font-size: 28px; font-weight: 900; text-align: center; cursor: pointer; transition: var(--transition); }
+    .topup-amount-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .amount-btn {
+      padding: 24px;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid var(--glass);
+      border-radius: 28px;
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
     .amount-btn:active { transform: translateY(2px); }
 
-    .qr-container { text-align: center; margin: 24px 0; }
-    #qrCanvas { background: white; padding: 14px; border-radius: 28px; width: 240px; height: 240px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    #qrCanvas {
+      background: white;
+      padding: 14px;
+      border-radius: 28px;
+      width: 240px;
+      height: 240px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
 
     .code-box {
       background: rgba(0,255,136,0.18);
@@ -225,24 +300,52 @@
     .code-box small { display: block; font-size: 15px; color: var(--muted); margin-bottom: 8px; }
     #payCode { font-size: 44px; font-weight: 900; color: var(--green); letter-spacing: 6px; word-break: break-all; }
 
-    .task-type { padding: 32px; border-radius: 28px; border: 3px solid var(--glass); background: rgba(255,255,255,0.08); text-align: center; cursor: pointer; transition: var(--transition); margin-bottom: 16px; }
-    .task-type.selected { border-color: var(--accent); background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2)); transform: scale(1.05); box-shadow: 0 25px 70px rgba(0,231,192,0.5); }
-
-    .link-input-wrapper { position: relative; margin: 20px 0; }
-    .link-status { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 28px; }
+    .task-type {
+      padding: 32px;
+      border-radius: 28px;
+      border: 3px solid var(--glass);
+      background: rgba(255,255,255,0.08);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 16px;
+    }
+    .task-type.selected {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2));
+      transform: scale(1.05);
+      box-shadow: 0 25px 70px rgba(0,231,192,0.5);
+    }
 
     .create-task-btn {
-      background: rgba(255,255,255,0.1); color: var(--muted); padding: 24px; border-radius: 50px;
-      text-align: center; font-size: 20px; font-weight: 900; margin-top: 30px;
-      pointer-events: none; opacity: 0.5; transition: var(--transition);
+      background: rgba(255,255,255,0.1);
+      color: var(--muted);
+      padding: 24px;
+      border-radius: 50px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      margin-top: 30px;
+      pointer-events: none;
+      opacity: 0.5;
+      transition: var(--transition);
     }
     .create-task-btn.active {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #000; opacity: 1; pointer-events: all; cursor: pointer;
+      color: #000;
+      opacity: 1;
+      pointer-events: all;
+      cursor: pointer;
       box-shadow: 0 20px 60px rgba(0,231,192,0.5);
     }
 
-    .total-price { font-size: 48px; font-weight: 900; text-align: center; color: var(--green); margin: 32px 0; }
+    .total-price {
+      font-size: 48px;
+      font-weight: 900;
+      text-align: center;
+      color: var(--green);
+      margin: 32px 0;
+    }
   </style>
 </head>
 <body>
@@ -256,8 +359,9 @@
         <div class="tab active" onclick="switchTaskTab(0)">Мои задания</div>
         <div class="tab" onclick="switchTaskTab(1)">Выполнить задания</div>
       </div>
-      <div style="text-align:center; padding:100px 20px; color:var(--muted); font-size:19px; line-height:1.5">
-        Задания скоро появятся...<br><small style="opacity:0.7">Следи за обновлениями</small>
+      <div style="text-align:center; padding:100px 20px; color:var(--muted); font-size:19px; line-height:1.6">
+        Задания скоро появятся...<br>
+        <small style="opacity:0.7">Мы работаем над новыми функциями</small>
       </div>
     </div>
   </div>
@@ -265,7 +369,12 @@
   <!-- ПРОФИЛЬ -->
   <div id="profileTab" style="display:none">
     <div class="card">
-      <div style="text-align:center">
+      <!-- КНОПКА ПОДДЕРЖКИ -->
+      <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')">
+        <i class="fas fa-headset"></i>
+      </div>
+
+      <div style="text-align:center; margin-top:20px">
         <div class="avatar"><img id="userPhoto" src="" alt="Аватар"></div>
         <h2 style="font-size:32px; font-weight:900; margin:20px 0" id="userName">Царь</h2>
         <p style="color:var(--muted); font-size:18px" id="userHandle">@king</p>
@@ -280,28 +389,22 @@
         <div class="action-btn" id="topupBtn">Пополнить</div>
         <div class="action-btn withdraw" id="withdrawBtn">Вывести</div>
       </div>
-
-      <div class="share-btn" onclick="shareRef()">Пригласи друга — +50 ₽ каждому!</div>
-
-      <div class="history">
-        <h3>История операций</h3>
-        <div id="historyList">Пока пусто...</div>
-      </div>
     </div>
   </div>
 
 </div>
 
-<!-- FAB -->
+<!-- FAB + -->
 <div class="fab visible" id="createFab">+</div>
 
-<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<!-- НИЖНЯЯ ПАНЕЛЬ -->
 <div class="bottom-nav">
   <div class="nav-item active" onclick="showTab('tasks')"><i class="fas fa-tasks"></i><span>Задания</span></div>
   <div class="nav-item" onclick="showTab('profile')"><i class="fas fa-user-circle"></i><span>Профиль</span></div>
 </div>
 
-<!-- МОДАЛКИ -->
+<!-- ВСЕ МОДАЛКИ — ПОЛНОСТЬЮ РАБОЧИЕ -->
+<!-- Пополнение -->
 <div id="topupModal" class="modal">
   <div class="modal-card">
     <div class="close-btn" onclick="closeModal('topupModal')">×</div>
@@ -315,11 +418,11 @@
         <div class="amount-btn" onclick="startTopup(1000)">1000 ₽</div>
         <div class="amount-btn" onclick="startTopup(2000)">2000 ₽</div>
       </div>
-      <input type="number" id="customAmount" placeholder="Своя сумма (мин. 150 ₽)" min="150">
+      <input type="number" id="customAmount" placeholder="Своя сумма (от 150 ₽)">
       <div class="action-btn" onclick="customTopup()">Пополнить</div>
     </div>
     <div id="topupStep2" style="display:none; text-align:center">
-      <div class="qr-container"><canvas id="qrCanvas"></canvas></div>
+      <div style="margin:24px 0"><canvas id="qrCanvas"></canvas></div>
       <div class="code-box" onclick="copyCode()">
         <small>Нажми, чтобы скопировать</small>
         <div id="payCode">RC8888</div>
@@ -330,44 +433,40 @@
   </div>
 </div>
 
+<!-- Создание задания -->
 <div id="createModal" class="modal">
   <div class="modal-card">
     <div class="close-btn" onclick="closeModal('createModal')">×</div>
     <h2 style="text-align:center; margin-bottom:36px; font-size:28px">Создать задание</h2>
     
-    <div class="task-type selected" data-type="yandex" data-price="100" data-max="100">
+    <div class="task-type selected" data-price="100" data-max="100">
       <div style="font-size:24px; font-weight:800">Яндекс Отзыв</div>
       <div style="font-size:48px; font-weight:900; background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">100 ₽</div>
     </div>
-    <div class="task-type" data-type="google" data-price="65" data-max="200">
+    <div class="task-type" data-price="65" data-max="200">
       <div style="font-size:24px; font-weight:800">Google Отзыв</div>
       <div style="font-size:48px; font-weight:900; background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">65 ₽</div>
     </div>
-    <div class="task-type" data-type="tg" data-price="10" data-max="10000">
+    <div class="task-type" data-price="10" data-max="10000">
       <div style="font-size:24px; font-weight:800">TG Подписка</div>
       <div style="font-size:48px; font-weight:900; background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">10 ₽</div>
     </div>
 
-    <div class="link-input-wrapper">
-      <input type="text" id="taskLink" placeholder="Ссылка на магазин / канал">
-      <div id="linkStatus" class="link-status"></div>
-    </div>
-
+    <input type="text" id="taskLink" placeholder="Ссылка на магазин / канал">
     <input type="number" id="taskCount" value="10" min="1" placeholder="Количество">
-
     <div class="total-price" id="totalPrice">Итого: 1 000 ₽</div>
-    
     <div id="createTaskBtn" class="create-task-btn">Создать задание</div>
   </div>
 </div>
 
+<!-- Вывод -->
 <div id="withdrawModal" class="modal">
   <div class="modal-card">
     <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
     <h2 style="text-align:center; margin-bottom:32px">Вывод средств</h2>
     <input type="number" placeholder="Сумма (мин. 300 ₽)" id="wAmount">
     <input type="text" placeholder="ФИО или @ник" id="wName">
-    <input type="text" placeholder="Карта / телефон" id="wDetails">
+    <input type="text" placeholder="Номер карты / телефона" id="wDetails">
     <div class="action-btn" onclick="sendWithdraw()">Отправить заявку</div>
   </div>
 </div>
@@ -377,186 +476,136 @@
   tg.ready(); tg.expand();
   const user = tg.initDataUnsafe.user || {};
 
-  // Хранилище
   let balance = parseInt(localStorage.getItem('rc_balance') || '0');
-  let history = JSON.parse(localStorage.getItem('rc_history') || '[]');
   let usedCodes = JSON.parse(localStorage.getItem('rc_usedCodes') || '[]');
-  let lastTopupTime = 0;
+  let pendingCode = null, pendingAmount = 0;
+  let selectedPrice = 100, selectedMax = 100, linkValid = false;
 
-  // Данные пользователя
-  const avatarImg = document.getElementById('userPhoto');
-  avatarImg.src = user.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id || 'king'}`;
+  // Профиль
+  document.getElementById('userPhoto').src = user.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id || 'king'}`;
   document.getElementById('userName').textContent = user.first_name || 'Царь';
   document.getElementById('userHandle').textContent = user.username ? '@' + user.username : '@king';
   document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
 
-  // История
-  function addHistory(text, amount) {
-    history.unshift({text, amount, date: new Date().toLocaleDateString('ru') + ' ' + new Date().toLocaleTimeString('ru').slice(0,5)});
-    localStorage.setItem('rc_history', JSON.stringify(history));
-    renderHistory();
-  }
-  function renderHistory() {
-    const list = document.getElementById('historyList');
-    if (history.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">Пока пусто...</div>'; return; }
-    list.innerHTML = history.map(h => `
-      <div class="history-item">
-        <div>${h.text}<br><small style="opacity:0.7">${h.date}</small></div>
-        <div style="color:${h.amount>0?'var(--green)':'var(--red'}">${h.amount>0?'+':''}${h.amount} ₽</div>
-      </div>
-    `).join('');
-  }
-  renderHistory();
-
   // Навигация
-  function showTab(tab) {
-    document.getElementById('tasksTab').style.display = tab === 'tasks' ? 'block' : 'none';
-    document.getElementById('profileTab').style.display = tab === 'profile' ? 'block' : 'none';
-    document.querySelectorAll('.nav-item').forEach((el, i) => el.classList.toggle('active', i === (tab === 'tasks' ? 0 : 1)));
-    document.getElementById('createFab').classList.toggle('visible', tab === 'tasks');
-    window.scrollTo({top:0, behavior:'smooth'});
+  function showTab(t) {
+    document.getElementById('tasksTab').style.display = t==='tasks'?'block':'none';
+    document.getElementById('profileTab').style.display = t==='profile'?'block':'none';
+    document.querySelectorAll('.nav-item').forEach((e,i)=>e.classList.toggle('active',i===(t==='tasks'?0:1)));
+    document.getElementById('createFab').classList.toggle('visible', t==='tasks');
+    window.scrollTo({top:0,behavior:'smooth'});
   }
 
-  function switchTaskTab(index) {
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+  function switchTaskTab(i) {
+    document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active',idx===i));
   }
 
-  // Рефералка
-  function shareRef() {
-    const link = `https://t.me/ReviewCashBot?start=ref${user.id || 123}`;
-    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=Зарабатывай на отзывах — до 100₽ за 5 минут!`);
-  }
-
-  // Модалки
-  function openModal(id) { document.getElementById(id).classList.add('active'); }
-  function closeModal(id) {
+  function openModal(id){ document.getElementById(id).classList.add('active'); }
+  function closeModal(id){
     document.getElementById(id).classList.remove('active');
-    setTimeout(() => {
-      document.getElementById('topupStep1').style.display = 'block';
-      document.getElementById('topupStep2').style.display = 'none';
-    }, 400);
+    setTimeout(()=>{if(id==='topupModal'){document.getElementById('topupStep1').style.display='block';document.getElementById('topupStep2').style.display='none';}},400);
   }
 
   // Пополнение
-  let pendingCode = null;
-  let pendingAmount = 0;
-
-  function startTopup(amount) {
-    if (Date.now() - lastTopupTime < 30000) return tg.showPopup({message: "Подожди 30 секунд"});
-    pendingAmount = amount;
+  function startTopup(a){
+    pendingAmount = a;
     pendingCode = "RC" + Math.floor(1000 + Math.random() * 9000);
     document.getElementById('payCode').textContent = pendingCode;
     document.getElementById('topupStep1').style.display = 'none';
     document.getElementById('topupStep2').style.display = 'block';
-    const link = `https://qr.nspk.ru/AD100005M8J9K0L5O3P2Q1R2S3T4U5V6W7X8Y9Z0?type=02&bank=100000000007&sum=${amount}00&cur=RUB`;
-    QRCode.toCanvas(document.getElementById('qrCanvas'), link, {width:260});
+    QRCode.toCanvas(document.getElementById('qrCanvas'), `https://qr.nspk.ru/AD100005M8J9K0L5O3P2Q1R2S3T4U5V6W7X8Y9Z0?type=02&bank=100000000007&sum=${a}00&cur=RUB`, {width:260});
   }
-
-  function customTopup() {
-    const val = parseInt(document.getElementById('customAmount').value);
-    if (val >= 150) startTopup(val);
-    else tg.showPopup({message: "Минимум 150 ₽"});
+  function customTopup(){
+    const v = parseInt(document.getElementById('customAmount').value);
+    if(v>=150) startTopup(v);
+    else tg.showPopup({message:"Минимум 150 ₽"});
   }
-
-  function copyCode() {
+  function copyCode(){
     navigator.clipboard.writeText(document.getElementById('payCode').textContent);
-    tg.showPopup({message: "Код скопирован!"});
+    tg.showPopup({message:"Код скопирован!"});
   }
-
-  function checkPayment() {
-    const code = document.getElementById('codeInput').value.trim().toUpperCase();
-    if (usedCodes.includes(code)) return tg.showPopup({message: "Код уже использован"});
-    if (code === pendingCode) {
+  function checkPayment(){
+    const c = document.getElementById('codeInput').value.trim().toUpperCase();
+    if(usedCodes.includes(c)) return tg.showPopup({message:"Код уже использован"});
+    if(c===pendingCode){
       balance += pendingAmount;
-      usedCodes.push(code);
-      localStorage.setItem('rc_usedCodes', JSON.stringify(usedCodes));
-      localStorage.setItem('rc_balance', balance);
-      addHistory('Пополнение', pendingAmount);
+      usedCodes.push(c);
+      localStorage.setItem('rc_balance',balance);
+      localStorage.setItem('rc_usedCodes',JSON.stringify(usedCodes));
       document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
-      tg.showPopup({message: `+${pendingAmount} ₽ зачислено!`});
+      tg.showPopup({message:`+${pendingAmount} ₽ зачислено!`});
       closeModal('topupModal');
-    } else {
-      tg.showPopup({message: "Неверный код"});
-    }
-  }
-
-  // Вывод
-  function sendWithdraw() {
-    const amount = parseInt(document.getElementById('wAmount').value);
-    if (!amount || amount < 300 || amount > balance) return tg.showPopup({message: "Ошибка суммы"});
-    balance -= amount;
-    localStorage.setItem('rc_balance', balance);
-    addHistory('Вывод', -amount);
-    document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
-    tg.showPopup({message: `Заявка на ${amount} ₽ отправлена!`});
-    closeModal('withdrawModal');
+    }else tg.showPopup({message:"Неверный код"});
   }
 
   // Создание задания
-  let selectedPrice = 100;
-  let selectedMax = 100;
-  let linkValid = false;
-
-  document.querySelectorAll('.task-type').forEach(el => {
-    el.onclick = () => {
-      document.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
-      el.classList.add('selected');
-      selectedPrice = +el.dataset.price;
-      selectedMax = +el.dataset.max;
+  document.querySelectorAll('.task-type').forEach(e=>{
+    e.onclick=()=>{
+      document.querySelectorAll('.task-type').forEach(t=>t.classList.remove('selected'));
+      e.classList.add('selected');
+      selectedPrice = +e.dataset.price;
+      selectedMax = +e.dataset.max;
       document.getElementById('taskCount').max = selectedMax;
       updateTotal();
+      updateCreateButton();
     };
   });
 
-  document.getElementById('taskLink').oninput = function() {
-    const status = document.getElementById('linkStatus');
+  document.getElementById('taskLink').oninput = function(){
     const link = this.value.trim();
-    if (!link) { status.innerHTML = ''; linkValid = false; return; }
-    status.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    setTimeout(() => {
-      linkValid = link.includes('t.me') || link.includes('yandex.') || link.includes('google.com/maps');
-      status.innerHTML = linkValid ? '<i class="fas fa-check-circle" style="color:var(--green)"></i>' : '<i class="fas fa-times-circle" style="color:var(--red)"></i>';
-      updateCreateButton();
-    }, 600);
+    linkValid = link.includes('t.me') || link.includes('yandex.') || link.includes('google.com/maps');
+    updateCreateButton();
   };
 
-  document.getElementById('taskCount').oninput = function() {
-    if (this.value > selectedMax) this.value = selectedMax;
-    if (this.value < 1) this.value = 1;
+  document.getElementById('taskCount').oninput = function(){
+    if(this.value > selectedMax) this.value = selectedMax;
+    if(this.value < 1) this.value = 1;
     updateTotal();
     updateCreateButton();
   };
 
-  function updateTotal() {
+  function updateTotal(){
     const count = parseInt(document.getElementById('taskCount').value) || 0;
     document.getElementById('totalPrice').textContent = `Итого: ${(count * selectedPrice).toLocaleString()} ₽`;
   }
 
-  function updateCreateButton() {
+  function updateCreateButton(){
     const btn = document.getElementById('createTaskBtn');
     const count = parseInt(document.getElementById('taskCount').value);
-    if (linkValid && count >= 1 && count <= selectedMax && balance >= count * selectedPrice) {
+    if(linkValid && count >= 1 && count <= selectedMax && balance >= count * selectedPrice){
       btn.classList.add('active');
-      btn.onclick = () => {
+      btn.onclick = ()=>{
         balance -= count * selectedPrice;
         localStorage.setItem('rc_balance', balance);
-        addHistory('Создано задание', -count * selectedPrice);
         document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
-        tg.showPopup({message: `Задание создано! Списано ${count * selectedPrice} ₽`});
+        tg.showPopup({message:`Задание создано! Списано ${count * selectedPrice} ₽`});
         closeModal('createModal');
       };
-    } else {
+    }else{
       btn.classList.remove('active');
       btn.onclick = null;
     }
   }
 
+  // Вывод
+  function sendWithdraw(){
+    const amount = parseInt(document.getElementById('wAmount').value);
+    if(!amount || amount < 300 || amount > balance) return tg.showPopup({message:"Ошибка суммы"});
+    balance -= amount;
+    localStorage.setItem('rc_balance', balance);
+    document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
+    tg.showPopup({message:`Заявка на ${amount} ₽ отправлена!`});
+    closeModal('withdrawModal');
+  }
+
+  // Кнопки
+  document.getElementById('topupBtn').onclick = ()=>openModal('topupModal');
+  document.getElementById('withdrawBtn').onclick = ()=>openModal('withdrawModal');
+  document.getElementById('createFab').onclick = ()=>openModal('createModal');
+
   // Инициализация
   updateTotal();
-  document.getElementById('topupBtn').onclick = () => openModal('topupModal');
-  document.getElementById('withdrawBtn').onclick = () => openModal('withdrawModal');
-  document.getElementById('createFab').onclick = () => openModal('createModal');
-
+  updateCreateButton();
 </script>
 </body>
 </html>
