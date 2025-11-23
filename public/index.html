@@ -19,6 +19,7 @@
       --text: #e0f7ff;
       --muted: #88c0d0;
       --radius: 32px;
+      --transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -39,6 +40,7 @@
       box-shadow: 0 30px 80px rgba(0,0,0,0.7);
       margin-bottom: 20px;
       position: relative;
+      transition: var(--transition);
     }
     .tabs {
       display: flex; gap: 16px; margin-bottom: 28px;
@@ -46,12 +48,14 @@
     .tab {
       flex: 1; padding: 20px; border-radius: 50px; font-weight: 800; font-size: 18px;
       text-align: center; cursor: pointer; background: rgba(255,255,255,0.08); color: var(--muted);
-      border: 2px solid transparent; transition: all 0.4s;
+      border: 2px solid transparent; transition: var(--transition);
     }
     .tab.active {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #000; transform: scale(1.05); box-shadow: 0 20px 50px rgba(0,231,192,0.5);
     }
+
+    /* ПЛЮСИК — ЛУЧШИЙ В МИРЕ */
     .fab {
       position: fixed; bottom: 100px; right: 24px; width: 82px; height: 82px;
       border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00e7c0);
@@ -59,12 +63,13 @@
       font-size: 42px; color: #000; font-weight: 900;
       box-shadow: 0 25px 70px rgba(0,255,136,0.7); cursor: pointer; z-index: 999;
       border: 5px solid rgba(255,255,255,0.3); animation: pulse 2.5s infinite;
+      transition: var(--transition);
     }
+    .fab:hover { transform: scale(1.2) rotate(90deg); }
     @keyframes pulse {
       0%,100% { box-shadow: 0 25px 70px rgba(0,255,136,0.7); }
       50% { box-shadow: 0 25px 100px rgba(0,255,136,1); }
     }
-    .fab:hover { transform: scale(1.2) rotate(90deg); }
 
     .bottom-nav {
       position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
@@ -74,6 +79,7 @@
     }
     .nav-item {
       text-align: center; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--muted);
+      transition: var(--transition);
     }
     .nav-item i { font-size: 30px; display: block; margin-bottom: 6px; }
     .nav-item.active { color: var(--accent); transform: scale(1.5); }
@@ -106,27 +112,35 @@
       flex: 1; padding: 22px 0; border-radius: 50px; font-weight: 800; font-size: 19px;
       text-align: center; cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #000; box-shadow: 0 20px 50px rgba(0,231,192,0.5);
+      transition: var(--transition);
     }
     .action-btn.withdraw {
       background: rgba(255,255,255,0.12); color: white; border: 2px solid var(--glass);
     }
 
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.97); backdrop-filter: blur(28px);
-      display: none; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
-    .modal.active { display: flex; }
+    .modal { 
+      position: fixed; inset: 0; background: rgba(0,0,0,0.97); backdrop-filter: blur(28px);
+      display: none; align-items: center; justify-content: center; z-index: 9999; padding: 16px;
+      transition: opacity 0.4s ease;
+    }
+    .modal.active { display: flex; opacity: 1; }
+
     .modal-card {
       width: 100%; max-width: 560px; background: var(--card); border-radius: var(--radius);
       padding: 40px; position: relative; max-height: 92dvh; overflow-y: auto;
+      transition: var(--transition);
     }
     .close-btn {
       position: absolute; top: 18px; right: 18px; width: 52px; height: 52px; border-radius: 50%;
       background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
-      font-size: 32px; cursor: pointer; color: var(--muted);
+      font-size: 32px; cursor: pointer; color: var(--muted); transition: var(--transition);
     }
+    .close-btn:hover { background: rgba(255,0,0,0.3); transform: scale(1.1); }
+
     .task-type {
       padding: 32px; border-radius: 28px; border: 3px solid var(--glass);
       background: rgba(255,255,255,0.08); text-align: center; cursor: pointer;
-      transition: all 0.5s; margin-bottom: 16px;
+      transition: var(--transition); margin-bottom: 16px;
     }
     .task-type.selected {
       border-color: var(--accent); background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2));
@@ -140,11 +154,16 @@
     .total-price {
       font-size: 48px; font-weight: 900; text-align: center; color: var(--green); margin: 32px 0;
     }
+    input[type="number"], input[type="text"] {
+      width: 100%; padding: 24px; border-radius: 32px; background: rgba(255,255,255,0.1);
+      border: 2px solid var(--glass); color: white; font-size: 20px; text-align: center;
+      margin: 16px 0; transition: var(--transition);
+    }
+    input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 30px rgba(0,231,192,0.4); }
   </style>
 </head>
 <body>
 
-  <!-- ЗАДАНИЯ -->
   <div id="tasksTab">
     <div class="card">
       <div class="tabs">
@@ -157,7 +176,6 @@
     </div>
   </div>
 
-  <!-- ПРОФИЛЬ -->
   <div id="profileTab" style="display:none">
     <div class="card">
       <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')">
@@ -182,10 +200,8 @@
     </div>
   </div>
 
-  <!-- ПЛЮСИК -->
   <div class="fab" id="createFab">+</div>
 
-  <!-- НИЖНЯЯ НАВИГАЦИЯ -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="showTab('tasksTab')">
       <i class="fas fa-tasks"></i>
@@ -203,21 +219,20 @@
       <div class="close-btn" onclick="closeModal('createModal')">×</div>
       <h2 style="text-align:center; margin-bottom:36px; font-size:28px">Создать задание</h2>
       
-      <div class="task-type selected" data-price="100">
+      <div class="task-type selected" data-price="100" data-max="100">
         <div style="font-size:24px; font-weight:800">Яндекс Отзыв</div>
         <div class="task-price">100 ₽</div>
       </div>
-      <div class="task-type" data-price="65">
+      <div class="task-type" data-price="65" data-max="200">
         <div style="font-size:24px; font-weight:800">Google Отзыв</div>
         <div class="task-price">65 ₽</div>
       </div>
-      <div class="task-type" data-price="10">
+      <div class="task-type" data-price="10" data-max="10000">
         <div style="font-size:24px; font-weight:800">TG Подписка</div>
         <div class="task-price">10 ₽</div>
       </div>
 
-      <input type="number" id="taskCount" value="10" min="1" max="100" 
-             style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:24px 0">
+      <input type="number" id="taskCount" value="10" min="1" placeholder="Количество">
 
       <div class="total-price" id="totalPrice">Итого: 1000 ₽</div>
       
@@ -244,8 +259,6 @@
         <div style="font-size:20px; color:var(--muted)">В комментарий:</div>
         <div style="font-size:48px; font-weight:900; color:var(--green); letter-spacing:8px" id="payCode">RC8888</div>
       </div>
-
-      <div class="action-btn" style="margin-top:30px" onclick="tg.showAlert('Оплата принята! Баланс скоро обновится')">Я оплатил</div>
     </div>
   </div>
 
@@ -254,9 +267,9 @@
     <div class="modal-card">
       <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
       <h2 style="text-align:center; margin-bottom:32px">Вывод средств</h2>
-      <input type="number" placeholder="Сумма (мин. 300 ₽)" id="wAmount" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:16px 0">
-      <input type="text" placeholder="ФИО или @ник" id="wName" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:16px 0">
-      <input type="text" placeholder="Карта / СБП / USDT" id="wDetails" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:16px 0">
+      <input type="number" placeholder="Сумма (мин. 300 ₽)" id="wAmount">
+      <input type="text" placeholder="ФИО или @ник" id="wName">
+      <input type="text" placeholder="Номер карты или телефона" id="wDetails">
       <div class="action-btn" onclick="sendWithdraw()">Отправить заявку</div>
     </div>
   </div>
@@ -266,19 +279,16 @@
   tg.ready(); tg.expand();
   const user = tg.initDataUnsafe.user || {};
 
-  // Профиль
   document.getElementById('userName').textContent = user.first_name || 'Царь';
   document.getElementById('userHandle').textContent = user.username ? '@' + user.username : '@king';
   if (user.photo_url) document.querySelector('#userAvatar img').src = user.photo_url;
 
   // Табы
   document.getElementById('myTasksTab').onclick = () => {
-    document.querySelectorAll('.tab')[0].classList.add('active');
-    document.querySelectorAll('.tab')[1].classList.remove('active');
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===0));
   };
   document.getElementById('availableTasksTab').onclick = () => {
-    document.querySelectorAll('.tab')[0].classList.remove('active');
-    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===1));
   };
 
   // Кнопки
@@ -303,24 +313,33 @@
     document.getElementById(id).classList.remove('active');
   }
 
-  // ИТОГО ПРИ СОЗДАНИИ ЗАДАНИИ
+  // Создание задания — с правильными максимумами
   let selectedPrice = 100;
+  let selectedMax = 100;
   document.querySelectorAll('.task-type').forEach(el => {
     el.onclick = () => {
       document.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
       el.classList.add('selected');
       selectedPrice = +el.dataset.price;
+      selectedMax = +el.dataset.max;
+      document.getElementById('taskCount').max = selectedMax;
       updateTotal();
     };
   });
-  document.getElementById('taskCount').oninput = updateTotal;
+
+  document.getElementById('taskCount').oninput = () => {
+    const val = parseInt(document.getElementById('taskCount').value);
+    if (val > selectedMax) document.getElementById('taskCount').value = selectedMax;
+    updateTotal();
+  };
+
   function updateTotal() {
     const count = parseInt(document.getElementById('taskCount').value) || 1;
     document.getElementById('totalPrice').textContent = `Итого: ${(count * selectedPrice).toLocaleString()} ₽`;
   }
   updateTotal();
 
-  // QR ДЛЯ ПОПОЛНЕНИЯ
+  // QR пополнение
   function generateQR(amount) {
     const code = "RC" + Math.floor(1000 + Math.random() * 9000);
     document.getElementById('payCode').textContent = code;
@@ -328,11 +347,13 @@
     QRCode.toCanvas(document.getElementById('qrCanvas'), link, { width: 320 });
   }
 
-  // ВЫВОД
+  // Вывод
   function sendWithdraw() {
     const amount = document.getElementById('wAmount').value;
-    if (!amount || amount < 300) return tg.showAlert('Минимум 300 ₽');
-    tg.showAlert('Заявка на вывод ' + amount + ' ₽ отправлена! Обработаем в течение 24ч');
+    const name = document.getElementById('wName').value;
+    const details = document.getElementById('wDetails').value;
+    if (!amount || amount < 300 || !name || !details) return tg.showAlert('Заполни все поля!');
+    tg.showAlert(`Заявка на ${amount} ₽ отправлена!\nПолучатель: ${name}\nРеквизиты: ${details}`);
     closeModal('withdrawModal');
   }
 </script>
