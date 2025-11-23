@@ -71,10 +71,9 @@
       font-size: 42px; color: #000; font-weight: 900;
       box-shadow: 0 25px 70px rgba(0,255,136,0.7); cursor: pointer; z-index: 999;
       border: 5px solid rgba(255,255,255,0.3); animation: pulse 2.5s infinite;
-      transition: var(--transition), opacity 0.4s ease, transform 0.6s ease;
-      opacity: 0; transform: scale(0) rotate(180deg);
+      transition: var(--transition); opacity: 0; transform: scale(0);
     }
-    .fab.visible { opacity: 1; transform: scale(1) rotate(0); }
+    .fab.visible { opacity: 1; transform: scale(1); }
     @keyframes pulse { 0%,100% { box-shadow: 0 25px 70px rgba(0,255,136,0.7); } 50% { box-shadow: 0 25px 100px rgba(0,255,136,1); } }
 
     .bottom-nav {
@@ -111,9 +110,7 @@
       color: #000; box-shadow: 0 20px 50px rgba(0,231,192,0.5);
       transition: var(--transition);
     }
-    .action-btn.withdraw {
-      background: rgba(255,255,255,0.12); color: white; border: 2px solid var(--glass);
-    }
+    .action-btn.withdraw { background: rgba(255,255,255,0.12); color: white; border: 2px solid var(--glass); }
 
     .modal {
       position: fixed; inset: 0; background: rgba(0,0,0,0.97); backdrop-filter: blur(28px);
@@ -122,7 +119,7 @@
     }
     .modal.active { display: flex; opacity: 1; }
     .modal-card {
-      width: 100%; max-width: 580px; background: var(--card); border-radius: var(--radius);
+      width: 100%; max-width: 560px; background: var(--card); border-radius: var(--radius);
       padding: 40px; position: relative; max-height: 92dvh; overflow-y: auto;
       transform: scale(0.9); opacity: 0; transition: var(--transition);
     }
@@ -131,7 +128,7 @@
     .close-btn {
       position: absolute; top: 18px; right: 18px; width: 52px; height: 52px; border-radius: 50%;
       background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
-      font-size: 32px; cursor: pointer; color: var(--muted); transition: var(--transition);
+      font-size: 32px; cursor: pointer; color: var(--muted);
     }
 
     input[type="number"], input[type="text"] {
@@ -159,10 +156,31 @@
     }
 
     .total-price { font-size: 48px; font-weight: 900; text-align: center; color: var(--green); margin: 32px 0; }
+
+    /* ПОПОЛНЕНИЕ — КРАСИВО И ЧИСТО */
+    .topup-amount-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+    }
+    .amount-btn {
+      padding: 24px; background: rgba(255,255,255,0.08); border: 2px solid var(--glass);
+      border-radius: 28px; font-size: 28px; font-weight: 900; text-align: center; cursor: pointer;
+      transition: var(--transition);
+    }
+    .amount-btn:hover { border-color: var(--accent); transform: translateY(-4px); }
+
+    .code-box {
+      background: rgba(0,255,136,0.15); border: 3px dashed var(--green); border-radius: 32px;
+      padding: 32px; text-align: center; margin: 30px 0;
+    }
+    #payCode {
+      font-size: 56px; font-weight: 900; color: var(--green); letter-spacing: 8px;
+      text-shadow: 0 0 30px rgba(0,255,136,0.6);
+    }
   </style>
 </head>
 <body>
 
+  <!-- ЗАДАНИЯ -->
   <div id="tasksTab" class="active">
     <div class="card">
       <div class="tabs">
@@ -175,13 +193,16 @@
     </div>
   </div>
 
+  <!-- ПРОФИЛЬ -->
   <div id="profileTab">
     <div class="card">
       <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')">
         <i class="fas fa-headset"></i>
       </div>
       <div style="text-align:center; margin-top:20px">
-        <div class="avatar" id="userAvatar"><img src="" alt="Аватар"></div>
+        <div class="avatar" id="userAvatar">
+          <img src="" alt="Аватар" id="userPhoto">
+        </div>
         <h2 style="font-size:32px; font-weight:900; margin:20px 0" id="userName">Царь</h2>
         <p style="color:var(--muted); font-size:18px" id="userHandle">@king</p>
       </div>
@@ -207,7 +228,38 @@
     </div>
   </div>
 
-  <!-- СОЗДАНИЕ ЗАДАНИЯ С ПРОВЕРКОЙ ССЫЛКИ -->
+  <!-- ПОПОЛНЕНИЕ -->
+  <div id="topupModal" class="modal">
+    <div class="modal-card">
+      <div class="close-btn" onclick="closeModal('topupModal')">×</div>
+      <h2 style="text-align:center; margin-bottom:32px; font-size:32px; background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        Пополнить баланс
+      </h2>
+
+      <div id="topupStep1">
+        <div class="topup-amount-grid">
+          <div class="amount-btn" onclick="startTopup(300)">300 ₽</div>
+          <div class="amount-btn" onclick="startTopup(500)">500 ₽</div>
+          <div class="amount-btn" onclick="startTopup(1000)">1000 ₽</div>
+          <div class="amount-btn" onclick="startTopup(2000)">2000 ₽</div>
+        </div>
+        <input type="number" id="customAmount" placeholder="Или введи свою сумму (мин. 150 ₽)" min="150">
+        <div class="action-btn" onclick="customTopup()">Пополнить на свою сумму</div>
+      </div>
+
+      <div id="topupStep2" style="display:none; text-align:center">
+        <canvas id="qrCanvas" width="280" height="280" style="background:white; padding:16px; border-radius:28px; margin:20px auto; display:block; box-shadow:0 20px 60px rgba(0,0,0,0.6)"></canvas>
+        <div class="code-box">
+          <div style="font-size:20px; color:var(--muted); margin-bottom:8px">В комментарий к оплате:</div>
+          <div id="payCode">RC8888</div>
+        </div>
+        <input type="text" id="codeInput" placeholder="Введи код RCxxxx после оплаты">
+        <div class="action-btn" style="margin-top:20px" onclick="checkPayment()">Я оплатил — зачислить</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- СОЗДАНИЕ ЗАДАНИЯ -->
   <div id="createModal" class="modal">
     <div class="modal-card">
       <div class="close-btn" onclick="closeModal('createModal')">×</div>
@@ -227,7 +279,7 @@
       </div>
 
       <div class="link-input-wrapper">
-        <input type="text" id="taskLink" class="link-input" placeholder="Ссылка на карту или канал">
+        <input type="text" id="taskLink" placeholder="Введите ссылку куда нужно написать отзыв или вступить в канал">
         <div id="linkStatus" class="link-status"></div>
       </div>
 
@@ -236,29 +288,6 @@
       <div class="total-price" id="totalPrice">Итого: 1 000 ₽</div>
       
       <div id="createTaskBtn" class="create-task-btn">Создать задание</div>
-    </div>
-  </div>
-
-  <!-- ПОПОЛНЕНИЕ — КРАСИВОЕ -->
-  <div id="topupModal" class="modal">
-    <div class="modal-card">
-      <div class="close-btn" onclick="closeModal('topupModal')">×</div>
-      <h2 style="text-align:center; margin-bottom:32px; font-size:32px; background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Пополнить баланс</h2>
-      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:30px 0">
-        <div class="action-btn" style="padding:20px 36px; font-size:20px" onclick="startTopup(300)">300 ₽</div>
-        <div class="action-btn" style="padding:20px 36px; font-size:20px" onclick="startTopup(500)">500 ₽</div>
-        <div class="action-btn" style="padding:20px 36px; font-size:20px" onclick="startTopup(1000)">1000 ₽</div>
-        <div class="action-btn" style="padding:20px 36px; font-size:20px" onclick="startTopup(2000)">2000 ₽</div>
-      </div>
-      <div id="topupStep2" style="display:none; text-align:center">
-        <canvas id="qrCanvas" width="300" height="300" style="background:white; padding:20px; border-radius:32px; margin:30px auto; display:block; box-shadow:0 20px 60px rgba(0,0,0,0.6)"></canvas>
-        <div style="padding:32px; background:rgba(0,255,136,0.18); border-radius:32px; border:3px dashed var(--green); margin:20px 0">
-          <div style="font-size:22px; color:var(--muted)">В комментарий:</div>
-          <div style="font-size:52px; font-weight:900; color:var(--green); letter-spacing:10px" id="payCode">RC8888</div>
-        </div>
-        <input type="text" id="codeInput" placeholder="Введи код после оплаты">
-        <div class="action-btn" style="margin-top:20px" onclick="checkPayment()">Я оплатил — зачислить</div>
-      </div>
     </div>
   </div>
 
@@ -282,15 +311,19 @@
   let balance = parseInt(localStorage.getItem('rc_balance') || '0');
   let pendingCode = null;
   let pendingAmount = 0;
-  let selectedType = 'yandex';
   let selectedPrice = 100;
   let selectedMax = 100;
   let linkValid = false;
 
-  document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
+  // АВАТАРКА И ПРОФИЛЬ
   document.getElementById('userName').textContent = user.first_name || 'Царь';
   document.getElementById('userHandle').textContent = user.username ? '@' + user.username : '@king';
-  if (user.photo_url) document.querySelector('#userAvatar img').src = user.photo_url;
+  if (user.photo_url) {
+    document.getElementById('userPhoto').src = user.photo_url;
+  } else {
+    document.getElementById('userPhoto').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user.id || 'king');
+  }
+  document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
 
   function updateBalance() {
     document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
@@ -317,14 +350,20 @@
   document.getElementById('createFab').onclick = () => openModal('createModal');
 
   // ПОПОЛНЕНИЕ
+  function customTopup() {
+    const amount = parseInt(document.getElementById('customAmount').value);
+    if (amount >= 150) startTopup(amount);
+    else tg.showAlert('Минимальная сумма — 150 ₽');
+  }
+
   function startTopup(amount) {
     pendingAmount = amount;
     pendingCode = "RC" + Math.floor(1000 + Math.random() * 9000);
     document.getElementById('payCode').textContent = pendingCode;
-    document.querySelector('#topupModal .action-btn').style.display = 'none';
+    document.getElementById('topupStep1').style.display = 'none';
     document.getElementById('topupStep2').style.display = 'block';
     const link = `https://qr.nspk.ru/AD100005M8J9K0L5O3P2Q1R2S3T4U5V6W7X8Y9Z0?type=02&bank=100000000007&sum=${amount}00&cur=RUB`;
-    QRCode.toCanvas(document.getElementById('qrCanvas'), link, { width: 300 });
+    QRCode.toCanvas(document.getElementById('qrCanvas'), link, { width: 280 });
   }
 
   function checkPayment() {
@@ -334,7 +373,9 @@
       updateBalance();
       tg.showAlert(`+${pendingAmount} ₽ зачислено!`);
       closeModal('topupModal');
+      document.getElementById('topupStep1').style.display = 'block';
       document.getElementById('topupStep2').style.display = 'none';
+      document.getElementById('customAmount').value = '';
     } else {
       tg.showAlert('Неверный код');
     }
@@ -342,8 +383,8 @@
 
   function sendWithdraw() {
     const amount = parseInt(document.getElementById('wAmount').value);
-    if (!amount || amount < 300 || amount > balance) return tg.showAlert('Ошибка');
-    tg.showAlert('Заявка отправлена!');
+    if (!amount || amount < 300 || amount > balance) return tg.showAlert('Ошибка суммы');
+    tg.showAlert('Заявка отправлена! Скоро выплатим');
     closeModal('withdrawModal');
   }
 
@@ -352,7 +393,6 @@
     el.onclick = () => {
       document.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
       el.classList.add('selected');
-      selectedType = el.dataset.type;
       selectedPrice = +el.dataset.price;
       selectedMax = +el.dataset.max;
       document.getElementById('taskCount').max = selectedMax;
@@ -377,7 +417,7 @@
 
   async function checkLink(url) {
     if (!url.startsWith('http')) url = 'https://' + url;
-    if (url.includes('t.me/') || url.includes('yandex.') || url.includes('google.com/maps')) return true;
+    if (url.includes('t.me/') || url.includes('yandex.') || url.includes('google.com/maps') || url.includes('2gis.')) return true;
     try {
       const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, { method: 'HEAD' });
       return res.ok;
