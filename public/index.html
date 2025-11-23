@@ -19,7 +19,6 @@
       --text: #e0f7ff;
       --muted: #88c0d0;
       --radius: 32px;
-      --shadow: 0 30px 80px rgba(0,0,0,0.7);
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -31,68 +30,54 @@
       padding-bottom: 140px;
       overflow-x: hidden;
     }
-
-    /* КАРТОЧКИ */
     .card {
       background: var(--card);
       backdrop-filter: blur(28px);
       border: 1px solid var(--glass);
       border-radius: var(--radius);
       padding: 32px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
       margin-bottom: 20px;
       position: relative;
     }
-
-    /* ТАБЫ — РАБОЧИЕ И КРАСИВЫЕ */
     .tabs {
       display: flex; gap: 16px; margin-bottom: 28px;
     }
     .tab {
       flex: 1; padding: 20px; border-radius: 50px; font-weight: 800; font-size: 18px;
-      text-align: center; cursor: pointer; transition: all 0.4s ease;
-      background: rgba(255,255,255,0.08); color: var(--muted);
-      border: 2px solid transparent;
+      text-align: center; cursor: pointer; background: rgba(255,255,255,0.08); color: var(--muted);
+      border: 2px solid transparent; transition: all 0.4s;
     }
     .tab.active {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #000; transform: scale(1.05);
-      box-shadow: 0 20px 50px rgba(0,231,192,0.5);
-      border-color: var(--accent);
+      color: #000; transform: scale(1.05); box-shadow: 0 20px 50px rgba(0,231,192,0.5);
     }
-
-    /* САМЫЙ КРАСИВЫЙ ПЛЮСИК В МИРЕ */
     .fab {
       position: fixed; bottom: 100px; right: 24px; width: 82px; height: 82px;
       border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00e7c0);
       display: flex; align-items: center; justify-content: center;
       font-size: 42px; color: #000; font-weight: 900;
-      box-shadow: 0 25px 70px rgba(0,255,136,0.7);
-      cursor: pointer; z-index: 999; border: 5px solid rgba(255,255,255,0.3);
-      animation: fabPulse 2.5s infinite; backdrop-filter: blur(12px);
+      box-shadow: 0 25px 70px rgba(0,255,136,0.7); cursor: pointer; z-index: 999;
+      border: 5px solid rgba(255,255,255,0.3); animation: pulse 2.5s infinite;
     }
-    .fab:hover { transform: scale(1.2) rotate(90deg); }
-    @keyframes fabPulse {
+    @keyframes pulse {
       0%,100% { box-shadow: 0 25px 70px rgba(0,255,136,0.7); }
       50% { box-shadow: 0 25px 100px rgba(0,255,136,1); }
     }
+    .fab:hover { transform: scale(1.2) rotate(90deg); }
 
-    /* НИЖНЯЯ ПАНЕЛЬ */
     .bottom-nav {
       position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-      background: var(--card); backdrop-filter: blur(32px);
-      border: 2px solid var(--glass); border-radius: 60px;
-      padding: 20px 90px; display: flex; gap: 120px; z-index: 1000;
-      box-shadow: var(--shadow);
+      background: var(--card); backdrop-filter: blur(32px); border: 2px solid var(--glass);
+      border-radius: 60px; padding: 20px 90px; display: flex; gap: 120px; z-index: 1000;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
     }
     .nav-item {
       text-align: center; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--muted);
-      transition: all 0.4s ease;
     }
     .nav-item i { font-size: 30px; display: block; margin-bottom: 6px; }
     .nav-item.active { color: var(--accent); transform: scale(1.5); }
 
-    /* ПРОФИЛЬ */
     .avatar {
       width: 120px; height: 120px; border-radius: 50%; overflow: hidden;
       border: 5px solid var(--accent); box-shadow: 0 25px 70px rgba(0,231,192,0.6);
@@ -100,7 +85,6 @@
     }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ПОДДЕРЖКА — ПУЛЬСИРУЮЩАЯ */
     .support-btn {
       position: absolute; top: 20px; right: 20px; width: 68px; height: 68px;
       background: rgba(0,231,192,0.3); border-radius: 50%; display: flex;
@@ -108,7 +92,6 @@
       border: 4px solid var(--accent); animation: pulse 3s infinite;
       box-shadow: 0 0 80px rgba(0,231,192,0.6);
     }
-    @keyframes pulse { 0%,100%{box-shadow:0 0 80px rgba(0,231,192,0.6)} 50%{box-shadow:0 0 120px rgba(0,231,192,1)} }
 
     .balance {
       font-size: 68px; font-weight: 900; text-align: center;
@@ -116,21 +99,18 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
 
-    /* КНОПКИ ДЕЙСТВИЙ */
     .action-buttons {
       display: flex; gap: 18px; margin-top: 36px;
     }
     .action-btn {
-      flex: 1; padding: 22px; border-radius: 50px; font-weight: 800; font-size: 20px;
-      text-align: center; cursor: pointer; transition: all 0.4s ease;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      flex: 1; padding: 22px 0; border-radius: 50px; font-weight: 800; font-size: 19px;
+      text-align: center; cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #000; box-shadow: 0 20px 50px rgba(0,231,192,0.5);
     }
     .action-btn.withdraw {
       background: rgba(255,255,255,0.12); color: white; border: 2px solid var(--glass);
     }
 
-    /* МОДАЛКИ */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.97); backdrop-filter: blur(28px);
       display: none; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
     .modal.active { display: flex; }
@@ -143,19 +123,22 @@
       background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
       font-size: 32px; cursor: pointer; color: var(--muted);
     }
-
     .task-type {
-      padding: 32px; border-radius: 28px; border: 3px solid var(--glass); background: rgba(255,255,255,0.08);
-      text-align: center; cursor: pointer; transition: all 0.5s ease; margin-bottom: 20px;
+      padding: 32px; border-radius: 28px; border: 3px solid var(--glass);
+      background: rgba(255,255,255,0.08); text-align: center; cursor: pointer;
+      transition: all 0.5s; margin-bottom: 16px;
     }
     .task-type.selected {
       border-color: var(--accent); background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2));
       transform: scale(1.05); box-shadow: 0 25px 70px rgba(0,231,192,0.5);
     }
     .task-price {
-      font-size: 48px; font-weight: 900; margin-top: 12px;
+      font-size: 48px; font-weight: 900;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .total-price {
+      font-size: 48px; font-weight: 900; text-align: center; color: var(--green); margin: 32px 0;
     }
   </style>
 </head>
@@ -168,7 +151,7 @@
         <div class="tab active" id="myTasksTab">Мои задания</div>
         <div class="tab" id="availableTasksTab">Выполнить задания</div>
       </div>
-      <div id="tasksContainer" style="text-align:center; padding:60px; color:var(--muted); font-size:18px">
+      <div id="tasksContainer" style="text-align:center; padding:80px; color:var(--muted); font-size:19px">
         Задания скоро появятся...
       </div>
     </div>
@@ -177,12 +160,12 @@
   <!-- ПРОФИЛЬ -->
   <div id="profileTab" style="display:none">
     <div class="card">
-      <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/RapiHappy')">
+      <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')">
         <i class="fas fa-headset"></i>
       </div>
       
       <div style="text-align:center; margin-top:20px">
-        <div class="avatar" id="userAvatar"><img src="" alt="Ты"></div>
+        <div class="avatar" id="userAvatar"><img src="" alt="Аватар"></div>
         <h2 style="font-size:32px; font-weight:900; margin:20px 0" id="userName">Царь</h2>
         <p style="color:var(--muted); font-size:18px" id="userHandle">@king</p>
       </div>
@@ -199,7 +182,7 @@
     </div>
   </div>
 
-  <!-- КНОПКА СОЗДАТЬ -->
+  <!-- ПЛЮСИК -->
   <div class="fab" id="createFab">+</div>
 
   <!-- НИЖНЯЯ НАВИГАЦИЯ -->
@@ -233,11 +216,12 @@
         <div class="task-price">10 ₽</div>
       </div>
 
-      <input type="number" id="taskCount" class="input" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:24px 0" value="10" min="1" max="100" placeholder="Количество (макс. 100)">
+      <input type="number" id="taskCount" value="10" min="1" max="100" 
+             style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:24px 0">
 
-      <div style="font-size:42px; font-weight:900; text-align:center; margin:32px 0; color:var(--green)" id="totalPrice">Итого: 1000 ₽</div>
+      <div class="total-price" id="totalPrice">Итого: 1000 ₽</div>
       
-      <div class="action-btn" style="margin-top:20px">Создать задание</div>
+      <div class="action-btn" id="createTaskBtn">Создать задание</div>
     </div>
   </div>
 
@@ -247,20 +231,33 @@
       <div class="close-btn" onclick="closeModal('topupModal')">×</div>
       <h2 style="text-align:center; margin-bottom:32px">Пополнить баланс</h2>
       
-      <div style="text-align:center">
-        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:20px 0">
-          <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="setAmount(300)">300 ₽</div>
-          <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="setAmount(500)">500 ₽</div>
-          <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="setAmount(1000)">1000 ₽</div>
-        </div>
-        
-        <canvas id="qrCanvas" width="300" height="300" style="background:white; padding:20px; border-radius:32px; margin:30px 0"></canvas>
-        
-        <div style="padding:28px; background:rgba(0,255,136,0.15); border-radius:28px; border:3px dashed var(--green)">
-          <div style="font-size:20px; color:var(--muted)">В комментарий впиши:</div>
-          <div style="font-size:48px; font-weight:900; color:var(--green); letter-spacing:8px" id="payCode">RC8888</div>
-        </div>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:20px 0">
+        <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="generateQR(300)">300 ₽</div>
+        <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="generateQR(500)">500 ₽</div>
+        <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="generateQR(1000)">1000 ₽</div>
+        <div class="action-btn" style="padding:18px 32px; font-size:18px" onclick="generateQR(2000)">2000 ₽</div>
       </div>
+
+      <canvas id="qrCanvas" width="320" height="320" style="background:white; padding:20px; border-radius:32px; margin:30px auto; display:block"></canvas>
+      
+      <div style="padding:28px; background:rgba(0,255,136,0.15); border-radius:28px; border:3px dashed var(--green); text-align:center">
+        <div style="font-size:20px; color:var(--muted)">В комментарий:</div>
+        <div style="font-size:48px; font-weight:900; color:var(--green); letter-spacing:8px" id="payCode">RC8888</div>
+      </div>
+
+      <div class="action-btn" style="margin-top:30px" onclick="tg.showAlert('Оплата принята! Баланс скоро обновится')">Я оплатил</div>
+    </div>
+  </div>
+
+  <!-- ВЫВОД -->
+  <div id="withdrawModal" class="modal">
+    <div class="modal-card">
+      <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
+      <h2 style="text-align:center; margin-bottom:32px">Вывод средств</h2>
+      <input type="number" placeholder="Сумма (мин. 300 ₽)" id="wAmount" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:16px 0">
+      <input type="text" placeholder="ФИО или @ник" id="wName" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:16px 0">
+      <input type="text" placeholder="Карта / СБП / USDT" id="wDetails" style="width:100%; padding:24px; border-radius:32px; background:rgba(255,255,255,0.1); border:2px solid var(--glass); color:white; font-size:20px; text-align:center; margin:16px 0">
+      <div class="action-btn" onclick="sendWithdraw()">Отправить заявку</div>
     </div>
   </div>
 
@@ -269,28 +266,32 @@
   tg.ready(); tg.expand();
   const user = tg.initDataUnsafe.user || {};
 
-  // АВАТАР И ИМЯ
+  // Профиль
   document.getElementById('userName').textContent = user.first_name || 'Царь';
   document.getElementById('userHandle').textContent = user.username ? '@' + user.username : '@king';
   if (user.photo_url) document.querySelector('#userAvatar img').src = user.photo_url;
 
-  // ТАБЫ
+  // Табы
   document.getElementById('myTasksTab').onclick = () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('myTasksTab').classList.add('active');
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.remove('active');
   };
   document.getElementById('availableTasksTab').onclick = () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('availableTasksTab').classList.add('active');
+    document.querySelectorAll('.tab')[0].classList.remove('active');
+    document.querySelectorAll('.tab')[1].classList.add('active');
   };
 
-  // КНОПКИ
+  // Кнопки
   document.getElementById('topupBtn').onclick = () => {
-    setAmount(300);
+    generateQR(300);
     document.getElementById('topupModal').classList.add('active');
   };
-  document.getElementById('withdrawBtn').onclick = () => tg.showAlert('Вывод в разработке');
-  document.getElementById('createFab').onclick = () => document.getElementById('createModal').classList.add('active');
+  document.getElementById('withdrawBtn').onclick = () => {
+    document.getElementById('withdrawModal').classList.add('active');
+  };
+  document.getElementById('createFab').onclick = () => {
+    document.getElementById('createModal').classList.add('active');
+  };
 
   function showTab(id) {
     document.getElementById('tasksTab').style.display = id === 'tasksTab' ? 'block' : 'none';
@@ -302,20 +303,38 @@
     document.getElementById(id).classList.remove('active');
   }
 
-  function setAmount(amount) {
-    const code = "RC" + Math.floor(1000 + Math.random() * 9000);
-    document.getElementById('payCode').textContent = code;
-    const sbpLink = `https://qr.nspk.ru/AD100005M8J9K0L5O3P2Q1R2S3T4U5V6W7X8Y9Z0?type=02&bank=100000000007&sum=${amount}00&cur=RUB`;
-    QRCode.toCanvas(document.getElementById('qrCanvas'), sbpLink, { width: 300, color: { dark: "#000", light: "#fff" } });
-  }
-
-  // Итог при создании задания
+  // ИТОГО ПРИ СОЗДАНИИ ЗАДАНИИ
+  let selectedPrice = 100;
   document.querySelectorAll('.task-type').forEach(el => {
     el.onclick = () => {
       document.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
       el.classList.add('selected');
+      selectedPrice = +el.dataset.price;
+      updateTotal();
     };
   });
+  document.getElementById('taskCount').oninput = updateTotal;
+  function updateTotal() {
+    const count = parseInt(document.getElementById('taskCount').value) || 1;
+    document.getElementById('totalPrice').textContent = `Итого: ${(count * selectedPrice).toLocaleString()} ₽`;
+  }
+  updateTotal();
+
+  // QR ДЛЯ ПОПОЛНЕНИЯ
+  function generateQR(amount) {
+    const code = "RC" + Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('payCode').textContent = code;
+    const link = `https://qr.nspk.ru/AD100005M8J9K0L5O3P2Q1R2S3T4U5V6W7X8Y9Z0?type=02&bank=100000000007&sum=${amount}00&cur=RUB`;
+    QRCode.toCanvas(document.getElementById('qrCanvas'), link, { width: 320 });
+  }
+
+  // ВЫВОД
+  function sendWithdraw() {
+    const amount = document.getElementById('wAmount').value;
+    if (!amount || amount < 300) return tg.showAlert('Минимум 300 ₽');
+    tg.showAlert('Заявка на вывод ' + amount + ' ₽ отправлена! Обработаем в течение 24ч');
+    closeModal('withdrawModal');
+  }
 </script>
 </body>
 </html>
