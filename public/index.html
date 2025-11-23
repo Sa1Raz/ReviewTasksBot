@@ -34,14 +34,12 @@
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
     }
-    body::-webkit-scrollbar { width: 6px; }
-    body::-webkit-scrollbar-track { background: transparent; }
+    body::-webkit-scrollbar { width: 6px; background: transparent; }
     body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 10px; }
-    body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
 
     .container { position: relative; }
 
-    /* ТАБЫ — ТОЧНО КАК НА ТВОЁМ СКРИНЕ */
+    /* ТАБЫ */
     .tabs {
       display: flex;
       background: rgba(255,255,255,0.08);
@@ -80,7 +78,7 @@
       overflow: hidden;
     }
 
-    /* КНОПКА ПОДДЕРЖКИ — ВЕРНУЛ КАК ТЫ ХОТЕЛ */
+    /* ПОДДЕРЖКА */
     .support-btn {
       position: absolute;
       top: 20px;
@@ -199,7 +197,7 @@
       border: 2px solid var(--glass);
     }
 
-    /* ВСЕ МОДАЛКИ */
+    /* МОДАЛКИ */
     .modal {
       position: fixed;
       inset: 0;
@@ -255,97 +253,55 @@
       text-align: center;
       margin: 16px 0;
       transition: var(--transition);
+      position: relative;
     }
     input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 30px rgba(0,231,192,0.4); }
 
-    .topup-amount-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+    /* КРАСИВАЯ ПРОВЕРКА ССЫЛКИ */
+    .link-input-wrapper {
+      position: relative;
       margin: 20px 0;
     }
-    .amount-btn {
-      padding: 24px;
-      background: rgba(255,255,255,0.08);
-      border: 2px solid var(--glass);
-      border-radius: 28px;
+    .link-status {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
       font-size: 28px;
-      font-weight: 900;
-      text-align: center;
-      cursor: pointer;
-      transition: var(--transition);
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .amount-btn:active { transform: translateY(2px); }
+    .link-status.show { opacity: 1; }
+    .link-status.checking i { animation: spin 1s linear infinite; color: var(--accent); }
+    .link-status.valid i { color: var(--green); animation: checkmark 0.6s ease forwards; }
+    .link-status.invalid i { color: var(--red); animation: cross 0.6s ease forwards; }
 
-    #qrCanvas {
-      background: white;
-      padding: 14px;
-      border-radius: 28px;
-      width: 240px;
-      height: 240px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    }
+    @keyframes spin { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
+    @keyframes checkmark { 0% { transform: translateY(-50%) scale(0) rotate(-45deg); } 70% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(1); } }
+    @keyframes cross { 0% { transform: translateY(-50%) scale(0) rotate(45deg); } 70% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(1); } }
 
-    .code-box {
-      background: rgba(0,255,136,0.18);
-      border: 3px dashed var(--green);
-      border-radius: 32px;
-      padding: 28px 20px;
-      text-align: center;
-      margin: 20px 0;
-      cursor: pointer;
-      transition: var(--transition);
-    }
+    .topup-amount-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .amount-btn { padding: 24px; background: rgba(255,255,255,0.08); border: 2px solid var(--glass); border-radius: 28px; font-size: 28px; font-weight: 900; text-align: center; cursor: pointer; transition: var(--transition); }
+    #qrCanvas { background: white; padding: 14px; border-radius: 28px; width: 240px; height: 240px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin: 0 auto; display: block; }
+    .code-box { background: rgba(0,255,136,0.18); border: 3px dashed var(--green); border-radius: 32px; padding: 28px 20px; text-align: center; margin: 20px 0; cursor: pointer; transition: var(--transition); }
     .code-box:hover { background: rgba(0,255,136,0.28); transform: scale(1.02); }
     .code-box small { display: block; font-size: 15px; color: var(--muted); margin-bottom: 8px; }
     #payCode { font-size: 44px; font-weight: 900; color: var(--green); letter-spacing: 6px; word-break: break-all; }
 
-    .task-type {
-      padding: 32px;
-      border-radius: 28px;
-      border: 3px solid var(--glass);
-      background: rgba(255,255,255,0.08);
-      text-align: center;
-      cursor: pointer;
-      transition: var(--transition);
-      margin-bottom: 16px;
-    }
-    .task-type.selected {
-      border-color: var(--accent);
-      background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2));
-      transform: scale(1.05);
-      box-shadow: 0 25px 70px rgba(0,231,192,0.5);
-    }
+    .task-type { padding: 32px; border-radius: 28px; border: 3px solid var(--glass); background: rgba(255,255,255,0.08); text-align: center; cursor: pointer; transition: var(--transition); margin-bottom: 16px; }
+    .task-type.selected { border-color: var(--accent); background: linear-gradient(135deg, rgba(0,231,192,0.25), rgba(0,212,255,0.2)); transform: scale(1.05); box-shadow: 0 25px 70px rgba(0,231,192,0.5); }
 
     .create-task-btn {
-      background: rgba(255,255,255,0.1);
-      color: var(--muted);
-      padding: 24px;
-      border-radius: 50px;
-      text-align: center;
-      font-size: 20px;
-      font-weight: 900;
-      margin-top: 30px;
-      pointer-events: none;
-      opacity: 0.5;
-      transition: var(--transition);
+      background: rgba(255,255,255,0.1); color: var(--muted); padding: 24px; border-radius: 50px;
+      text-align: center; font-size: 20px; font-weight: 900; margin-top: 30px;
+      pointer-events: none; opacity: 0.5; transition: var(--transition);
     }
     .create-task-btn.active {
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #000;
-      opacity: 1;
-      pointer-events: all;
-      cursor: pointer;
+      color: #000; opacity: 1; pointer-events: all; cursor: pointer;
       box-shadow: 0 20px 60px rgba(0,231,192,0.5);
     }
-
-    .total-price {
-      font-size: 48px;
-      font-weight: 900;
-      text-align: center;
-      color: var(--green);
-      margin: 32px 0;
-    }
+    .total-price { font-size: 48px; font-weight: 900; text-align: center; color: var(--green); margin: 32px 0; }
   </style>
 </head>
 <body>
@@ -369,22 +325,18 @@
   <!-- ПРОФИЛЬ -->
   <div id="profileTab" style="display:none">
     <div class="card">
-      <!-- КНОПКА ПОДДЕРЖКИ -->
       <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')">
         <i class="fas fa-headset"></i>
       </div>
-
       <div style="text-align:center; margin-top:20px">
         <div class="avatar"><img id="userPhoto" src="" alt="Аватар"></div>
         <h2 style="font-size:32px; font-weight:900; margin:20px 0" id="userName">Царь</h2>
         <p style="color:var(--muted); font-size:18px" id="userHandle">@king</p>
       </div>
-
       <div style="text-align:center; padding:40px 0; border-top:2px solid var(--glass); margin:40px 0">
         <div style="font-size:22px; color:var(--muted)">Баланс</div>
         <div class="balance" id="balance">0 ₽</div>
       </div>
-
       <div class="action-buttons">
         <div class="action-btn" id="topupBtn">Пополнить</div>
         <div class="action-btn withdraw" id="withdrawBtn">Вывести</div>
@@ -394,17 +346,14 @@
 
 </div>
 
-<!-- FAB + -->
 <div class="fab visible" id="createFab">+</div>
 
-<!-- НИЖНЯЯ ПАНЕЛЬ -->
 <div class="bottom-nav">
   <div class="nav-item active" onclick="showTab('tasks')"><i class="fas fa-tasks"></i><span>Задания</span></div>
   <div class="nav-item" onclick="showTab('profile')"><i class="fas fa-user-circle"></i><span>Профиль</span></div>
 </div>
 
-<!-- ВСЕ МОДАЛКИ — ПОЛНОСТЬЮ РАБОЧИЕ -->
-<!-- Пополнение -->
+<!-- ПОПОЛНЕНИЕ -->
 <div id="topupModal" class="modal">
   <div class="modal-card">
     <div class="close-btn" onclick="closeModal('topupModal')">×</div>
@@ -433,7 +382,7 @@
   </div>
 </div>
 
-<!-- Создание задания -->
+<!-- СОЗДАНИЕ ЗАДАНИЯ -->
 <div id="createModal" class="modal">
   <div class="modal-card">
     <div class="close-btn" onclick="closeModal('createModal')">×</div>
@@ -452,14 +401,18 @@
       <div style="font-size:48px; font-weight:900; background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">10 ₽</div>
     </div>
 
-    <input type="text" id="taskLink" placeholder="Ссылка на магазин / канал">
+    <div class="link-input-wrapper">
+      <input type="text" id="taskLink" placeholder="Ссылка на магазин / канал">
+      <div id="linkStatus" class="link-status"><i class="fas fa-spinner"></i></div>
+    </div>
+
     <input type="number" id="taskCount" value="10" min="1" placeholder="Количество">
     <div class="total-price" id="totalPrice">Итого: 1 000 ₽</div>
     <div id="createTaskBtn" class="create-task-btn">Создать задание</div>
   </div>
 </div>
 
-<!-- Вывод -->
+<!-- ВЫВОД -->
 <div id="withdrawModal" class="modal">
   <div class="modal-card">
     <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
@@ -487,7 +440,6 @@
   document.getElementById('userHandle').textContent = user.username ? '@' + user.username : '@king';
   document.getElementById('balance').textContent = balance.toLocaleString() + ' ₽';
 
-  // Навигация
   function showTab(t) {
     document.getElementById('tasksTab').style.display = t==='tasks'?'block':'none';
     document.getElementById('profileTab').style.display = t==='profile'?'block':'none';
@@ -538,6 +490,32 @@
     }else tg.showPopup({message:"Неверный код"});
   }
 
+  // КРАСИВАЯ ПРОВЕРКА ССЫЛКИ
+  const linkInput = document.getElementById('taskLink');
+  const linkStatus = document.getElementById('linkStatus');
+
+  linkInput.addEventListener('input', function() {
+    const value = this.value.trim();
+    linkStatus.className = 'link-status show checking';
+    linkStatus.innerHTML = '<i class="fas fa-spinner"></i>';
+
+    setTimeout(() => {
+      if (value === '') {
+        linkStatus.classList.remove('show', 'checking', 'valid', 'invalid');
+        linkValid = false;
+      } else if (value.includes('t.me') || value.includes('yandex.') || value.includes('google.com/maps') || value.includes('2gis.')) {
+        linkStatus.className = 'link-status show valid';
+        linkStatus.innerHTML = '<i class="fas fa-check-circle"></i>';
+        linkValid = true;
+      } else {
+        linkStatus.className = 'link-status show invalid';
+        linkStatus.innerHTML = '<i class="fas fa-times-circle"></i>';
+        linkValid = false;
+      }
+      updateCreateButton();
+    }, 800);
+  });
+
   // Создание задания
   document.querySelectorAll('.task-type').forEach(e=>{
     e.onclick=()=>{
@@ -550,12 +528,6 @@
       updateCreateButton();
     };
   });
-
-  document.getElementById('taskLink').oninput = function(){
-    const link = this.value.trim();
-    linkValid = link.includes('t.me') || link.includes('yandex.') || link.includes('google.com/maps');
-    updateCreateButton();
-  };
 
   document.getElementById('taskCount').oninput = function(){
     if(this.value > selectedMax) this.value = selectedMax;
