@@ -32,7 +32,7 @@ except Exception:
     requests = None
 
 # ---------- Config ----------
-DEFAULT_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Замените на ваш токен
+DEFAULT_BOT_TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"  # Замените на ваш токен
 BOT_TOKEN = os.environ.get("BOT_TOKEN", DEFAULT_BOT_TOKEN).strip()
 
 # Railway автоматически устанавливает PORT и PROVIDER статический URL
