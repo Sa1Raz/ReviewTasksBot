@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Moderator • ReviewCash</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0f172a; --panel:#1e293b; --text:#f1f5f9; --accent:#3b82f6; --success:#10b981; --error:#ef4444;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:20px;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
+    .container{max-width:500px;width:100%;}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+    .card{background:var(--panel);border-radius:16px;padding:24px;box-shadow:0 10px 25px rgba(0,0,0,0.3);margin-bottom:20px;}
+    .task-title{font-size:18px;font-weight:800;margin-bottom:8px;}
+    .task-meta{color:#94a3b8;font-size:13px;margin-bottom:16px;}
+    .proof-box{background:#0f172a;border-radius:8px;padding:12px;margin-bottom:20px;overflow:hidden;}
+    .proof-img{width:100%;border-radius:8px;display:block;}
+    .proof-link{color:var(--accent);word-break:break-all;}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .btn{border:none;padding:14px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:transform 0.2s;}
+    .btn:active{transform:scale(0.96);}
+    .btn-approve{background:var(--success);color:white;}
+    .btn-reject{background:var(--error);color:white;}
+    .stats{display:flex;gap:12px;margin-top:20px;}
+    .stat-box{background:var(--panel);padding:12px;border-radius:10px;flex:1;text-align:center;}
+    .stat-num{font-weight:800;font-size:20px;color:var(--accent);}
+    .stat-label{font-size:12px;color:#94a3b8;}
+    .empty-state{text-align:center;padding:40px;color:#64748b;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div style="font-weight:800;font-size:20px;">🛡️ Модерация</div>
+      <div id="adminName" style="font-size:14px;color:#94a3b8;">...</div>
+    </div>
+
+    <div id="taskCard" class="card" style="display:none;">
+      <div class="task-title" id="tTitle">...</div>
+      <div class="task-meta">ID: <span id="tId">...</span> • User: <span id="tUser">...</span></div>
+      
+      <div class="proof-box" id="proofContainer">
+        <!-- Image or Link goes here -->
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-reject" id="btnReject">✖ Отклонить</button>
+        <button class="btn btn-approve" id="btnApprove">✓ Одобрить</button>
+      </div>
+    </div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div style="font-size:40px;margin-bottom:10px;">🎉</div>
+      <div>Все задания проверены!</div>
+      <button onclick="loadNextTask()" style="margin-top:20px;background:transparent;border:1px solid #334155;color:white;padding:8px 16px;border-radius:8px;cursor:pointer;">Обновить</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-num" id="statChecked">0</div>
+        <div class="stat-label">Проверено вами</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statPending">0</div>
+        <div class="stat-label">В очереди</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = new URLSearchParams(location.search).get('token');
+    let currentAssignmentId = null;
+
+    async function api(path, method='GET', body=null){
+      try {
+        const opts = { headers: { 'Authorization': 'Bearer ' + token } };
+        if(method !== 'GET') {
+          opts.method = method;
+          opts.headers['Content-Type'] = 'application/json';
+          if(body) opts.body = JSON.stringify(body);
+        }
+        const res = await fetch(path + '?token=' + token, opts);
+        return await res.json();
+      } catch(e) { return null; }
+    }
+
+    async function loadStats() {
+      const res = await api('/api/moderator/me');
+      if(res && res.ok) {
+        document.getElementById('adminName').textContent = res.name || 'Admin';
+        document.getElementById('statChecked').textContent = res.tasks_reviewed || 0;
+      }
+    }
+
+    async function loadNextTask() {
+      const res = await api('/api/moderator/queue');
+      if(!res || !res.ok || !res.assignment) {
+        document.getElementById('taskCard').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('statPending').textContent = '0';
+        return;
+      }
+      
+      const a = res.assignment;
+      currentAssignmentId = a.id;
+      
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('taskCard').style.display = 'block';
+      document.getElementById('statPending').textContent = res.queue_length || 1;
+      
+      document.getElementById('tTitle').textContent = a.task_title || 'Задание';
+      document.getElementById('tId').textContent = a.id;
+      document.getElementById('tUser').textContent = a.user_id;
+
+      const pc = document.getElementById('proofContainer');
+      pc.innerHTML = '';
+      if(a.proof_type === 'image' && a.proof_data) {
+        pc.innerHTML = `<img src="${a.proof_data}" class="proof-img" />`;
+      } else if (a.proof_type === 'link' && a.proof_data) {
+        pc.innerHTML = `<a href="${a.proof_data}" target="_blank" class="proof-link">${a.proof_data}</a><div style="margin-top:8px;font-size:12px;color:#64748b">Нажмите, чтобы открыть ссылку</div>`;
+      } else {
+        pc.innerHTML = `<div style="color:#64748b;font-style:italic;">Нет вложений (текстовое подтверждение)</div><div style="margin-top:8px;">${a.proof_data || ''}</div>`;
+      }
+    }
+
+    document.getElementById('btnApprove').onclick = async () => {
+      if(!currentAssignmentId) return;
+      const res = await api('/api/moderator/approve', 'POST', { id: currentAssignmentId });
+      if(res && res.ok) {
+        loadNextTask();
+        loadStats();
+      } else {
+        alert('Ошибка обработки');
+      }
+    };
+
+    document.getElementById('btnReject').onclick = async () => {
+      if(!currentAssignmentId) return;
+      const reason = prompt("Причина отказа (для пользователя):") || "Не выполнено условие";
+      const res = await api('/api/moderator/reject', 'POST', { id: currentAssignmentId, reason });
+      if(res && res.ok) {
+        loadNextTask();
+        loadStats();
+      } else {
+        alert('Ошибка обработки');
+      }
+    };
+
+    loadStats();
+    loadNextTask();
+  </script>
+</body>
+</html>
