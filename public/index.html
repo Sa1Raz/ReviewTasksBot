@@ -1,489 +1,466 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>ReviewCash – Зарабатывай на отзывах</title>
-
-  <!-- Telegram Web App + Socket.IO -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-
-  <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>ReviewCash — Зарабатывай на отзывах</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-
+  <script src="/socket.io/socket.io.js"></script>
   <style>
-    :root {
-      --bg: #020617;
-      --bg-alt: #020817;
-      --card: rgba(15, 35, 60, 0.96);
-      --glass: rgba(148, 163, 184, 0.38);
-      --accent: #00e7c0;
-      --accent-soft: rgba(34, 197, 167, 0.18);
-      --accent2: #00d4ff;
-      --green: #22c55e;
-      --red: #fb7185;
-      --text: #e2f3ff;
-      --muted: #94a3b8;
-      --radius: 32px;
-      --transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(59,130,246,0.35), transparent 55%),
-        radial-gradient(circle at 100% 0%, rgba(16,185,129,0.38), transparent 55%),
-        radial-gradient(circle at 0% 100%, rgba(236,72,153,0.32), transparent 55%),
-        linear-gradient(145deg, var(--bg) 0%, var(--bg-alt) 45%, #020617 100%);
-      color: var(--text);
-      min-height: 100dvh;
-      padding: 16px;
-      padding-bottom: 140px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      position: relative;
-      isolation: isolate;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(120deg, rgba(148,163,184,0.08) 1px, transparent 1px),
-        linear-gradient(210deg, rgba(148,163,184,0.06) 1px, transparent 1px);
-      background-size: 80px 80px;
-      opacity: 0.6;
-      mix-blend-mode: soft-light;
-      pointer-events: none;
-      z-index: -1;
-    }
-    body::-webkit-scrollbar { width: 6px; background: transparent; }
-    body::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.6); border-radius: 999px; }
-
-    .container { position: relative; max-width: 640px; margin: 0 auto; }
-
-    /* Status bar */
-    .status-bar {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:18px;
-      padding:6px 14px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.35);
-      background:radial-gradient(circle at 0 0, rgba(56,189,248,0.32), transparent 55%),
-                 radial-gradient(circle at 100% 0, rgba(45,212,191,0.3), transparent 60%),
-                 rgba(15,23,42,0.88);
-      backdrop-filter:blur(18px);
-      box-shadow:0 18px 45px rgba(15,23,42,0.85);
-      gap:8px;
-    }
-    .status-left { display:flex; align-items:center; gap:8px; }
-    .app-pill {
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:10px;
-      font-weight:700;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-      background:rgba(15,23,42,0.8);
-      border:1px solid rgba(148,163,184,0.5);
-      display:flex;
-      align-items:center;gap:5px;
-    }
-    .app-pill-dot{
-      width:7px;height:7px;border-radius:999px;
-      background:radial-gradient(circle at 30% 30%, #bbf7d0, #22c55e);
-      box-shadow:0 0 18px rgba(34,197,94,0.9);
-    }
-    .status-right{ display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted); }
-    .balance-chip{ padding:4px 10px;border-radius:999px;background:rgba(15,23,42,0.9);border:1px solid rgba(56,189,248,0.6);font-weight:600;font-size:11px;display:flex;align-items:center;gap:5px;}
-    .balance-dot{ width:7px;height:7px;border-radius:999px;background:conic-gradient(from 0deg, #22c55e, #22c55e);box-shadow:0 0 10px rgba(34,197,94,0.9); }
-
-    /* Tabs etc (kept same as original) */
-    .tabs { display:flex;background:rgba(15,23,42,0.86);border-radius:50px;padding:6px;margin-bottom:28px;backdrop-filter:blur(18px);box-shadow:0 18px 55px rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.55);position:relative;overflow:hidden; }
-    .tab { flex:1;padding:16px 18px;text-align:center;font-weight:800;font-size:16px;border-radius:999px;transition:var(--transition);color:#64748b;display:flex;align-items:center;justify-content:center;gap:8px; }
-    .tab.active{ background:linear-gradient(135deg,#22c55e,#22c55e,#0ea5e9);color:#020617;box-shadow:0 18px 40px rgba(34,197,94,0.6);transform:translateY(-2px); }
-
-    .card { background: rgba(15,23,42,0.96); border-radius:var(--radius); padding:28px 22px 26px; box-shadow:0 30px 80px rgba(15,23,42,0.9); margin-bottom:22px; position:relative; overflow:hidden; border:1px solid var(--glass); }
-    .card::before{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% -20%, rgba(148,163,184,0.3), transparent 65%); opacity:0.6; pointer-events:none; }
-
-    /* Profile & UI blocks (kept from your original) */
-    .avatar { width:112px;height:112px;border-radius:50%;overflow:hidden;border:4px solid rgba(52,211,153,0.85);box-shadow:0 22px 55px rgba(34,197,94,0.85); margin:0 auto 18px; background:radial-gradient(circle at 30% 0,#1e293b,#020617); }
-    .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
-    .balance { font-size:64px;font-weight:900;text-align:center;background:linear-gradient(120deg,#22c55e,#22c55e,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
-    .balance-caption{ font-size:13px;color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
-
-    /* Buttons and modal styles preserved... */
-    .action-btn{ flex:1;padding:18px 0;border-radius:999px;font-weight:800;font-size:17px;text-align:center;cursor:pointer;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#020617;box-shadow:0 20px 50px rgba(34,197,94,0.75);border:1px solid rgba(15,23,42,0.85); display:flex;align-items:center;justify-content:center;gap:8px;}
-    .action-btn.withdraw{ background: rgba(15,23,42,0.9); color:#e2e8f0; border:1px solid rgba(148,163,184,0.55); box-shadow:0 16px 40px rgba(15,23,42,0.95); }
-    .topup-amount-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 14px; }
-    .amount-btn{ padding:16px;border-radius:18px;background:rgba(15,23,42,0.96);border:1px solid rgba(148,163,184,0.7); font-weight:800; cursor:pointer; transition:var(--transition); text-align:center; }
-
-    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(2,6,23,0.93); backdrop-filter: blur(26px); z-index:9999; padding:16px; }
-    .modal.active{ display:flex; }
-    .modal-card{ width:100%; max-width:560px; background:rgba(15,23,42,0.98); border-radius:30px; padding:30px 22px 26px; max-height:92dvh; overflow-y:auto; border:1px solid rgba(148,163,184,0.6); box-shadow:0 28px 90px rgba(15,23,42,1); position:relative; }
-
-    input[type="text"], input[type="number"]{ width:100%; padding:18px; border-radius:18px; background:rgba(15,23,42,0.96); border:1px solid rgba(148,163,184,0.7); color:white; font-size:16px; margin:10px 0 6px; }
-    .label-row{ display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted); margin-top:8px; }
-    .sbp-details{ background:linear-gradient(135deg, rgba(59,130,246,0.1), rgba(16,185,129,0.1)); border-radius:18px; padding:20px; margin:16px 0; border:1px solid rgba(59,130,246,0.3); }
-    .sbp-warning{ background:rgba(234,179,8,0.1); border-radius:12px; padding:14px; margin:16px 0; }
-
-    @media (max-width:480px){ .card{padding:24px 18px;} .balance{font-size:52px;} .avatar{width:100px;height:100px;} }
+    :root{ --bg:#020617; --card:rgba(15,23,42,0.96); --accent1:#22c55e; --accent2:#0ea5e9; --muted:#94a3b8; --text:#e2f3ff; --radius:18px; --glass-border:1px solid rgba(148,163,184,0.14); }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:var(--text);background:linear-gradient(145deg,#020617,#020817);padding:16px;min-height:100vh}
+    .container{max-width:760px;margin:0 auto}
+    .status-bar{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:999px;border:var(--glass-border);background:rgba(255,255,255,0.02);margin-bottom:18px}
+    .app-pill{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-weight:700}
+    .balance-chip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);display:flex;align-items:center;gap:8px}
+    .card{background:var(--card);border-radius:20px;padding:20px;border:var(--glass-border);margin-bottom:18px}
+    .tabs{display:flex;gap:8px;margin-bottom:12px}
+    .tab{flex:1;padding:10px;border-radius:999px;text-align:center;background:rgba(255,255,255,0.02);cursor:pointer;font-weight:800}
+    .tab.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018}
+    .avatar{width:92px;height:92px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(180deg,#0f1724,#020617);display:flex;align-items:center;justify-content:center;border:4px solid rgba(34,197,94,0.14)}
+    .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .balance{font-weight:900;font-size:44px;text-align:center;background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .action-row{display:flex;gap:10px;margin-top:12px}
+    .action-btn{flex:1;padding:12px;border-radius:999px;text-align:center;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018;border:none}
+    .action-btn.ghost{background:rgba(255,255,255,0.02);border:var(--glass-border);color:var(--text)}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.75);backdrop-filter:blur(6px);z-index:9999;padding:16px}
+    .modal.open{display:flex}
+    .modal-card{width:100%;max-width:640px;background:var(--card);border-radius:16px;padding:20px;border:var(--glass-border)}
+    .close-btn{position:absolute;right:12px;top:10px;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer}
+    input[type="number"], input[type="text"]{width:100%;padding:12px;border-radius:12px;border:var(--glass-border);background:rgba(255,255,255,0.02);color:var(--text);margin-top:8px}
+    .topup-amount-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+    .amount-btn{padding:12px;border-radius:12px;background:rgba(255,255,255,0.02);border:var(--glass-border);font-weight:800;cursor:pointer}
+    .sbp-details{background:linear-gradient(90deg, rgba(14,165,233,0.03), rgba(34,197,94,0.03));padding:12px;border-radius:10px;margin-top:12px}
+    .tasks-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+    .task-item{background:rgba(255,255,255,0.02);padding:12px;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
+    .fab{position:fixed;right:20px;bottom:90px;width:56px;height:56px;border-radius:999px;background:linear-gradient(90deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#021018;cursor:pointer}
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:rgba(255,255,255,0.02);padding:8px;border-radius:999px;border:var(--glass-border);display:flex;gap:8px}
+    .nav-item{padding:8px 12px;border-radius:999px;color:var(--muted);cursor:pointer}
+    .nav-item.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018}
+    .muted{color:var(--muted)}
+    .small{font-size:13px}
+    .qr-img{max-width:180px;border-radius:12px;display:block;margin:12px auto}
+    .spinner{display:inline-block;width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--text);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:520px){ .balance{font-size:36px} .avatar{width:80px;height:80px} }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Status / header -->
+  <div class="container" id="app">
     <div class="status-bar">
-      <div class="status-left">
-        <div class="app-pill"><span class="app-pill-dot"></span><span>ReviewCash</span></div>
-        <span style="font-size:11px;color:#cbd5f5;font-weight:500;">Зарабатывай на отзывах</span>
-      </div>
-      <div class="status-right">
-        <div class="balance-chip" id="headerBalanceChip">
-          <span class="balance-dot"></span>
-          <span id="headerBalanceText">0 ₽</span>
-        </div>
-      </div>
+      <div class="app-pill"><span style="width:8px;height:8px;border-radius:999px;background:linear-gradient(90deg,#bbf7d0,#22c55e);display:inline-block"></span> ReviewCash</div>
+      <div class="balance-chip" aria-live="polite"><span id="headerBalanceText">0 ₽</span></div>
     </div>
 
     <!-- Tabs -->
-    <div id="tasksTab">
-      <div class="card">
-        <div class="tabs">
-          <div class="tab active" onclick="switchTaskTab(0)"><i class="fas fa-list-ul"></i><span>Мои задания</span></div>
-          <div class="tab" onclick="switchTaskTab(1)"><i class="fas fa-play-circle"></i><span>Выполнить задания</span></div>
-        </div>
-
-        <div class="empty-state">
-          <div class="empty-orb"><i class="fas fa-stars"></i></div>
-          Задания скоро появятся...<br>
-          <span style="font-size:14px;opacity:0.85;">Мы активно выкатываем новые функции</span>
-          <div class="empty-pill"><i class="fas fa-bolt"></i><span>Следи за обновлениями</span></div>
-        </div>
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <div class="tab active" data-tab="tasks">Мои задания</div>
+        <div class="tab" data-tab="profile">Профиль</div>
       </div>
-    </div>
 
-    <!-- Profile -->
-    <div id="profileTab" style="display:none">
-      <div class="card">
-        <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')"><i class="fas fa-headset"></i></div>
+      <!-- Tasks content -->
+      <div id="tasksPanel">
+        <div id="tasksEmpty" class="empty-state" style="text-align:center;padding:24px;border-radius:12px;background:rgba(255,255,255,0.01);">
+          <div style="font-weight:800;font-size:18px;margin-bottom:8px">Задания появятся здесь</div>
+          <div class="small muted">Пока что можно создать задание (кнопка справа)</div>
+        </div>
+        <div class="tasks-list" id="tasksList" style="display:none"></div>
+      </div>
 
-        <div style="text-align:center; margin-top:10px">
+      <!-- Profile content -->
+      <div id="profilePanel" style="display:none">
+        <div style="text-align:center">
           <div class="avatar"><img id="userPhoto" src="" alt="Аватар"></div>
-          <h2 id="userName" style="font-size:26px; font-weight:900; margin:10px 0 2px">Пользователь</h2>
-          <p id="userHandle" style="color:var(--muted); font-size:14px">@user</p>
-          <div class="profile-meta">
-            <div class="profile-tag"><i class="fas fa-crown" style="font-size:11px;color:#facc15;"></i><span>Уровень: 1</span></div>
-            <div class="profile-tag"><i class="fas fa-shield-halved" style="font-size:11px;color:#60a5fa;"></i><span>Защита сделок</span></div>
+          <h2 id="userName" style="margin:6px 0 0">Пользователь</h2>
+          <div id="userHandle" class="muted small">@user</div>
+          <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.02);padding-top:12px">
+            <div class="small muted">Текущий баланс</div>
+            <div class="balance" id="balance">0 ₽</div>
+            <div class="action-row">
+              <button class="action-btn" id="topupBtn"><i class="fas fa-plus-circle"></i> Пополнить</button>
+              <button class="action-btn ghost" id="withdrawBtn"><i class="fas fa-arrow-up-right-from-square"></i> Вывести</button>
+            </div>
           </div>
         </div>
-
-        <div style="text-align:center; padding:26px 0 26px; border-top:1px solid rgba(148,163,184,0.55); margin:22px 0 6px">
-          <div class="balance-caption">Текущий баланс</div>
-          <div class="balance" id="balance">0 ₽</div>
-        </div>
-
-        <div class="action-buttons">
-          <div class="action-btn" id="topupBtn"><i class="fas fa-plus-circle"></i><span>Пополнить</span></div>
-          <div class="action-btn withdraw" id="withdrawBtn"><i class="fas fa-arrow-up-right-from-square"></i><span>Вывести</span></div>
-        </div>
       </div>
     </div>
   </div>
 
-  <div class="fab visible" id="createFab"><span>+</span></div>
+  <div class="fab" id="createFab" title="Создать задание">+</div>
 
   <div class="bottom-nav">
-    <div class="nav-item active" onclick="showTab('tasks')"><i class="fas fa-tasks"></i><span>Задания</span></div>
-    <div class="nav-item" onclick="showTab('profile')"><i class="fas fa-user-circle"></i><span>Профиль</span></div>
+    <div class="nav-item active" data-nav="tasks">Задания</div>
+    <div class="nav-item" data-nav="profile">Профиль</div>
   </div>
 
-  <!-- Topup modal (QR + Tinkoff link) -->
+  <!-- TOPUP Modal -->
   <div id="topupModal" class="modal" aria-hidden="true">
     <div class="modal-card">
-      <div class="close-btn" onclick="closeModal('topupModal')">×</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;margin-top:6px;">
-        <div class="step-pill"><span class="step-dot"></span><span>Пополнение баланса</span></div>
-        <span style="font-size:12px;color:var(--muted);">Заявка создаётся автоматически</span>
-      </div>
-
-      <h2 style="text-align:left; margin-bottom:10px; font-size:22px; font-weight:800;">Пополнить через СБП</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
-        Переведите деньги по QR-коду или перейдите в Тинькофф. Баланс будет зачислен только после подтверждения администратора.
-      </p>
-
-      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;">
-        <!-- Put your QR image file (qr-code.png) in /public -->
-        <img src="qr-code.png" alt="QR код для оплаты" style="max-width:170px;width:100%;height:auto;border-radius:14px;box-shadow:0 2px 8px #0f1e3622;margin-bottom:10px;">
-        <a href="https://www.tinkoff.ru/rm/r_TfPtbPbddX.PiDdKULdka/kkRwB91205" target="_blank"
-           class="action-btn bank-btn" style="margin:4px auto;max-width:280px;">
-          <i class="fas fa-external-link-alt"></i>Перейти в банк
-        </a>
-      </div>
+      <button class="close-btn" data-close>×</button>
+      <h3>Пополнить через СБП</h3>
+      <p class="small muted">Выберите сумму или введите свою. Система создаст заявку и сгенерирует ссылку для оплаты.</p>
 
       <div id="sbpStep1">
-        <div class="label-row"><span>Быстрый выбор</span><span style="font-size:11px;color:var(--muted);">Минимум 150 ₽</span></div>
-        <div class="topup-amount-grid">
-          <div class="amount-btn" onclick="prepareSBP(300)">300 ₽</div>
-          <div class="amount-btn" onclick="prepareSBP(500)">500 ₽</div>
-          <div class="amount-btn" onclick="prepareSBP(1000)">1 000 ₽</div>
-          <div class="amount-btn" onclick="prepareSBP(2000)">2 000 ₽</div>
+        <div class="label-row">
+          <div class="small">Быстрый выбор</div>
+          <div class="small muted">Мин. 150 ₽</div>
         </div>
-
-        <label class="label-row" style="margin-top:4px;"><span>Своя сумма</span><span style="font-size:11px;color:var(--muted);">Минимум 150 ₽</span></label>
-        <input type="number" id="customAmount" placeholder="Введите сумму (от 150 ₽)">
-        <div class="action-btn bank-btn" style="margin-top:10px;" onclick="prepareCustomSBP()"><i class="fas fa-mobile-alt"></i><span>Перевести через СБП</span></div>
+        <div class="topup-amount-grid">
+          <button class="amount-btn" data-amount="300">300 ₽</button>
+          <button class="amount-btn" data-amount="500">500 ₽</button>
+          <button class="amount-btn" data-amount="1000">1 000 ₽</button>
+          <button class="amount-btn" data-amount="2000">2 000 ₽</button>
+        </div>
+        <label class="small muted" style="margin-top:12px">Своя сумма</label>
+        <input type="number" id="customAmount" placeholder="Введите сумму (от 150 ₽)" min="150">
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="action-btn" id="toSBP">Перевести через СБП</button>
+          <button class="action-btn ghost" data-close>Отмена</button>
+        </div>
       </div>
 
       <div id="sbpStep2" style="display:none">
         <div class="sbp-details">
-          <h3>📱 Реквизиты для перевода СБП:</h3>
-          <div class="detail-item"><span class="detail-label">Получатель</span><span class="detail-value">Раяз Н.</span></div>
-          <div class="detail-item"><span class="detail-label">Банк</span><span class="detail-value">Т-Банк</span></div>
-          <div class="detail-item"><span class="detail-label">Сумма</span><span class="sbp-amount" id="sbpAmount">— ₽</span></div>
+          <div style="font-weight:700">Реквизиты для перевода</div>
+          <div style="margin-top:8px">Получатель: <strong>Нигматдинов Раяз Ильдарович</strong></div>
+          <div>Договор: <strong>5587811905</strong></div>
+          <div style="margin-top:8px">Сумма: <strong id="sbpAmount">— ₽</strong></div>
         </div>
 
-        <div class="sbp-warning">
-          <div class="warning-title"><i class="fas fa-info-circle" style="color:#f59e0b;font-size:16px;"></i><strong>Важная информация:</strong></div>
-          <ul>
-            <li>Переведите точную сумму: <strong id="exactAmount">— ₽</strong></li>
-            <li>Укажите комментарий: <strong id="transferCode">RC код</strong></li>
-            <li>После перевода нажмите "Перевел"</li>
-          </ul>
-        </div>
+        <!-- Use your provided local QR image -->
+        <img id="qrImg" class="qr-img" src="/mnt/data/44e2a7f0-6c8c-4641-9717-9eb401613a95.png" alt="QR код">
 
-        <a href="https://www.tinkoff.ru/rm/r_TfPtbPbddX.PiDdKULdka/kkRwB91205" target="_blank"
-           class="action-btn bank-btn" style="margin: 16px 0; width:100%;"><i class="fas fa-external-link-alt"></i><span>Открыть приложение банка</span></a>
-
-        <div style="border-top:1px solid rgba(148,163,184,0.3);padding-top:16px;margin-top:16px;">
-          <label class="label-row"><span>Комментарий к переводу (обязательно)</span><span style="font-size:11px;color:var(--muted);">Скопируйте точно как указано</span></label>
-          <input type="text" id="transferComment" placeholder="RC_12345" readonly style="background:rgba(15,23,42,0.9);">
-          <div style="text-align:center;margin:16px 0;">
-            <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">После перевода нажмите:</div>
-            <div class="action-btn bank-btn" onclick="confirmTransfer()"><i class="fas fa-check"></i><span>Перевел, создать заявку</span></div>
-          </div>
+        <label class="small muted" style="margin-top:8px">Комментарий к переводу (обязательно)</label>
+        <input type="text" id="transferComment" readonly value="" style="cursor:pointer">
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <a id="openBankLink" class="action-btn" href="#" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Открыть банк</a>
+          <button class="action-btn ghost" id="iPaidBtn">Перевел, создать заявку</button>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- Withdraw modal -->
+  <!-- WITHDRAW Modal -->
   <div id="withdrawModal" class="modal" aria-hidden="true">
     <div class="modal-card">
-      <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:6px;">
-        <div class="step-pill"><span class="step-dot"></span><span>Вывод средств</span></div>
-        <span style="font-size:12px;color:var(--muted);">Доступно: <span id="withdrawBalanceInline">0 ₽</span></span>
+      <button class="close-btn" data-close>×</button>
+      <h3>Вывод средств</h3>
+      <p class="small muted">Заявка будет отправлена на проверку администраторам.</p>
+      <label class="small muted">Сумма (мин. 300 ₽)</label>
+      <input type="number" id="wAmount" min="300" placeholder="Сумма (мин. 300 ₽)">
+      <label class="small muted">ФИО или ник в Банке</label>
+      <input type="text" id="wName" placeholder="ФИО или ник в Банке">
+      <label class="small muted">Реквизиты (номер карты / телефона)</label>
+      <input type="text" id="wDetails" placeholder="Номер карты / телефона">
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="action-btn" id="sendWithdrawBtn">Отправить заявку</button>
+        <button class="action-btn ghost" data-close>Отмена</button>
       </div>
-
-      <h2 style="text-align:left; margin-bottom:10px; font-size:22px; font-weight:800">Создать заявку</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Заполните реквизиты для вывода. Обычно заявки обрабатываются в течение 5–30 минут.</p>
-
-      <label class="label-row">Сумма вывода</label>
-      <input type="number" placeholder="Сумма (мин. 300 ₽)" id="wAmount">
-      <label class="label-row">Получатель</label>
-      <input type="text" placeholder="ФИО или @ник в Telegram" id="wName">
-      <label class="label-row">Реквизиты</label>
-      <input type="text" placeholder="Номер карты / телефона" id="wDetails">
-      <div class="action-btn bank-btn" style="margin-top:12px;" onclick="sendWithdraw()"><i class="fas fa-paper-plane"></i><span>Отправить заявку</span></div>
     </div>
   </div>
 
-  <script>
-    // Telegram WebApp init
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    try { tg.expand(); } catch(e){}
-    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+  <!-- Create Task modal -->
+  <div id="createTaskModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="close-btn" data-close>×</button>
+      <h3>Создать задание</h3>
+      <label class="small muted">Заголовок</label>
+      <input type="text" id="taskTitle" placeholder="Например: Написать отзыв в Яндекс.Карты">
+      <label class="small muted">Описание</label>
+      <input type="text" id="taskDesc" placeholder="Краткие требования">
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="number" id="taskPrice" placeholder="Цена за 1" min="1" style="flex:1">
+        <input type="number" id="taskQty" placeholder="Количество" min="1" style="width:110px">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="action-btn" id="createTaskBtn">Создать</button>
+        <button class="action-btn ghost" data-close>Отмена</button>
+      </div>
+    </div>
+  </div>
 
-    const my_uid = tgUser.id || null;
+<script>
+(function(){
+  'use strict';
+  // Telegram WebApp (safe)
+  const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  try { tg?.ready?.(); tg?.expand?.(); } catch(e){}
 
-    // Elements
-    const balanceEl = document.getElementById('balance');
-    const headerBalanceText = document.getElementById('headerBalanceText');
-    const withdrawBalanceInline = document.getElementById('withdrawBalanceInline');
-    const userPhoto = document.getElementById('userPhoto');
-    const userNameEl = document.getElementById('userName');
-    const userHandleEl = document.getElementById('userHandle');
+  const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+  const my_uid = tgUser.id || null;
 
-    // Render profile from Telegram data
-    userPhoto.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${tgUser.id || 'user'}`;
-    userNameEl.textContent = tgUser.first_name || 'Пользователь';
-    userHandleEl.textContent = tgUser.username ? '@' + tgUser.username : '@user';
+  // DOM refs
+  const tabs = document.querySelectorAll('.tab');
+  const navItems = document.querySelectorAll('.nav-item');
+  const tasksList = document.getElementById('tasksList');
+  const tasksEmpty = document.getElementById('tasksEmpty');
+  const createFab = document.getElementById('createFab');
+  const headerBalanceText = document.getElementById('headerBalanceText');
+  const balanceEl = document.getElementById('balance');
 
-    // Load profile/balance from server
-    async function loadProfile() {
-      if (!my_uid) return;
-      try {
-        const res = await fetch(`/api/user/info?uid=${encodeURIComponent(my_uid)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const bal = Number((data.user && data.user.balance) || 0);
-        renderBalance(bal);
-        window.__USER_BALANCE = bal;
-      } catch(e) {
-        console.error('loadProfile error', e);
-      }
-    }
+  // Profile
+  const userPhoto = document.getElementById('userPhoto');
+  const userNameEl = document.getElementById('userName');
+  const userHandleEl = document.getElementById('userHandle');
 
-    function renderBalance(bal) {
-      const fmt = Number(bal||0).toLocaleString() + ' ₽';
-      balanceEl.textContent = fmt;
-      headerBalanceText.textContent = fmt;
-      withdrawBalanceInline.textContent = fmt;
-    }
+  // Topup
+  const topupModal = document.getElementById('topupModal');
+  const sbpStep1 = document.getElementById('sbpStep1');
+  const sbpStep2 = document.getElementById('sbpStep2');
+  const amountBtns = document.querySelectorAll('.amount-btn');
+  const customAmountInput = document.getElementById('customAmount');
+  const toSBPBtn = document.getElementById('toSBP');
+  const sbpAmountEl = document.getElementById('sbpAmount');
+  const transferCommentEl = document.getElementById('transferComment');
+  const openBankLink = document.getElementById('openBankLink');
+  const iPaidBtn = document.getElementById('iPaidBtn');
 
-    // WebSocket for realtime updates
-    let socket = null;
-    (function setupSocket(){
-      if (typeof io === 'undefined') return;
-      try {
-        socket = io({ transports: ['websocket'] });
-        socket.on('connect', () => console.log('socket connected', socket.id));
-        socket.on('user_update', data => {
-          if (!data) return;
-          if (String(data.user_id) === String(my_uid)) {
-            // Server tells us to reload profile
-            loadProfile();
-          }
+  let currentTopup = null;
+
+  // Withdraw
+  const withdrawModal = document.getElementById('withdrawModal');
+  const wAmount = document.getElementById('wAmount');
+  const wName = document.getElementById('wName');
+  const wDetails = document.getElementById('wDetails');
+  const sendWithdrawBtn = document.getElementById('sendWithdrawBtn');
+
+  // Create Task
+  const createTaskModal = document.getElementById('createTaskModal');
+  const createTaskBtn = document.getElementById('createTaskBtn');
+  const taskTitle = document.getElementById('taskTitle');
+  const taskDesc = document.getElementById('taskDesc');
+  const taskPrice = document.getElementById('taskPrice');
+  const taskQty = document.getElementById('taskQty');
+
+  // Utils
+  function fmtRub(n){ return Number(n||0).toLocaleString('ru-RU') + ' ₽'; }
+  function showModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
+  function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', e => {
+    const modal = e.target.closest('.modal');
+    if (modal) closeModal(modal);
+  }));
+
+  // Set profile
+  userPhoto.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${tgUser.id || 'user'}`;
+  userNameEl.textContent = tgUser.first_name || 'Пользователь';
+  userHandleEl.textContent = tgUser.username ? '@' + tgUser.username : '@user';
+
+  // Tabs
+  tabs.forEach(t => t.addEventListener('click', ()=> {
+    tabs.forEach(x => x.classList.toggle('active', x===t));
+    const tabName = t.dataset.tab;
+    document.getElementById('tasksPanel').style.display = tabName==='tasks' ? 'block' : 'none';
+    document.getElementById('profilePanel').style.display = tabName==='profile' ? 'block' : 'none';
+    navItems.forEach(n => n.classList.toggle('active', (tabName==='profile'? n.dataset.nav==='profile' : n.dataset.nav==='tasks')));
+  }));
+  navItems.forEach(n => n.addEventListener('click', ()=> {
+    const nav = n.dataset.nav;
+    document.querySelector(`.tab[data-tab="${nav==='profile'?'profile':'tasks'}"]`).click();
+  }));
+
+  // Fab opens create task
+  createFab.addEventListener('click', ()=> showModal(createTaskModal));
+
+  // Load tasks list
+  async function loadTasks(){
+    try{
+      const res = await fetch('/api/tasks/list');
+      const j = await res.json();
+      if (j.ok){
+        const tasks = j.tasks || [];
+        if (!tasks.length){ tasksList.style.display='none'; tasksEmpty.style.display='block'; return; }
+        tasksList.innerHTML = '';
+        tasks.forEach(t => {
+          const item = document.createElement('div'); item.className = 'task-item';
+          item.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description}</div></div>
+            <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||0)} ₽</div><div class="small muted">${t.qty||1} шт</div></div>`;
+          tasksList.appendChild(item);
         });
-      } catch(e){
-        console.warn('Socket init error', e);
+        tasksList.style.display='flex'; tasksEmpty.style.display='none';
       }
-    })();
+    }catch(e){ console.warn('loadTasks',e) }
+  }
 
-    // Tabs
-    function showTab(t) {
-      document.getElementById('tasksTab').style.display = t==='tasks'?'block':'none';
-      document.getElementById('profileTab').style.display = t==='profile'?'block':'none';
-      document.querySelectorAll('.nav-item').forEach((e,i)=>e.classList.toggle('active', i === (t==='tasks'?0:1)));
-      document.getElementById('createFab').classList.toggle('visible', t==='tasks');
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
-    function switchTaskTab(i) {
-      document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active', idx===i));
-    }
+  // Initial profile & balance load
+  async function loadProfile(){
+    if (!my_uid) { updateBalanceUI(0); return; }
+    try{
+      const res = await fetch(`/api/profile_me?uid=${encodeURIComponent(my_uid)}`);
+      const j = await res.json();
+      if (j.ok && j.user){
+        updateBalanceUI(j.user.balance);
+      }
+    }catch(e){ console.warn(e) }
+  }
 
-    // Modals
-    function openModal(id){ document.getElementById(id).classList.add('active'); }
-    function closeModal(id){
-      document.getElementById(id).classList.remove('active');
-      setTimeout(()=>{
-        if (id === 'topupModal') {
-          document.getElementById('sbpStep1').style.display = 'block';
-          document.getElementById('sbpStep2').style.display = 'none';
-        }
-      }, 300);
-    }
+  function updateBalanceUI(bal){
+    const txt = fmtRub(b);
+    balanceEl.textContent = txt;
+    headerBalanceText.textContent = txt;
+  }
 
-    document.getElementById('topupBtn').onclick = () => openModal('topupModal');
-    document.getElementById('withdrawBtn').onclick = () => openModal('withdrawModal');
-    document.getElementById('createFab').onclick = () => {
-      tg.showPopup({ title:'📝 Создание задания', message:'Функция создания заданий будет доступна в следующей версии!', buttons:[{type:'ok'}]});
-    };
-
-    // TOPUP logic: create a topup request on server (no client-side balance change)
-    let currentSBPAmount = 0;
-    let currentTransferCode = '';
-    let transferUnique = '';
-
-    function prepareSBP(amount) {
-      if (!amount || amount < 150) { tg.showPopup({message:'Минимум 150 ₽'}); return; }
-      prepareSBPTransfer(amount);
-    }
-    function prepareCustomSBP() {
-      const amount = parseInt(document.getElementById('customAmount').value);
-      if (!amount || amount < 150) { tg.showPopup({message:'Минимум 150 ₽'}); return; }
-      prepareSBPTransfer(amount);
-    }
-    function prepareSBPTransfer(amount) {
-      currentSBPAmount = amount;
-      currentTransferCode = 'RC' + Math.floor(1000 + Math.random() * 9000);
-      transferUnique = currentTransferCode + '_' + Math.floor(Date.now() / 1000);
-      document.getElementById('sbpAmount').textContent = amount.toLocaleString() + ' ₽';
-      document.getElementById('exactAmount').textContent = amount.toLocaleString() + ' ₽';
-      document.getElementById('transferCode').textContent = transferUnique;
-      document.getElementById('transferComment').value = transferUnique;
-      document.getElementById('sbpStep1').style.display = 'none';
-      document.getElementById('sbpStep2').style.display = 'block';
-    }
-
-    // copy transfer comment
-    document.getElementById('transferComment').addEventListener('click', function(){
-      if (!this.value) return;
-      navigator.clipboard.writeText(this.value).then(()=> tg.showPopup({message:'Комментарий скопирован!'}));
+  // Socket.io realtime
+  let socket = null;
+  try {
+    socket = io({ transports: ['websocket'] });
+    socket.on('connect', ()=> console.log('socket connected', socket.id));
+    socket.on('user_update', data => {
+      if (!data) return;
+      if (String(data.user_id) === String(my_uid)){
+        updateBalanceUI(data.balance);
+      }
     });
-
-    async function confirmTransfer() {
-      if (!my_uid) { tg.showPopup({message:'Неизвестный пользователь'}); return; }
-      try {
-        const res = await fetch('/api/user/topup', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ uid: my_uid, amount: currentSBPAmount, manual_code: transferUnique })
-        });
-        if (res.ok) {
-          tg.showPopup({ title:'✅ Заявка создана!', message:`+${currentSBPAmount.toLocaleString()} ₽ появится на балансе после проверки администратором.`, buttons:[{type:'ok'}]});
-          closeModal('topupModal');
-        } else {
-          const j = await res.json().catch(()=>null);
-          tg.showPopup({ title:'Ошибка', message: j && j.errmsg ? j.errmsg : 'Ошибка создания заявки', buttons:[{type:'ok'}]});
-        }
-      } catch(e) {
-        console.error('confirmTransfer error', e);
-        tg.showPopup({ title:'Ошибка', message:'Ошибка сети', buttons:[{type:'ok'}]});
+    socket.on('topup_approved', data => {
+      if (String(data.user.id) === String(my_uid)) {
+        // balance updated via user_update event
+        tg?.showPopup?.({ title:'Пополнение принято', message:`+${Number(data.amount).toLocaleString()} ₽ зачислено`, buttons:[{type:'ok'}] });
       }
-    }
-
-    // Withdraw: send withdraw request to server; no client-side balance change
-    async function sendWithdraw() {
-      const amount = parseInt(document.getElementById('wAmount').value);
-      const name = document.getElementById('wName').value.trim();
-      const details = document.getElementById('wDetails').value.trim();
-      if (!amount || amount < 300) { tg.showPopup({message:'Минимум для вывода 300 ₽'}); return; }
-      if (amount > (window.__USER_BALANCE || 0)) { tg.showPopup({message:'Недостаточно средств'}); return; }
-      if (!name || !details) { tg.showPopup({message:'Заполните все поля'}); return; }
-
-      try {
-        const res = await fetch('/api/user/withdraw', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ uid: my_uid, amount, name, details })
-        });
-        if (res.ok) {
-          tg.showPopup({ title:'✅ Заявка создана!', message:`Заявка на вывод ${amount.toLocaleString()} ₽ отправлена. Статус: В обработке.`, buttons:[{type:'ok'}]});
-          closeModal('withdrawModal');
-        } else {
-          const j = await res.json().catch(()=>null);
-          tg.showPopup({ title:'Ошибка', message: j && j.errmsg ? j.errmsg : 'Ошибка отправки заявки', buttons:[{type:'ok'}]});
-        }
-      } catch(e) {
-        console.error('sendWithdraw error', e);
-        tg.showPopup({ title:'Ошибка', message:'Ошибка сети', buttons:[{type:'ok'}]});
+    });
+    socket.on('topup_rejected', data => {
+      if (String(data.user.id) === String(my_uid)) {
+        tg?.showPopup?.({ title:'Пополнение отклонено', message:data.reject_reason || 'Отклонено администратором', buttons:[{type:'ok'}] });
       }
+    });
+    socket.on('withdraw_approved', data => {
+      if (String(data.user.id) === String(my_uid)) {
+        tg?.showPopup?.({ title:'Вывод подтверждён', message:`Вывод ${Number(data.amount).toLocaleString()} ₽ подтверждён`, buttons:[{type:'ok'}] });
+      }
+    });
+    socket.on('withdraw_rejected', data => {
+      if (String(data.user.id) === String(my_uid)) {
+        tg?.showPopup?.({ title:'Вывод отклонён', message:data.reject_reason || 'Отклонено администратором', buttons:[{type:'ok'}] });
+      }
+    });
+    socket.on('task_created', t => {
+      // push into listing
+      loadTasks();
+    });
+  } catch (e) {
+    console.warn('socket init', e);
+  }
+
+  // Topup flow: request pay_link -> show step2 -> when user clicks "I paid" call confirm endpoint
+  amountBtns.forEach(b => b.addEventListener('click', ()=> prepareSBPTransfer(Number(b.dataset.amount))));
+  toSBPBtn.addEventListener('click', ()=> {
+    const v = Number(customAmountInput.value || 0);
+    prepareSBPTransfer(v);
+  });
+
+  async function prepareSBPTransfer(amount){
+    if (!amount || amount < 150) { tg?.showPopup?.({message:'Минимум 150 ₽'}); return; }
+    // call server to create topup and get pay_link + manual_code
+    try{
+      const res = await fetch('/api/user/topup-link', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: my_uid, amount })
+      });
+      const j = await res.json();
+      if (!res.ok || !j.ok) {
+        tg?.showPopup?.({ title:'Ошибка', message: j.errmsg || 'Ошибка создания заявки', buttons:[{type:'ok'}] });
+        return;
+      }
+      // save current topup
+      currentTopup = j.topup;
+      sbpAmountEl.textContent = amount.toLocaleString() + ' ₽';
+      transferCommentEl.value = j.manual_code;
+      openBankLink.href = j.pay_link;
+      // show step 2
+      sbpStep1.style.display='none'; sbpStep2.style.display='block';
+      showModal(topupModal);
+      // optionally open bank automatically:
+      // window.open(j.pay_link, '_blank');
+    }catch(e){
+      console.error('prepareSBPTransfer', e);
+      tg?.showPopup?.({message:'Ошибка сети'});
     }
+  }
 
-    // Init load
-    loadProfile();
+  // copy comment on click
+  transferCommentEl.addEventListener('click', async ()=> {
+    if (!transferCommentEl.value) return;
+    try { await navigator.clipboard.writeText(transferCommentEl.value); tg?.showPopup?.({message:'Комментарий скопирован!'}); } catch(e){ tg?.showPopup?.({message:'Не удалось скопировать'}); }
+  });
 
-    // Small helpers for UI
-    function showTabName(name) { showTab(name); }
-    // Expose some functions to global (for inline onclicks)
-    window.switchTaskTab = switchTaskTab;
-    window.showTab = showTab;
-    window.openModal = openModal;
-    window.closeModal = closeModal;
-    window.prepareSBP = prepareSBP;
-    window.prepareCustomSBP = prepareCustomSBP;
-    window.confirmTransfer = confirmTransfer;
-    window.sendWithdraw = sendWithdraw;
+  // user clicked "I paid"
+  iPaidBtn.addEventListener('click', async ()=> {
+    if (!currentTopup) return tg?.showPopup?.({message:'Нет активной заявки'});
+    try{
+      const res = await fetch('/api/user/topup-confirm', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: my_uid, topup_id: currentTopup.id })
+      });
+      const j = await res.json();
+      if (!res.ok || !j.ok) {
+        tg?.showPopup?.({ title:'Ошибка', message: j.errmsg || 'Ошибка подтверждения', buttons:[{type:'ok'}] });
+        return;
+      }
+      tg?.showPopup?.({ title:'Заявка создана', message:'Спасибо! Заявка на проверку отправлена администратору.', buttons:[{type:'ok'}] });
+      closeModal(topupModal);
+      // keep UI step2 cleared
+      sbpStep1.style.display='block'; sbpStep2.style.display='none';
+      currentTopup = null;
+    }catch(e){
+      console.error('iPaid', e);
+      tg?.showPopup?.({message:'Ошибка сети'});
+    }
+  });
 
-  </script>
+  // Withdraw submit
+  sendWithdrawBtn.addEventListener('click', async ()=> {
+    const amount = Number(wAmount.value || 0);
+    const name = (wName.value || '').trim();
+    const details = (wDetails.value || '').trim();
+    if (!amount || amount < 300) return tg?.showPopup?.({message:'Мин. 300 ₽'});
+    try {
+      const res = await fetch('/api/user/withdraw', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: my_uid, amount, name, details })
+      });
+      const j = await res.json();
+      if (!res.ok || !j.ok) return tg?.showPopup?.({ title:'Ошибка', message: j.errmsg || 'Ошибка запроса', buttons:[{type:'ok'}] });
+      tg?.showPopup?.({ title:'Готово', message:'Заявка на вывод отправлена на проверку администратору.', buttons:[{type:'ok'}] });
+      closeModal(withdrawModal);
+      wAmount.value = wName.value = wDetails.value = '';
+    } catch (e) { console.error(e); tg?.showPopup?.({message:'Ошибка сети'}); }
+  });
+
+  // Create task
+  createTaskBtn.addEventListener('click', async ()=> {
+    const title = (taskTitle.value || '').trim();
+    const desc = (taskDesc.value || '').trim();
+    const price = Number(taskPrice.value || 0);
+    const qty = Number(taskQty.value || 1);
+    if (!title || !price || price <= 0) return tg?.showPopup?.({message:'Заполните заголовок и цену'});
+    try {
+      const res = await fetch('/api/tasks/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ title, description: desc, type_id: 'custom', unit_price: price, qty })
+      });
+      const j = await res.json();
+      if (!res.ok || !j.ok) return tg?.showPopup?.({message: j.errmsg || 'Ошибка создания задания'});
+      tg?.showPopup?.({message:'Задание создано!'}); closeModal(createTaskModal);
+      taskTitle.value = taskDesc.value = taskPrice.value = taskQty.value = '';
+      loadTasks();
+    } catch(e){ console.error(e); tg?.showPopup?.({message:'Ошибка сети'}); }
+  });
+
+  // Openers
+  document.getElementById('topupBtn').addEventListener('click', ()=> { sbpStep1.style.display='block'; sbpStep2.style.display='none'; showModal(topupModal); });
+  document.getElementById('withdrawBtn').addEventListener('click', ()=> showModal(withdrawModal));
+  document.getElementById('createFab').addEventListener('click', ()=> showModal(createTaskModal));
+
+  // initial load
+  loadTasks(); loadProfile();
+  // try to update balance periodically (in case socket disconnect)
+  setInterval(loadProfile, 60_000);
+
+})();
+</script>
 </body>
 </html>
