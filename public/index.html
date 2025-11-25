@@ -4,11 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>ReviewCash – Зарабатывай на отзывах</title>
+
+  <!-- Telegram Web App + Socket.IO -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
   <style>
     :root {
       --bg: #020617;
@@ -95,525 +99,391 @@
       background:radial-gradient(circle at 30% 30%, #bbf7d0, #22c55e);
       box-shadow:0 0 18px rgba(34,197,94,0.9);
     }
-    .status-right{
-      display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);
-    }
-    .balance-chip{
-      padding:4px 10px;border-radius:999px;
-      background:rgba(15,23,42,0.9);
-      border:1px solid rgba(56,189,248,0.6);
-      font-weight:600;font-size:11px;
-      display:flex;align-items:center;gap:5px;
-    }
-    .balance-dot{
-      width:7px;height:7px;border-radius:999px;
-      background:conic-gradient(from 0deg, #22c55e, #22c55e, #22c55e, #22c55e);
-      box-shadow:0 0 10px rgba(34,197,94,0.9);
+    .status-right{ display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted); }
+    .balance-chip{ padding:4px 10px;border-radius:999px;background:rgba(15,23,42,0.9);border:1px solid rgba(56,189,248,0.6);font-weight:600;font-size:11px;display:flex;align-items:center;gap:5px;}
+    .balance-dot{ width:7px;height:7px;border-radius:999px;background:conic-gradient(from 0deg, #22c55e, #22c55e);box-shadow:0 0 10px rgba(34,197,94,0.9); }
+
+    /* Tabs etc (kept same as original) */
+    .tabs { display:flex;background:rgba(15,23,42,0.86);border-radius:50px;padding:6px;margin-bottom:28px;backdrop-filter:blur(18px);box-shadow:0 18px 55px rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.55);position:relative;overflow:hidden; }
+    .tab { flex:1;padding:16px 18px;text-align:center;font-weight:800;font-size:16px;border-radius:999px;transition:var(--transition);color:#64748b;display:flex;align-items:center;justify-content:center;gap:8px; }
+    .tab.active{ background:linear-gradient(135deg,#22c55e,#22c55e,#0ea5e9);color:#020617;box-shadow:0 18px 40px rgba(34,197,94,0.6);transform:translateY(-2px); }
+
+    .card { background: rgba(15,23,42,0.96); border-radius:var(--radius); padding:28px 22px 26px; box-shadow:0 30px 80px rgba(15,23,42,0.9); margin-bottom:22px; position:relative; overflow:hidden; border:1px solid var(--glass); }
+    .card::before{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% -20%, rgba(148,163,184,0.3), transparent 65%); opacity:0.6; pointer-events:none; }
+
+    /* Profile & UI blocks (kept from your original) */
+    .avatar { width:112px;height:112px;border-radius:50%;overflow:hidden;border:4px solid rgba(52,211,153,0.85);box-shadow:0 22px 55px rgba(34,197,94,0.85); margin:0 auto 18px; background:radial-gradient(circle at 30% 0,#1e293b,#020617); }
+    .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+    .balance { font-size:64px;font-weight:900;text-align:center;background:linear-gradient(120deg,#22c55e,#22c55e,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+    .balance-caption{ font-size:13px;color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+
+    /* Buttons and modal styles preserved... */
+    .action-btn{ flex:1;padding:18px 0;border-radius:999px;font-weight:800;font-size:17px;text-align:center;cursor:pointer;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#020617;box-shadow:0 20px 50px rgba(34,197,94,0.75);border:1px solid rgba(15,23,42,0.85); display:flex;align-items:center;justify-content:center;gap:8px;}
+    .action-btn.withdraw{ background: rgba(15,23,42,0.9); color:#e2e8f0; border:1px solid rgba(148,163,184,0.55); box-shadow:0 16px 40px rgba(15,23,42,0.95); }
+    .topup-amount-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 14px; }
+    .amount-btn{ padding:16px;border-radius:18px;background:rgba(15,23,42,0.96);border:1px solid rgba(148,163,184,0.7); font-weight:800; cursor:pointer; transition:var(--transition); text-align:center; }
+
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(2,6,23,0.93); backdrop-filter: blur(26px); z-index:9999; padding:16px; }
+    .modal.active{ display:flex; }
+    .modal-card{ width:100%; max-width:560px; background:rgba(15,23,42,0.98); border-radius:30px; padding:30px 22px 26px; max-height:92dvh; overflow-y:auto; border:1px solid rgba(148,163,184,0.6); box-shadow:0 28px 90px rgba(15,23,42,1); position:relative; }
+
+    input[type="text"], input[type="number"]{ width:100%; padding:18px; border-radius:18px; background:rgba(15,23,42,0.96); border:1px solid rgba(148,163,184,0.7); color:white; font-size:16px; margin:10px 0 6px; }
+    .label-row{ display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted); margin-top:8px; }
+    .sbp-details{ background:linear-gradient(135deg, rgba(59,130,246,0.1), rgba(16,185,129,0.1)); border-radius:18px; padding:20px; margin:16px 0; border:1px solid rgba(59,130,246,0.3); }
+    .sbp-warning{ background:rgba(234,179,8,0.1); border-radius:12px; padding:14px; margin:16px 0; }
+
+    @media (max-width:480px){ .card{padding:24px 18px;} .balance{font-size:52px;} .avatar{width:100px;height:100px;} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Status / header -->
+    <div class="status-bar">
+      <div class="status-left">
+        <div class="app-pill"><span class="app-pill-dot"></span><span>ReviewCash</span></div>
+        <span style="font-size:11px;color:#cbd5f5;font-weight:500;">Зарабатывай на отзывах</span>
+      </div>
+      <div class="status-right">
+        <div class="balance-chip" id="headerBalanceChip">
+          <span class="balance-dot"></span>
+          <span id="headerBalanceText">0 ₽</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div id="tasksTab">
+      <div class="card">
+        <div class="tabs">
+          <div class="tab active" onclick="switchTaskTab(0)"><i class="fas fa-list-ul"></i><span>Мои задания</span></div>
+          <div class="tab" onclick="switchTaskTab(1)"><i class="fas fa-play-circle"></i><span>Выполнить задания</span></div>
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-orb"><i class="fas fa-stars"></i></div>
+          Задания скоро появятся...<br>
+          <span style="font-size:14px;opacity:0.85;">Мы активно выкатываем новые функции</span>
+          <div class="empty-pill"><i class="fas fa-bolt"></i><span>Следи за обновлениями</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div id="profileTab" style="display:none">
+      <div class="card">
+        <div class="support-btn" onclick="tg.openTelegramLink('https://t.me/LolikMoney')"><i class="fas fa-headset"></i></div>
+
+        <div style="text-align:center; margin-top:10px">
+          <div class="avatar"><img id="userPhoto" src="" alt="Аватар"></div>
+          <h2 id="userName" style="font-size:26px; font-weight:900; margin:10px 0 2px">Пользователь</h2>
+          <p id="userHandle" style="color:var(--muted); font-size:14px">@user</p>
+          <div class="profile-meta">
+            <div class="profile-tag"><i class="fas fa-crown" style="font-size:11px;color:#facc15;"></i><span>Уровень: 1</span></div>
+            <div class="profile-tag"><i class="fas fa-shield-halved" style="font-size:11px;color:#60a5fa;"></i><span>Защита сделок</span></div>
+          </div>
+        </div>
+
+        <div style="text-align:center; padding:26px 0 26px; border-top:1px solid rgba(148,163,184,0.55); margin:22px 0 6px">
+          <div class="balance-caption">Текущий баланс</div>
+          <div class="balance" id="balance">0 ₽</div>
+        </div>
+
+        <div class="action-buttons">
+          <div class="action-btn" id="topupBtn"><i class="fas fa-plus-circle"></i><span>Пополнить</span></div>
+          <div class="action-btn withdraw" id="withdrawBtn"><i class="fas fa-arrow-up-right-from-square"></i><span>Вывести</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fab visible" id="createFab"><span>+</span></div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showTab('tasks')"><i class="fas fa-tasks"></i><span>Задания</span></div>
+    <div class="nav-item" onclick="showTab('profile')"><i class="fas fa-user-circle"></i><span>Профиль</span></div>
+  </div>
+
+  <!-- Topup modal (QR + Tinkoff link) -->
+  <div id="topupModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="close-btn" onclick="closeModal('topupModal')">×</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;margin-top:6px;">
+        <div class="step-pill"><span class="step-dot"></span><span>Пополнение баланса</span></div>
+        <span style="font-size:12px;color:var(--muted);">Заявка создаётся автоматически</span>
+      </div>
+
+      <h2 style="text-align:left; margin-bottom:10px; font-size:22px; font-weight:800;">Пополнить через СБП</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+        Переведите деньги по QR-коду или перейдите в Тинькофф. Баланс будет зачислен только после подтверждения администратора.
+      </p>
+
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;">
+        <!-- Put your QR image file (qr-code.png) in /public -->
+        <img src="qr-code.png" alt="QR код для оплаты" style="max-width:170px;width:100%;height:auto;border-radius:14px;box-shadow:0 2px 8px #0f1e3622;margin-bottom:10px;">
+        <a href="https://www.tinkoff.ru/rm/r_TfPtbPbddX.PiDdKULdka/kkRwB91205" target="_blank"
+           class="action-btn bank-btn" style="margin:4px auto;max-width:280px;">
+          <i class="fas fa-external-link-alt"></i>Перейти в банк
+        </a>
+      </div>
+
+      <div id="sbpStep1">
+        <div class="label-row"><span>Быстрый выбор</span><span style="font-size:11px;color:var(--muted);">Минимум 150 ₽</span></div>
+        <div class="topup-amount-grid">
+          <div class="amount-btn" onclick="prepareSBP(300)">300 ₽</div>
+          <div class="amount-btn" onclick="prepareSBP(500)">500 ₽</div>
+          <div class="amount-btn" onclick="prepareSBP(1000)">1 000 ₽</div>
+          <div class="amount-btn" onclick="prepareSBP(2000)">2 000 ₽</div>
+        </div>
+
+        <label class="label-row" style="margin-top:4px;"><span>Своя сумма</span><span style="font-size:11px;color:var(--muted);">Минимум 150 ₽</span></label>
+        <input type="number" id="customAmount" placeholder="Введите сумму (от 150 ₽)">
+        <div class="action-btn bank-btn" style="margin-top:10px;" onclick="prepareCustomSBP()"><i class="fas fa-mobile-alt"></i><span>Перевести через СБП</span></div>
+      </div>
+
+      <div id="sbpStep2" style="display:none">
+        <div class="sbp-details">
+          <h3>📱 Реквизиты для перевода СБП:</h3>
+          <div class="detail-item"><span class="detail-label">Получатель</span><span class="detail-value">Раяз Н.</span></div>
+          <div class="detail-item"><span class="detail-label">Банк</span><span class="detail-value">Т-Банк</span></div>
+          <div class="detail-item"><span class="detail-label">Сумма</span><span class="sbp-amount" id="sbpAmount">— ₽</span></div>
+        </div>
+
+        <div class="sbp-warning">
+          <div class="warning-title"><i class="fas fa-info-circle" style="color:#f59e0b;font-size:16px;"></i><strong>Важная информация:</strong></div>
+          <ul>
+            <li>Переведите точную сумму: <strong id="exactAmount">— ₽</strong></li>
+            <li>Укажите комментарий: <strong id="transferCode">RC код</strong></li>
+            <li>После перевода нажмите "Перевел"</li>
+          </ul>
+        </div>
+
+        <a href="https://www.tinkoff.ru/rm/r_TfPtbPbddX.PiDdKULdka/kkRwB91205" target="_blank"
+           class="action-btn bank-btn" style="margin: 16px 0; width:100%;"><i class="fas fa-external-link-alt"></i><span>Открыть приложение банка</span></a>
+
+        <div style="border-top:1px solid rgba(148,163,184,0.3);padding-top:16px;margin-top:16px;">
+          <label class="label-row"><span>Комментарий к переводу (обязательно)</span><span style="font-size:11px;color:var(--muted);">Скопируйте точно как указано</span></label>
+          <input type="text" id="transferComment" placeholder="RC_12345" readonly style="background:rgba(15,23,42,0.9);">
+          <div style="text-align:center;margin:16px 0;">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">После перевода нажмите:</div>
+            <div class="action-btn bank-btn" onclick="confirmTransfer()"><i class="fas fa-check"></i><span>Перевел, создать заявку</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Withdraw modal -->
+  <div id="withdrawModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="close-btn" onclick="closeModal('withdrawModal')">×</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:6px;">
+        <div class="step-pill"><span class="step-dot"></span><span>Вывод средств</span></div>
+        <span style="font-size:12px;color:var(--muted);">Доступно: <span id="withdrawBalanceInline">0 ₽</span></span>
+      </div>
+
+      <h2 style="text-align:left; margin-bottom:10px; font-size:22px; font-weight:800">Создать заявку</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Заполните реквизиты для вывода. Обычно заявки обрабатываются в течение 5–30 минут.</p>
+
+      <label class="label-row">Сумма вывода</label>
+      <input type="number" placeholder="Сумма (мин. 300 ₽)" id="wAmount">
+      <label class="label-row">Получатель</label>
+      <input type="text" placeholder="ФИО или @ник в Telegram" id="wName">
+      <label class="label-row">Реквизиты</label>
+      <input type="text" placeholder="Номер карты / телефона" id="wDetails">
+      <div class="action-btn bank-btn" style="margin-top:12px;" onclick="sendWithdraw()"><i class="fas fa-paper-plane"></i><span>Отправить заявку</span></div>
+    </div>
+  </div>
+
+  <script>
+    // Telegram WebApp init
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    try { tg.expand(); } catch(e){}
+    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+
+    const my_uid = tgUser.id || null;
+
+    // Elements
+    const balanceEl = document.getElementById('balance');
+    const headerBalanceText = document.getElementById('headerBalanceText');
+    const withdrawBalanceInline = document.getElementById('withdrawBalanceInline');
+    const userPhoto = document.getElementById('userPhoto');
+    const userNameEl = document.getElementById('userName');
+    const userHandleEl = document.getElementById('userHandle');
+
+    // Render profile from Telegram data
+    userPhoto.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${tgUser.id || 'user'}`;
+    userNameEl.textContent = tgUser.first_name || 'Пользователь';
+    userHandleEl.textContent = tgUser.username ? '@' + tgUser.username : '@user';
+
+    // Load profile/balance from server
+    async function loadProfile() {
+      if (!my_uid) return;
+      try {
+        const res = await fetch(`/api/user/info?uid=${encodeURIComponent(my_uid)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const bal = Number((data.user && data.user.balance) || 0);
+        renderBalance(bal);
+        window.__USER_BALANCE = bal;
+      } catch(e) {
+        console.error('loadProfile error', e);
+      }
     }
 
-    /* Tabs */
-    .tabs {
-      display: flex;
-      background: rgba(15,23,42,0.86);
-      border-radius: 50px;
-      padding: 6px;
-      margin-bottom: 28px;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 18px 55px rgba(15,23,42,0.95);
-      border:1px solid rgba(148,163,184,0.55);
-      position:relative;
-      overflow: hidden;
-    }
-    .tabs::before{
-      content:"";
-      position:absolute;inset:0;
-      background:radial-gradient(circle at 0 0, rgba(59,130,246,0.25), transparent 55%),
-                 radial-gradient(circle at 100% 0, rgba(16,185,129,0.25), transparent 55%);
-      mix-blend-mode:soft-light;
-      pointer-events:none;
-    }
-    .tab {
-      flex: 1;
-      padding: 16px 18px;
-      text-align: center;
-      font-weight: 800;
-      font-size: 16px;
-      border-radius: 999px;
-      transition: var(--transition);
-      color: #64748b;
-      position:relative;
-      z-index:1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-    }
-    .tab i{font-size:15px;}
-    .tab.active {
-      background: linear-gradient(135deg, #22c55e, #22c55e, #0ea5e9);
-      color: #020617;
-      box-shadow: 0 18px 40px rgba(34,197,94,0.6);
-      transform: translateY(-2px);
+    function renderBalance(bal) {
+      const fmt = Number(bal||0).toLocaleString() + ' ₽';
+      balanceEl.textContent = fmt;
+      headerBalanceText.textContent = fmt;
+      withdrawBalanceInline.textContent = fmt;
     }
 
-    .card {
-      background: radial-gradient(circle at 0 0, rgba(59,130,246,0.16), transparent 60%),
-                  radial-gradient(circle at 100% 0, rgba(34,197,94,0.16), transparent 60%),
-                  rgba(15,23,42,0.96);
-      backdrop-filter: blur(28px);
-      border: 1px solid var(--glass);
-      border-radius: var(--radius);
-      padding: 28px 22px 26px;
-      box-shadow: 0 30px 80px rgba(15,23,42,0.9);
-      margin-bottom: 22px;
-      position: relative;
-      overflow: hidden;
+    // WebSocket for realtime updates
+    let socket = null;
+    (function setupSocket(){
+      if (typeof io === 'undefined') return;
+      try {
+        socket = io({ transports: ['websocket'] });
+        socket.on('connect', () => console.log('socket connected', socket.id));
+        socket.on('user_update', data => {
+          if (!data) return;
+          if (String(data.user_id) === String(my_uid)) {
+            // Server tells us to reload profile
+            loadProfile();
+          }
+        });
+      } catch(e){
+        console.warn('Socket init error', e);
+      }
+    })();
+
+    // Tabs
+    function showTab(t) {
+      document.getElementById('tasksTab').style.display = t==='tasks'?'block':'none';
+      document.getElementById('profileTab').style.display = t==='profile'?'block':'none';
+      document.querySelectorAll('.nav-item').forEach((e,i)=>e.classList.toggle('active', i === (t==='tasks'?0:1)));
+      document.getElementById('createFab').classList.toggle('visible', t==='tasks');
+      window.scrollTo({top:0,behavior:'smooth'});
     }
-    .card::before {
-      content:"";
-      position:absolute;
-      inset:0;
-      background:radial-gradient(circle at 50% -20%, rgba(148,163,184,0.3), transparent 65%);
-      opacity:0.6;
-      pointer-events:none;
+    function switchTaskTab(i) {
+      document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active', idx===i));
     }
 
-    /* Support button */
-    .support-btn {
-      position: absolute;
-      top: 18px;
-      right: 18px;
-      width: 64px;
-      height: 64px;
-      background: radial-gradient(circle at 30% 20%, rgba(34,197,94,0.35), transparent 55%),
-                  rgba(15,23,42,0.9);
-      border: 4px solid rgba(34,197,94,0.8);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 30px;
-      color: #bbf7d0;
-      box-shadow: 0 18px 55px rgba(22,163,74,0.9);
-      animation: pulse 3s infinite;
-      cursor: pointer;
-      z-index: 100;
+    // Modals
+    function openModal(id){ document.getElementById(id).classList.add('active'); }
+    function closeModal(id){
+      document.getElementById(id).classList.remove('active');
+      setTimeout(()=>{
+        if (id === 'topupModal') {
+          document.getElementById('sbpStep1').style.display = 'block';
+          document.getElementById('sbpStep2').style.display = 'none';
+        }
+      }, 300);
     }
 
-    @keyframes pulse {
-      0%,100% { box-shadow: 0 18px 55px rgba(22,163,74,0.9); transform:translateY(0) scale(1); }
-      50% { box-shadow: 0 26px 70px rgba(34,197,94,1); transform:translateY(-2px) scale(1.04); }
+    document.getElementById('topupBtn').onclick = () => openModal('topupModal');
+    document.getElementById('withdrawBtn').onclick = () => openModal('withdrawModal');
+    document.getElementById('createFab').onclick = () => {
+      tg.showPopup({ title:'📝 Создание задания', message:'Функция создания заданий будет доступна в следующей версии!', buttons:[{type:'ok'}]});
+    };
+
+    // TOPUP logic: create a topup request on server (no client-side balance change)
+    let currentSBPAmount = 0;
+    let currentTransferCode = '';
+    let transferUnique = '';
+
+    function prepareSBP(amount) {
+      if (!amount || amount < 150) { tg.showPopup({message:'Минимум 150 ₽'}); return; }
+      prepareSBPTransfer(amount);
+    }
+    function prepareCustomSBP() {
+      const amount = parseInt(document.getElementById('customAmount').value);
+      if (!amount || amount < 150) { tg.showPopup({message:'Минимум 150 ₽'}); return; }
+      prepareSBPTransfer(amount);
+    }
+    function prepareSBPTransfer(amount) {
+      currentSBPAmount = amount;
+      currentTransferCode = 'RC' + Math.floor(1000 + Math.random() * 9000);
+      transferUnique = currentTransferCode + '_' + Math.floor(Date.now() / 1000);
+      document.getElementById('sbpAmount').textContent = amount.toLocaleString() + ' ₽';
+      document.getElementById('exactAmount').textContent = amount.toLocaleString() + ' ₽';
+      document.getElementById('transferCode').textContent = transferUnique;
+      document.getElementById('transferComment').value = transferUnique;
+      document.getElementById('sbpStep1').style.display = 'none';
+      document.getElementById('sbpStep2').style.display = 'block';
     }
 
-    .fab {
-      position: fixed;
-      bottom: 130px;
-      right: 24px;
-      width: 78px;
-      height: 78px;
-      border-radius: 50%;
-      background: conic-gradient(from 160deg, #22c55e, #22c55e, #0ea5e9, #22c55e);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: #020617;
-      font-weight: 900;
-      box-shadow: 0 22px 65px rgba(22,163,74,0.9);
-      cursor: pointer;
-      z-index: 999;
-      border: 3px solid rgba(15,23,42,0.9);
-      animation: pulse 2.5s infinite;
-      opacity: 0;
-      transform: translateY(20px) scale(0.85);
-      transition: var(--transition);
-      overflow:hidden;
-    }
-    .fab::before{
-      content:"";
-      position:absolute;inset:2px;
-      border-radius:inherit;
-      background:radial-gradient(circle at 30% 0, rgba(248,250,252,0.9), transparent 60%);
-      opacity:0.9;
-    }
-    .fab span{
-      position:relative;z-index:1;
-    }
-    .fab.visible { opacity: 1; transform: translateY(0) scale(1); }
+    // copy transfer comment
+    document.getElementById('transferComment').addEventListener('click', function(){
+      if (!this.value) return;
+      navigator.clipboard.writeText(this.value).then(()=> tg.showPopup({message:'Комментарий скопирован!'}));
+    });
 
-    .bottom-nav {
-      position: fixed;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(15,23,42,0.96);
-      backdrop-filter: blur(30px);
-      border: 1px solid rgba(148,163,184,0.55);
-      border-radius: 999px;
-      padding: 14px 80px;
-      display: flex;
-      gap: 100px;
-      z-index: 1000;
-      box-shadow: 0 28px 80px rgba(15,23,42,0.95);
-      max-width: 480px;
-      width: calc(100% - 32px);
-      justify-content: center;
-    }
-    .nav-item {
-      text-align: center;
-      cursor: pointer;
-      transition: var(--transition);
-      position:relative;
-      color:#94a3b8;
-    }
-    .nav-item::after{
-      content:"";
-      position:absolute;
-      inset:auto 10px -6px 10px;
-      border-radius:999px;
-      background:radial-gradient(circle at 50% 0, rgba(34,197,94,0.6), transparent 60%);
-      opacity:0;
-      transition:opacity .3s ease, transform .3s ease;
-      transform:scaleX(0.5);
-    }
-    .nav-item i { font-size: 25px; display: block; margin-bottom: 4px; }
-    .nav-item span { font-size: 11px; font-weight: 700; letter-spacing:0.08em; text-transform:uppercase; }
-    .nav-item.active {
-      color: #e2f3ff;
-      transform: translateY(-2px) scale(1.16);
-      text-shadow:0 0 22px rgba(34,197,94,0.9);
-    }
-    .nav-item.active::after{
-      opacity:1;
-      transform:scaleX(1);
+    async function confirmTransfer() {
+      if (!my_uid) { tg.showPopup({message:'Неизвестный пользователь'}); return; }
+      try {
+        const res = await fetch('/api/user/topup', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ uid: my_uid, amount: currentSBPAmount, manual_code: transferUnique })
+        });
+        if (res.ok) {
+          tg.showPopup({ title:'✅ Заявка создана!', message:`+${currentSBPAmount.toLocaleString()} ₽ появится на балансе после проверки администратором.`, buttons:[{type:'ok'}]});
+          closeModal('topupModal');
+        } else {
+          const j = await res.json().catch(()=>null);
+          tg.showPopup({ title:'Ошибка', message: j && j.errmsg ? j.errmsg : 'Ошибка создания заявки', buttons:[{type:'ok'}]});
+        }
+      } catch(e) {
+        console.error('confirmTransfer error', e);
+        tg.showPopup({ title:'Ошибка', message:'Ошибка сети', buttons:[{type:'ok'}]});
+      }
     }
 
-    .avatar {
-      width: 112px;
-      height: 112px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 4px solid rgba(52,211,153,0.85);
-      box-shadow: 0 22px 55px rgba(34,197,94,0.85);
-      margin: 0 auto 18px;
-      background: radial-gradient(circle at 30% 0, #1e293b, #020617);
-      position:relative;
-    }
-    .avatar::after{
-      content:"";
-      position:absolute;inset:0;
-      border-radius:inherit;
-      box-shadow:inset 0 0 0 1px rgba(15,23,42,0.9);
-      pointer-events:none;
-    }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    // Withdraw: send withdraw request to server; no client-side balance change
+    async function sendWithdraw() {
+      const amount = parseInt(document.getElementById('wAmount').value);
+      const name = document.getElementById('wName').value.trim();
+      const details = document.getElementById('wDetails').value.trim();
+      if (!amount || amount < 300) { tg.showPopup({message:'Минимум для вывода 300 ₽'}); return; }
+      if (amount > (window.__USER_BALANCE || 0)) { tg.showPopup({message:'Недостаточно средств'}); return; }
+      if (!name || !details) { tg.showPopup({message:'Заполните все поля'}); return; }
 
-    .profile-meta{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      margin-top:4px;
-      color:var(--muted);
-      font-size:13px;
-    }
-    .profile-tag{
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.6);
-      background:rgba(15,23,42,0.9);
-      font-size:11px;
-      display:flex;align-items:center;gap:6px;
+      try {
+        const res = await fetch('/api/user/withdraw', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ uid: my_uid, amount, name, details })
+        });
+        if (res.ok) {
+          tg.showPopup({ title:'✅ Заявка создана!', message:`Заявка на вывод ${amount.toLocaleString()} ₽ отправлена. Статус: В обработке.`, buttons:[{type:'ok'}]});
+          closeModal('withdrawModal');
+        } else {
+          const j = await res.json().catch(()=>null);
+          tg.showPopup({ title:'Ошибка', message: j && j.errmsg ? j.errmsg : 'Ошибка отправки заявки', buttons:[{type:'ok'}]});
+        }
+      } catch(e) {
+        console.error('sendWithdraw error', e);
+        tg.showPopup({ title:'Ошибка', message:'Ошибка сети', buttons:[{type:'ok'}]});
+      }
     }
 
-    .balance {
-      font-size: 64px;
-      font-weight: 900;
-      text-align: center;
-      background: linear-gradient(120deg, #22c55e, #22c55e, #0ea5e9);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: -0.04em;
-    }
+    // Init load
+    loadProfile();
 
-    .balance-caption{
-      font-size:13px;
-      color:var(--muted);
-      letter-spacing:0.16em;
-      text-transform:uppercase;
-      margin-bottom:6px;
-    }
+    // Small helpers for UI
+    function showTabName(name) { showTab(name); }
+    // Expose some functions to global (for inline onclicks)
+    window.switchTaskTab = switchTaskTab;
+    window.showTab = showTab;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.prepareSBP = prepareSBP;
+    window.prepareCustomSBP = prepareCustomSBP;
+    window.confirmTransfer = confirmTransfer;
+    window.sendWithdraw = sendWithdraw;
 
-    .action-buttons {
-      display: flex;
-      gap: 14px;
-      margin-top: 30px;
-    }
-    .action-btn {
-      flex: 1;
-      padding: 18px 0;
-      border-radius: 999px;
-      font-weight: 800;
-      font-size: 17px;
-      text-align: center;
-      cursor: pointer;
-      background: radial-gradient(circle at 0 0, rgba(248,250,252,0.8), transparent 65%),
-                  linear-gradient(135deg, #22c55e, #0ea5e9);
-      color: #020617;
-      box-shadow: 0 20px 50px rgba(34,197,94,0.75);
-      transition: var(--transition);
-      border:1px solid rgba(15,23,42,0.85);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-    }
-    .action-btn i{font-size:17px;}
-    .action-btn:hover{transform:translateY(-1px) scale(1.02); box-shadow:0 22px 58px rgba(34,197,94,0.9);}
-    .action-btn.withdraw {
-      background: radial-gradient(circle at 0 0, rgba(148,163,184,0.38), transparent 65%),
-                  rgba(15,23,42,0.9);
-      color: #e2e8f0;
-      border: 1px solid rgba(148,163,184,0.55);
-      box-shadow: 0 16px 40px rgba(15,23,42,0.95);
-    }
-
-    /* Empty state */
-    .empty-state{
-      text-align:center;
-      padding:70px 18px 80px;
-      color:var(--muted);
-      font-size:18px;
-      line-height:1.6;
-      position:relative;
-    }
-    .empty-orb{
-      width:120px;height:120px;border-radius:50%;
-      margin:0 auto 24px;
-      background:radial-gradient(circle at 30% 0, rgba(248,250,252,0.9), transparent 55%),
-                 radial-gradient(circle at 70% 100%, rgba(34,197,94,0.9), transparent 60%),
-                 #020617;
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 26px 70px rgba(15,23,42,0.95);
-      position:relative;overflow:hidden;
-    }
-    .empty-orb::after{
-      content:"";position:absolute;inset:14px;border-radius:inherit;
-      border:1px dashed rgba(148,163,184,0.6);
-      opacity:0.8;
-    }
-    .empty-orb i{font-size:38px;color:#bbf7d0;position:relative;z-index:1;}
-    .empty-pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:5px 11px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.55);
-      background:rgba(15,23,42,0.9);
-      font-size:11px;
-      text-transform:uppercase;
-      letter-spacing:0.12em;
-      margin-top:10px;
-    }
-
-    /* Modals */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 0 0, rgba(59,130,246,0.45), transparent 55%),
-                  radial-gradient(circle at 100% 100%, rgba(236,72,153,0.42), transparent 55%),
-                  rgba(2,6,23,0.93);
-      backdrop-filter: blur(26px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 16px;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-    .modal.active { display: flex; opacity: 1; }
-    .modal-card {
-      width: 100%;
-      max-width: 560px;
-      background: radial-gradient(circle at 0 0, rgba(59,130,246,0.22), transparent 60%),
-                  radial-gradient(circle at 100% 0, rgba(34,197,94,0.22), transparent 60%),
-                  rgba(15,23,42,0.98);
-      border-radius: 30px;
-      padding: 30px 22px 26px;
-      max-height: 92dvh;
-      overflow-y: auto;
-      transform: translateY(16px) scale(0.96);
-      opacity: 0;
-      transition: var(--transition);
-      border:1px solid rgba(148,163,184,0.6);
-      box-shadow:0 28px 90px rgba(15,23,42,1);
-      position:relative;
-    }
-    .modal.active .modal-card { transform: translateY(0) scale(1); opacity: 1; }
-
-    .close-btn {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      background: rgba(15,23,42,0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--muted);
-      border:1px solid rgba(148,163,184,0.7);
-      box-shadow:0 14px 40px rgba(15,23,42,0.9);
-      z-index:2;
-    }
-
-    input[type="text"], input[type="number"] {
-      width: 100%;
-      padding: 18px 18px;
-      border-radius: 18px;
-      background: rgba(15,23,42,0.96);
-      border: 1px solid rgba(148,163,184,0.7);
-      color: white;
-      font-size: 16px;
-      margin: 10px 0 6px;
-      transition: var(--transition);
-      position: relative;
-    }
-    input::placeholder{color:#6b7280;}
-    input:focus { outline: none; border-color: rgba(56,189,248,0.9); box-shadow: 0 0 0 1px rgba(56,189,248,0.9), 0 0 30px rgba(56,189,248,0.4); }
-
-    /* SBP styles */
-    .sbp-details {
-      background:linear-gradient(135deg, rgba(59,130,246,0.1), rgba(16,185,129,0.1));
-      border:1px solid rgba(59,130,246,0.3);
-      border-radius:18px;
-      padding:20px;
-      margin:16px 0;
-      text-align:left;
-    }
-    .sbp-details h3{
-      margin:0 0 12px 0;
-      font-size:16px;
-      color:#e2f3ff;
-    }
-    .sbp-details .detail-item{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:8px;
-    }
-    .sbp-details .detail-label{
-      color:var(--muted);
-      font-size:12px;
-    }
-    .sbp-details .detail-value{
-      font-weight:700;
-      color:#22c55e;
-      font-size:14px;
-    }
-    .sbp-amount {
-      font-weight:900;
-      color:#22c55e;
-      font-size:18px;
-    }
-
-    .sbp-warning{
-      background:rgba(234,179,8,0.1);
-      border:1px solid rgba(234,179,8,0.3);
-      border-radius:12px;
-      padding:14px;
-      margin:16px 0;
-      text-align:left;
-    }
-    .sbp-warning .warning-title{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      margin-bottom:8px;
-    }
-    .sbp-warning .warning-title strong{
-      color:#fbbf24;
-    }
-    .sbp-warning ul{
-      margin:0;
-      padding-left:18px;
-      color:#fef3c7;
-      font-size:13px;
-      line-height:1.5;
-    }
-
-    .topup-amount-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 14px; }
-    .amount-btn {
-      padding: 16px 10px;
-      background: rgba(15,23,42,0.96);
-      border: 1px solid rgba(148,163,184,0.7);
-      border-radius: 18px;
-      font-size: 18px;
-      font-weight: 800;
-      text-align: center;
-      cursor: pointer;
-      transition: var(--transition);
-      position:relative;
-      overflow:hidden;
-    }
-    .amount-btn::before{
-      content:"";position:absolute;inset:0;border-radius:inherit;
-      background:radial-gradient(circle at 0 0, rgba(56,189,248,0.65), transparent 60%);
-      opacity:0;transition:opacity .35s ease;
-      mix-blend-mode:soft-light;
-    }
-    .amount-btn:hover{
-      border-color:rgba(56,189,248,0.95);
-      transform:translateY(-1px) scale(1.02);
-      box-shadow:0 14px 40px rgba(15,23,42,0.9);
-    }
-    .amount-btn:hover::before{opacity:1;}
-
-    .bank-btn {
-      background: radial-gradient(circle at 0 0, rgba(248,250,252,0.9), transparent 65%),
-                  linear-gradient(135deg, #22c55e, #0ea5e9);
-      color: #020617;
-      box-shadow: 0 20px 50px rgba(34,197,94,0.75);
-      transition: var(--transition);
-      border:1px solid rgba(15,23,42,0.85);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-    }
-    .bank-btn:hover{transform:translateY(-1px) scale(1.02); box-shadow:0 22px 58px rgba(34,197,94,0.9);}
-
-    .label-row{
-      display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px;
-    }
-
-    /* Progress pill */
-    .step-pill{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.7);
-      background:rgba(15,23,42,0.95);
-      font-size:11px;color:var(--muted);
-      text-transform:uppercase;letter-spacing:0.16em;
-    }
-    .step-dot{
-      width:7px;height:7px;border-radius:999px;
-      background:#22c55e;box-shadow:0 0 10px rgba(34,197,94,0.9);
-    }
-
-    /* Responsive */
-    @media (max-width: 480px){
-      .card{padding:24px 18px;}
-      .tabs{margin-bottom:22px;}
-      .bottom-nav{padding:12px 36px;gap:64px;}
-      .fab{right:18px;bottom:118px;width:68px;height:68px;font-size:34px;}
-      .balance{font-size:52px;}
-      .avatar{width:100px;height:100px;}
-    }
   </script>
 </body>
 </html>
