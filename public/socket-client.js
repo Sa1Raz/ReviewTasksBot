@@ -1,10 +1,8 @@
-// Simple socket client to include in admin/index pages
 (function(){
   function qs(name){ return new URLSearchParams(location.search).get(name); }
   const token = qs('token') || '';
   if(typeof io === 'undefined') return;
-  const socket = io({ auth: { token: token }, transports: ['websocket'] });
-
+  const socket = io({ auth: { token }, transports: ['websocket'] });
   socket.on('connect', () => console.log('socket connected', socket.id));
   socket.on('connect_error', (err) => console.error('socket connect_error', err));
   socket.on('new_topup', (data) => { console.log('new_topup', data); });
