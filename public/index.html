@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>ReviewCash — Зарабатывай на отзывах</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     :root{ --bg:#020617; --card:rgba(15,23,42,0.96); --accent1:#22c55e; --accent2:#0ea5e9; --muted:#94a3b8; --text:#e2f3ff; --radius:18px; --glass-border:1px solid rgba(148,163,184,0.14); }
@@ -64,7 +63,7 @@
       <div id="tasksPanel">
         <div id="tasksEmpty" class="empty-state" style="text-align:center;padding:24px;border-radius:12px;background:rgba(255,255,255,0.01);">
           <div style="font-weight:800;font-size:18px;margin-bottom:8px">Задания появятся здесь</div>
-          <div class="small muted">Пока что можно создать задание (кнопка справа)</div>
+          <div class="small muted">Нажмите "+" чтобы создать своё или дождитесь новых заданий</div>
         </div>
         <div class="tasks-list" id="tasksList" style="display:none"></div>
       </div>
@@ -100,7 +99,7 @@
     <div class="modal-card">
       <button class="close-btn" data-close>×</button>
       <h3>Пополнить через СБП</h3>
-      <p class="small muted">Выберите сумму или введите свою. Система создаст заявку и сгенерирует ссылку для оплаты.</p>
+      <p class="small muted">Выберите сумму или введите свою. Система создаст заявку и сгенерирует ссылку/QR для оплаты.</p>
 
       <div id="sbpStep1">
         <div class="label-row">
@@ -124,14 +123,12 @@
       <div id="sbpStep2" style="display:none">
         <div class="sbp-details">
           <div style="font-weight:700">Реквизиты для перевода</div>
-          <div style="margin-top:8px">Получатель: <strong>Нигматдинов Раяз Ильдарович</strong></div>
-          <div>Договор: <strong>5587811905</strong></div>
+          <div style="margin-top:8px">Получатель: <strong>Компания ReviewCash</strong></div>
+          <div>Договор: <strong>—</strong></div>
           <div style="margin-top:8px">Сумма: <strong id="sbpAmount">— ₽</strong></div>
         </div>
 
-        <!-- Use your provided local QR image -->
-        <img id="qrImg" class="qr-img" src="/mnt/data/44e2a7f0-6c8c-4641-9717-9eb401613a95.png" alt="QR код">
-
+        <img id="qrImg" class="qr-img" src="" alt="QR код">
         <label class="small muted" style="margin-top:8px">Комментарий к переводу (обязательно)</label>
         <input type="text" id="transferComment" readonly value="" style="cursor:pointer">
         <div style="display:flex;gap:10px;margin-top:12px">
@@ -184,12 +181,13 @@
 <script>
 (function(){
   'use strict';
-  // Telegram WebApp (safe)
   const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
   try { tg?.ready?.(); tg?.expand?.(); } catch(e){}
 
+  // try to read tg init user if available; fallback to local id
   const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
-  const my_uid = tgUser.id || null;
+  const my_uid = tgUser.id || localStorage.getItem('rc_uid') || ('u' + Math.floor(Math.random()*1e9));
+  localStorage.setItem('rc_uid', my_uid);
 
   // DOM refs
   const tabs = document.querySelectorAll('.tab');
@@ -200,12 +198,11 @@
   const headerBalanceText = document.getElementById('headerBalanceText');
   const balanceEl = document.getElementById('balance');
 
-  // Profile
   const userPhoto = document.getElementById('userPhoto');
   const userNameEl = document.getElementById('userName');
   const userHandleEl = document.getElementById('userHandle');
 
-  // Topup
+  // Topup elements
   const topupModal = document.getElementById('topupModal');
   const sbpStep1 = document.getElementById('sbpStep1');
   const sbpStep2 = document.getElementById('sbpStep2');
@@ -216,7 +213,6 @@
   const transferCommentEl = document.getElementById('transferComment');
   const openBankLink = document.getElementById('openBankLink');
   const iPaidBtn = document.getElementById('iPaidBtn');
-
   let currentTopup = null;
 
   // Withdraw
@@ -234,7 +230,6 @@
   const taskPrice = document.getElementById('taskPrice');
   const taskQty = document.getElementById('taskQty');
 
-  // Utils
   function fmtRub(n){ return Number(n||0).toLocaleString('ru-RU') + ' ₽'; }
   function showModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
   function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
@@ -243,12 +238,12 @@
     if (modal) closeModal(modal);
   }));
 
-  // Set profile
-  userPhoto.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${tgUser.id || 'user'}`;
+  // profile
+  userPhoto.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${my_uid}`;
   userNameEl.textContent = tgUser.first_name || 'Пользователь';
   userHandleEl.textContent = tgUser.username ? '@' + tgUser.username : '@user';
 
-  // Tabs
+  // tabs navigation
   tabs.forEach(t => t.addEventListener('click', ()=> {
     tabs.forEach(x => x.classList.toggle('active', x===t));
     const tabName = t.dataset.tab;
@@ -261,12 +256,11 @@
     document.querySelector(`.tab[data-tab="${nav==='profile'?'profile':'tasks'}"]`).click();
   }));
 
-  // Fab opens create task
+  // fab -> create task
   createFab.addEventListener('click', ()=> showModal(createTaskModal));
 
-  // Load tasks list
   async function loadTasks(){
-    try{
+    try {
       const res = await fetch('/api/tasks/list');
       const j = await res.json();
       if (j.ok){
@@ -275,25 +269,23 @@
         tasksList.innerHTML = '';
         tasks.forEach(t => {
           const item = document.createElement('div'); item.className = 'task-item';
-          item.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description}</div></div>
-            <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||0)} ₽</div><div class="small muted">${t.qty||1} шт</div></div>`;
+          item.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description || t.desc || ''}</div></div>
+            <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||t.reward||0)} ₽</div><div class="small muted">${t.qty||t.count||1} шт</div></div>`;
           tasksList.appendChild(item);
         });
         tasksList.style.display='flex'; tasksEmpty.style.display='none';
       }
-    }catch(e){ console.warn('loadTasks',e) }
+    } catch(e){ console.warn(e) }
   }
 
-  // Initial profile & balance load
   async function loadProfile(){
-    if (!my_uid) { updateBalanceUI(0); return; }
-    try{
+    try {
       const res = await fetch(`/api/profile_me?uid=${encodeURIComponent(my_uid)}`);
       const j = await res.json();
       if (j.ok && j.user){
         updateBalanceUI(j.user.balance);
       }
-    }catch(e){ console.warn(e) }
+    } catch(e){ console.warn(e) }
   }
 
   function updateBalanceUI(bal){
@@ -302,47 +294,21 @@
     headerBalanceText.textContent = txt;
   }
 
-  // Socket.io realtime
-  let socket = null;
+  // socket.io realtime
+  let socket=null;
   try {
-    socket = io({ transports: ['websocket'] });
+    socket = io({ transports:['websocket'] });
     socket.on('connect', ()=> console.log('socket connected', socket.id));
     socket.on('user_update', data => {
-      if (!data) return;
       if (String(data.user_id) === String(my_uid)){
         updateBalanceUI(data.balance);
       }
     });
-    socket.on('topup_approved', data => {
-      if (String(data.user.id) === String(my_uid)) {
-        // balance updated via user_update event
-        tg?.showPopup?.({ title:'Пополнение принято', message:`+${Number(data.amount).toLocaleString()} ₽ зачислено`, buttons:[{type:'ok'}] });
-      }
-    });
-    socket.on('topup_rejected', data => {
-      if (String(data.user.id) === String(my_uid)) {
-        tg?.showPopup?.({ title:'Пополнение отклонено', message:data.reject_reason || 'Отклонено администратором', buttons:[{type:'ok'}] });
-      }
-    });
-    socket.on('withdraw_approved', data => {
-      if (String(data.user.id) === String(my_uid)) {
-        tg?.showPopup?.({ title:'Вывод подтверждён', message:`Вывод ${Number(data.amount).toLocaleString()} ₽ подтверждён`, buttons:[{type:'ok'}] });
-      }
-    });
-    socket.on('withdraw_rejected', data => {
-      if (String(data.user.id) === String(my_uid)) {
-        tg?.showPopup?.({ title:'Вывод отклонён', message:data.reject_reason || 'Отклонено администратором', buttons:[{type:'ok'}] });
-      }
-    });
-    socket.on('task_created', t => {
-      // push into listing
-      loadTasks();
-    });
-  } catch (e) {
-    console.warn('socket init', e);
-  }
+    socket.on('task_update', ()=> loadTasks());
+    socket.on('new_topup', ()=> {});
+  } catch(e){ console.warn('socket init', e) }
 
-  // Topup flow: request pay_link -> show step2 -> when user clicks "I paid" call confirm endpoint
+  // topup actions
   amountBtns.forEach(b => b.addEventListener('click', ()=> prepareSBPTransfer(Number(b.dataset.amount))));
   toSBPBtn.addEventListener('click', ()=> {
     const v = Number(customAmountInput.value || 0);
@@ -350,116 +316,87 @@
   });
 
   async function prepareSBPTransfer(amount){
-    if (!amount || amount < 150) { tg?.showPopup?.({message:'Минимум 150 ₽'}); return; }
-    // call server to create topup and get pay_link + manual_code
-    try{
+    if (!amount || amount < 150) { alert('Минимум 150 ₽'); return; }
+    try {
       const res = await fetch('/api/user/topup-link', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ uid: my_uid, amount })
       });
       const j = await res.json();
-      if (!res.ok || !j.ok) {
-        tg?.showPopup?.({ title:'Ошибка', message: j.errmsg || 'Ошибка создания заявки', buttons:[{type:'ok'}] });
-        return;
-      }
-      // save current topup
+      if (!j.ok) { alert(j.errmsg || 'Ошибка'); return; }
       currentTopup = j.topup;
       sbpAmountEl.textContent = amount.toLocaleString() + ' ₽';
       transferCommentEl.value = j.manual_code;
       openBankLink.href = j.pay_link;
-      // show step 2
+      document.getElementById('qrImg').src = j.qr_base64;
       sbpStep1.style.display='none'; sbpStep2.style.display='block';
       showModal(topupModal);
-      // optionally open bank automatically:
-      // window.open(j.pay_link, '_blank');
-    }catch(e){
-      console.error('prepareSBPTransfer', e);
-      tg?.showPopup?.({message:'Ошибка сети'});
-    }
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
   }
 
-  // copy comment on click
   transferCommentEl.addEventListener('click', async ()=> {
     if (!transferCommentEl.value) return;
-    try { await navigator.clipboard.writeText(transferCommentEl.value); tg?.showPopup?.({message:'Комментарий скопирован!'}); } catch(e){ tg?.showPopup?.({message:'Не удалось скопировать'}); }
+    try { await navigator.clipboard.writeText(transferCommentEl.value); alert('Комментарий скопирован'); } catch(e){ alert('Не удалось скопировать'); }
   });
 
-  // user clicked "I paid"
   iPaidBtn.addEventListener('click', async ()=> {
-    if (!currentTopup) return tg?.showPopup?.({message:'Нет активной заявки'});
-    try{
-      const res = await fetch('/api/user/topup-confirm', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ uid: my_uid, topup_id: currentTopup.id })
-      });
+    if (!currentTopup) return alert('Нет заявки');
+    try {
+      const res = await fetch('/api/user/topup-confirm', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: my_uid, topup_id: currentTopup.id })});
       const j = await res.json();
-      if (!res.ok || !j.ok) {
-        tg?.showPopup?.({ title:'Ошибка', message: j.errmsg || 'Ошибка подтверждения', buttons:[{type:'ok'}] });
-        return;
-      }
-      tg?.showPopup?.({ title:'Заявка создана', message:'Спасибо! Заявка на проверку отправлена администратору.', buttons:[{type:'ok'}] });
+      if (!j.ok) { alert(j.errmsg || 'Ошибка'); return; }
+      alert('Заявка создана. Ожидайте подтверждения от администратора.');
       closeModal(topupModal);
-      // keep UI step2 cleared
       sbpStep1.style.display='block'; sbpStep2.style.display='none';
       currentTopup = null;
-    }catch(e){
-      console.error('iPaid', e);
-      tg?.showPopup?.({message:'Ошибка сети'});
-    }
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
   });
 
-  // Withdraw submit
+  // withdraw
   sendWithdrawBtn.addEventListener('click', async ()=> {
     const amount = Number(wAmount.value || 0);
     const name = (wName.value || '').trim();
     const details = (wDetails.value || '').trim();
-    if (!amount || amount < 300) return tg?.showPopup?.({message:'Мин. 300 ₽'});
+    if (!amount || amount < 300) return alert('Мин. 300 ₽');
     try {
       const res = await fetch('/api/user/withdraw', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ uid: my_uid, amount, name, details })
       });
       const j = await res.json();
-      if (!res.ok || !j.ok) return tg?.showPopup?.({ title:'Ошибка', message: j.errmsg || 'Ошибка запроса', buttons:[{type:'ok'}] });
-      tg?.showPopup?.({ title:'Готово', message:'Заявка на вывод отправлена на проверку администратору.', buttons:[{type:'ok'}] });
+      if (!j.ok) return alert(j.errmsg || 'Ошибка');
+      alert('Заявка на вывод отправлена на проверку администратору.');
       closeModal(withdrawModal);
       wAmount.value = wName.value = wDetails.value = '';
-    } catch (e) { console.error(e); tg?.showPopup?.({message:'Ошибка сети'}); }
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
   });
 
-  // Create task
+  // create task
   createTaskBtn.addEventListener('click', async ()=> {
     const title = (taskTitle.value || '').trim();
     const desc = (taskDesc.value || '').trim();
     const price = Number(taskPrice.value || 0);
     const qty = Number(taskQty.value || 1);
-    if (!title || !price || price <= 0) return tg?.showPopup?.({message:'Заполните заголовок и цену'});
+    if (!title || !price) return alert('Заполните заголовок и цену');
     try {
-      const res = await fetch('/api/tasks/create', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ title, description: desc, type_id: 'custom', unit_price: price, qty })
-      });
+      const res = await fetch('/api/tasks/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, description: desc, unit_price: price, qty })});
       const j = await res.json();
-      if (!res.ok || !j.ok) return tg?.showPopup?.({message: j.errmsg || 'Ошибка создания задания'});
-      tg?.showPopup?.({message:'Задание создано!'}); closeModal(createTaskModal);
+      if (!j.ok) return alert(j.errmsg || 'Ошибка создания');
+      alert('Задание создано!');
+      closeModal(createTaskModal);
       taskTitle.value = taskDesc.value = taskPrice.value = taskQty.value = '';
       loadTasks();
-    } catch(e){ console.error(e); tg?.showPopup?.({message:'Ошибка сети'}); }
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
   });
 
-  // Openers
+  // openers
   document.getElementById('topupBtn').addEventListener('click', ()=> { sbpStep1.style.display='block'; sbpStep2.style.display='none'; showModal(topupModal); });
   document.getElementById('withdrawBtn').addEventListener('click', ()=> showModal(withdrawModal));
   document.getElementById('createFab').addEventListener('click', ()=> showModal(createTaskModal));
 
-  // initial load
+  // init
   loadTasks(); loadProfile();
-  // try to update balance periodically (in case socket disconnect)
   setInterval(loadProfile, 60_000);
-
 })();
 </script>
 </body>
