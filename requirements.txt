@@ -4,7 +4,9 @@ pytelegrambotapi>=4.0
 PyJWT>=2.0
 Flask-SocketIO>=5.0
 python-socketio>=5.0
-eventlet>=0.33
+gevent>=22.0  # Заменил eventlet на gevent, так как в app.py используется async_mode="gevent"
 dnspython>=2.0
 requests>=2.0
-redis>=4.0
+redis>=4.0  # Оставил, хотя в коде не используется напрямую; если не нужно - удали
+qrcode>=7.0
+Pillow>=9.0
