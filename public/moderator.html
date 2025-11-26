@@ -1,119 +1,363 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-  <title>Модерация отзывов — ReviewCash</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>ReviewCash • Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    :root{ --bg:#141e2f; --panel:#1e293b; --panel-light:#223353; --accent:#3b82f6; --success:#10b981; --error:#ef4444; --text:#e8effa; --muted:#a1accf; --radius:18px;}
-    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}
-    .container{max-width:520px;margin:32px auto;padding:18px}
-    .main-title{font-weight:900;font-size:24px;margin-bottom:7px}
-    .subtitle{font-size:15px;color:var(--muted);margin-bottom:16px}
-    .card{background:var(--panel);border-radius:var(--radius);padding:20px;margin-bottom:16px}
-    .review-title{font-weight:700;font-size:18px;margin:8px 0}
-    .review-link{display:block;background:var(--panel-light);padding:8px;border-radius:10px;margin-bottom:6px;word-break:break-all}
-    .proof-img{border-radius:12px;max-width:100%}
-    .actions{display:flex;gap:8px;margin-top:12px}
-    .btn{flex:1;padding:12px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
-    .btn-approve{background:linear-gradient(90deg,var(--success),#28ffc1);color:#042016}
-    .btn-reject{background:linear-gradient(90deg,var(--error),#ff7b7b);color:#fff}
-    .stats{display:flex;gap:10px;margin-top:12px}
-    .stat-box{background:var(--panel-light);padding:10px;border-radius:10px;flex:1;text-align:center}
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)}
-    .modal.open{display:flex}
-    .modal-card{background:var(--panel);padding:18px;border-radius:12px}
+    :root { --bg: #020617; --card: #0f1e36; --accent: #00e7c0; --accent2: #00d4ff; --text: #e2f3ff; --muted: #94a3b8; --radius: 14px; --shadow: 0 4px 30px rgba(0,0,0,0.1); }
+    * { box-sizing: border-box; transition: all 0.3s ease; }
+    body { margin: 0; font-family: Inter, system-ui; background: linear-gradient(135deg, #020617, #061029); color: var(--text); padding: 16px; }
+    .wrap { max-width: 1200px; margin: 0 auto; display: flex; gap: 20px; }
+    .panel { flex: 1; min-width: 300px; background: var(--card); padding: 18px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.08); box-shadow: var(--shadow); }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .small { font-size: 13px; color: var(--muted); }
+    .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px; color: var(--text); }
+    .btn { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; box-shadow: var(--shadow); }
+    .btn:hover { transform: scale(1.02); }
+    .btn-approve { background: linear-gradient(90deg, #22c55e, #16a34a); color: #021018; }
+    .btn-reject { background: linear-gradient(90deg, #ef4444, #dc2626); color: #fff; }
+    .muted { color: var(--muted); }
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.3s ease; }
+    .modal.open { display: flex; opacity: 1; }
+    .modal-card { background: var(--card); padding: 16px; border-radius: 12px; width: 460px; transform: scale(0.95); transition: transform 0.3s ease; box-shadow: var(--shadow); }
+    .modal.open .modal-card { transform: scale(1); }
+    .qr-preview { max-width: 220px; display: block; margin: 8px auto; box-shadow: var(--shadow); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+    .tab { padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); cursor: pointer; box-shadow: var(--shadow); }
+    .tab.active { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #021018; }
+    .tab:hover { transform: scale(1.05); }
+    .search-input { width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color: var(--text); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div><div class="main-title">🛡 Модерация отзывов</div><div class="subtitle" id="adminName">Вы проверяете: —</div></div>
-
-    <div id="reviewCard" class="card" style="display:none">
-      <div class="small muted" id="reviewId">ID: —</div>
-      <div class="review-title" id="reviewTitle"></div>
-      <div class="review-link"><a id="reviewTarget" href="#" target="_blank" style="color:var(--accent)"></a></div>
-      <div id="proofBox"></div>
-      <div class="actions">
-        <button class="btn btn-reject" id="btnReject">Отклонить</button>
-        <button class="btn btn-approve" id="btnApprove">Подтвердить</button>
-      </div>
+  <div style="max-width:1200px;margin:0 auto">
+    <h1>Admin • ReviewCash</h1>
+    <div class="tabs">
+      <div class="tab active" data-tab="dashboard">Панель</div>
+      <div class="tab" data-tab="topups">Пополнения</div>
+      <div class="tab" data-tab="withdraws">Выводы</div>
+      <div class="tab" data-tab="tasks">Задания</div>
+      <div class="tab" data-tab="users">Пользователи</div>
+      <div class="tab" data-tab="moderators">Модераторы</div>
+      <div class="tab" data-tab="task-types">Типы заданий</div>
     </div>
+    <div class="wrap">
+      <div class="panel" id="leftPanel">
+        <!-- Dashboard -->
+        <div id="dashboardView">
+          <div class="small">Статистика</div>
+          <div style="display:flex;gap:10px;margin-top:10px">
+            <div style="flex:1"><strong id="numUsers">—</strong><div class="small muted">Пользователей</div></div>
+            <div style="flex:1"><strong id="totalRevenue">—</strong><div class="small muted">Оборот</div></div>
+            <div style="flex:1"><strong id="numTasks">—</strong><div class="small muted">Заданий</div></div>
+            <div style="flex:1"><strong id="pendingCount">—</strong><div class="small muted">В ожидании</div></div>
+          </div>
+          <div style="margin-top:16px">
+            <div class="small muted">Последние операции</div>
+            <div id="recentActivity"></div>
+          </div>
+        </div>
 
-    <div id="emptyState" style="display:none;text-align:center;padding:40px;color:var(--muted)">Очередь пуста<br><button onclick="loadNextTask()" style="margin-top:10px">Обновить</button></div>
+        <!-- Topups -->
+        <div id="topupsView" style="display:none">
+          <div class="small">Пополнения</div>
+          <input class="search-input" id="topupsSearch" placeholder="Поиск по коду или статусу">
+          <table class="table" id="topupsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Код</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
 
-    <div class="stats">
-      <div class="stat-box"><div id="statDone">0</div><div class="small muted">Проверено вами</div></div>
-      <div class="stat-box"><div id="statQueue">0</div><div class="small muted">В очереди</div></div>
+        <!-- Withdraws -->
+        <div id="withdrawsView" style="display:none">
+          <div class="small">Выводы</div>
+          <input class="search-input" id="withdrawsSearch" placeholder="Поиск по пользователю или статусу">
+          <table class="table" id="withdrawsTable"><thead><tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Реквизиты</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- Tasks -->
+        <div id="tasksView" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="small">Задания</div>
+            <button class="btn" id="openCreateTask">Создать</button>
+          </div>
+          <table class="table" id="tasksTable"><thead><tr><th>ID</th><th>Заголовок</th><th>Цена</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- Users -->
+        <div id="usersView" style="display:none">
+          <div class="small">Пользователи</div>
+          <table class="table" id="usersTable"><thead><tr><th>ID</th><th>Имя</th><th>Баланс</th><th>Заданий</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- Moderators -->
+        <div id="moderatorsView" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="small">Модераторы</div>
+            <button class="btn" id="openAddMod">Добавить</button>
+          </div>
+          <table class="table" id="moderatorsTable"><thead><tr><th>ID</th><th>Имя</th><th>Проверено заданий</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- Task Types -->
+        <div id="taskTypesView" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="small">Типы заданий</div>
+            <button class="btn" id="openCreateType">Создать</button>
+          </div>
+          <table class="table" id="taskTypesTable"><thead><tr><th>ID</th><th>Имя</th><th>Цена</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="panel" style="flex:0.52" id="rightPanel">
+        <div class="small muted">Инструменты</div>
+        <div style="margin-top:12px">
+          <button class="btn" id="btnRefresh"><i class="fas fa-sync"></i> Обновить</button>
+          <button class="btn" id="btnExport"><i class="fas fa-download"></i> Экспорт</button>
+        </div>
+
+        <div style="margin-top:20px">
+          <div class="small muted">QR предпросмотр</div>
+          <img id="previewQR" class="qr-preview" src="" alt="QR">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input id="quickAmount" type="number" placeholder="Сумма ₽" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
+            <button class="btn" id="genQR">Генерировать</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div id="modal" class="modal"><div class="modal-card"><div id="modalMsg"></div><div style="margin-top:12px"><button onclick="closeModal()" class="btn btn-approve">OK</button></div></div></div>
+  <!-- Modals -->
+  <div id="createTaskModal" class="modal">
+    <div class="modal-card">
+      <h3>Создать задание</h3>
+      <input id="adminTaskTitle" placeholder="Заголовок">
+      <input id="adminTaskReward" placeholder="Цена" type="number">
+      <input id="adminTaskQty" placeholder="Количество" type="number" value="1">
+      <textarea id="adminTaskDesc" placeholder="Описание"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-approve" id="createAdminTask">Создать</button>
+        <button class="btn" data-close>Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addModModal" class="modal">
+    <div class="modal-card">
+      <h3>Добавить модератора</h3>
+      <input id="modId" placeholder="ID (Telegram UID)">
+      <input id="modName" placeholder="Имя">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-approve" id="addModBtn">Добавить</button>
+        <button class="btn" data-close>Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="createTypeModal" class="modal">
+    <div class="modal-card">
+      <h3>Создать тип задания</h3>
+      <input id="typeId" placeholder="ID (уникальный)">
+      <input id="typeName" placeholder="Имя">
+      <input id="typePrice" placeholder="Цена" type="number">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-approve" id="createTypeBtn">Создать</button>
+        <button class="btn" data-close>Отмена</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 const token = new URLSearchParams(location.search).get('token') || '';
-async function api(path, method='GET', body=null){
-  try {
-    const opts = {headers: {'Authorization':'Bearer '+token}};
-    if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
-    const res = await fetch(path + '?token=' + token, opts); return await res.json();
-  } catch(e){ return null; }
+const apiGet = (p) => fetch(p + (p.includes('?') ? '&' : '?') + 'token=' + token).then(r => r.json()).catch(() => null);
+const apiPost = (p, body) => fetch(p + '?token=' + token, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+
+function showSection(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  ['dashboardView', 'topupsView', 'withdrawsView', 'tasksView', 'usersView', 'moderatorsView', 'taskTypesView'].forEach(id => document.getElementById(id).style.display = id.replace('View', '') === name ? 'block' : 'none');
 }
 
-async function loadStats(){
-  const res = await api('/api/moderator/me');
-  if (res && res.ok) {
-    document.getElementById('adminName').textContent = 'Вы: ' + (res.name || 'Модератор');
-    document.getElementById('statDone').textContent = res.tasks_reviewed || 0;
-  }
-}
-function showModal(msg){ document.getElementById('modalMsg').textContent = msg; document.getElementById('modal').classList.add('open'); }
-function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showSection(t.dataset.tab)));
 
-let currentAssignmentId = null;
-async function loadNextTask(){
-  const res = await api('/api/moderator/queue');
-  if (!res || !res.ok || !res.assignment){ document.getElementById('reviewCard').style.display='none'; document.getElementById('emptyState').style.display='block'; document.getElementById('statQueue').textContent = '0'; return; }
-  document.getElementById('emptyState').style.display='none'; document.getElementById('reviewCard').style.display='block';
-  const a = res.assignment; currentAssignmentId = a.id;
-  document.getElementById('reviewId').textContent = 'ID: ' + a.id;
-  document.getElementById('reviewTitle').textContent = a.task_title || '';
-  document.getElementById('reviewTarget').href = a.review_target || '#'; document.getElementById('reviewTarget').textContent = (a.review_target || '').slice(0,80);
-  const proofBox = document.getElementById('proofBox');
-  if (a.proof_type === 'image' && a.proof_data) {
-    proofBox.innerHTML = `<img src="${a.proof_data}" class="proof-img">`;
-  } else if (a.proof_type === 'link' && a.proof_data) {
-    proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank">${a.proof_data}</a>`;
-  } else {
-    proofBox.innerHTML = `<div class="small muted">Нет доказательства</div><div style="margin-top:6px">${a.proof_data || ''}</div>`;
-  }
-  document.getElementById('statQueue').textContent = res.queue_length || 0;
+async function loadDashboard() {
+  const res = await apiGet('/api/admin/dashboard');
+  if (!res || !res.ok) return;
+  const d = res.data;
+  document.getElementById('numUsers').textContent = d.usersCount;
+  document.getElementById('totalRevenue').textContent = d.totalRevenue + ' ₽';
+  document.getElementById('numTasks').textContent = d.tasksCount;
+  document.getElementById('pendingCount').textContent = d.pendingCount;
+  const activity = document.getElementById('recentActivity');
+  activity.innerHTML = '';
+  (d.recentActivity || []).forEach(it => {
+    const div = document.createElement('div');
+    div.style.padding = '8px 0';
+    div.innerHTML = `<div><strong>${it.id}</strong> ${it.amount || ''} ₽ <span class="muted">[${it.status || ''}]</span></div>`;
+    activity.appendChild(div);
+  });
 }
 
-document.getElementById('btnApprove').addEventListener('click', async ()=>{
-  if (!currentAssignmentId) return;
-  if (!confirm('Подтвердить выполнение?')) return;
-  const r = await api('/api/moderator/approve','POST',{id: currentAssignmentId});
-  if (r && r.ok){ showModal('Подтверждено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
+async function loadTopups() {
+  const res = await apiGet('/api/admin/topups');
+  const tbody = document.querySelector('#topupsTable tbody');
+  tbody.innerHTML = '';
+  if (!res || !res.ok) return;
+  (res.items || []).forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.id}</td><td>${t.uid}</td><td>${t.amount} ₽</td><td><code>${t.manual_code || ''}</code></td><td>${t.status}</td><td></td>`;
+    const actions = tr.querySelector('td:last-child');
+    if (t.status === 'pending') {
+      const a = document.createElement('button'); a.className = 'btn btn-approve'; a.textContent = '✓'; a.onclick = async () => { await apiPost(`/api/admin/topups/${t.id}/approve`, {}); loadTopups(); loadDashboard(); };
+      const r = document.createElement('button'); r.className = 'btn btn-reject'; r.textContent = '✕'; r.onclick = async () => { await apiPost(`/api/admin/topups/${t.id}/reject`, {}); loadTopups(); loadDashboard(); };
+      actions.append(a, r);
+    }
+    tbody.appendChild(tr);
+  });
+  // Search
+  document.getElementById('topupsSearch').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    Array.from(tbody.rows).forEach(row => row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none');
+  });
+}
+
+async function loadWithdraws() {
+  const res = await apiGet('/api/admin/withdraws');
+  const tbody = document.querySelector('#withdrawsTable tbody');
+  tbody.innerHTML = '';
+  if (!res || !res.ok) return;
+  (res.items || []).forEach(w => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${w.id}</td><td>${w.user.id}</td><td>${w.amount} ₽</td><td>${w.details}</td><td>${w.status}</td><td></td>`;
+    const actions = tr.querySelector('td:last-child');
+    if (w.status === 'pending') {
+      const ok = document.createElement('button'); ok.className = 'btn btn-approve'; ok.textContent = '✓'; ok.onclick = async () => { await apiPost(`/api/admin/withdraws/${w.id}/approve`, {}); loadWithdraws(); loadDashboard(); };
+      const rej = document.createElement('button'); rej.className = 'btn btn-reject'; rej.textContent = '✕'; rej.onclick = async () => { await apiPost(`/api/admin/withdraws/${w.id}/reject`, {}); loadWithdraws(); loadDashboard(); };
+      actions.append(ok, rej);
+    }
+    tbody.appendChild(tr);
+  });
+  // Search
+  document.getElementById('withdrawsSearch').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    Array.from(tbody.rows).forEach(row => row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none');
+  });
+}
+
+async function loadTasksAdmin() {
+  const res = await apiGet('/api/admin/tasks');
+  const tbody = document.querySelector('#tasksTable tbody');
+  tbody.innerHTML = '';
+  if (!res || !res.ok) return;
+  (res.tasks || []).forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.id}</td><td>${t.title}</td><td>${t.unit_price} ₽</td><td>${t.status}</td><td></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadUsersAdmin() {
+  const res = await apiGet('/api/admin/users');
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
+  if (!res || !res.ok) return;
+  (res.users || []).forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${u.id}</td><td>${u.first_name || u.username || '—'}</td><td>${u.balance} ₽</td><td>${u.tasks_done || 0}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadModerators() {
+  const res = await apiGet('/api/admin/moderators');
+  const tbody = document.querySelector('#moderatorsTable tbody');
+  tbody.innerHTML = '';
+  if (!res || !res.ok) return;
+  (res.moderators || []).forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.id}</td><td>${m.name}</td><td>${m.tasks_reviewed}</td><td></td>`;
+    const actions = tr.querySelector('td:last-child');
+    const del = document.createElement('button'); del.className = 'btn btn-reject'; del.textContent = 'Удалить'; del.onclick = async () => { await apiPost('/api/admin/moderators/remove', { id: m.id }); loadModerators(); };
+    actions.appendChild(del);
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadTaskTypes() {
+  const res = await apiGet('/api/admin/task-types');
+  const tbody = document.querySelector('#taskTypesTable tbody');
+  tbody.innerHTML = '';
+  if (!res || !res.ok) return;
+  (res.types || []).forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.id}</td><td>${t.name}</td><td>${t.unit_price} ₽</td><td></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('btnRefresh').addEventListener('click', loadAll);
+document.getElementById('genQR').addEventListener('click', async () => {
+  const v = Number(document.getElementById('quickAmount').value || 0);
+  if (!v) return alert('Введите сумму');
+  const resp = await apiPost('/api/user/topup-link', { uid: 'admin_preview', amount: v });
+  if (resp.ok) document.getElementById('previewQR').src = resp.qr_base64;
 });
-document.getElementById('btnReject').addEventListener('click', async ()=>{
-  if (!currentAssignmentId) return;
-  const reason = prompt('Причина отказа','Неверный отзыв');
-  if (!reason) return;
-  const r = await api('/api/moderator/reject','POST',{id: currentAssignmentId, reason});
-  if (r && r.ok){ showModal('Отклонено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
+
+document.getElementById('openCreateTask').addEventListener('click', () => document.getElementById('createTaskModal').classList.add('open'));
+document.getElementById('createAdminTask').addEventListener('click', async () => {
+  const title = document.getElementById('adminTaskTitle').value;
+  const reward = Number(document.getElementById('adminTaskReward').value);
+  const qty = Number(document.getElementById('adminTaskQty').value);
+  const desc = document.getElementById('adminTaskDesc').value;
+  if (!title || !reward) return alert('Заполните поля');
+  await apiPost('/api/admin/task-create', { title, desc, reward, qty });
+  document.getElementById('createTaskModal').classList.remove('open');
+  loadTasksAdmin();
 });
 
-try {
-  const socket = io({ transports: ['websocket'] });
-  socket.on('connect', ()=> console.log('connected', socket.id));
-  socket.on('new_review', ()=> loadNextTask());
-} catch(e){ console.warn(e); }
+document.getElementById('openAddMod').addEventListener('click', () => document.getElementById('addModModal').classList.add('open'));
+document.getElementById('addModBtn').addEventListener('click', async () => {
+  const id = document.getElementById('modId').value;
+  const name = document.getElementById('modName').value;
+  if (!id || !name) return alert('Заполните поля');
+  await apiPost('/api/admin/moderators/add', { id, name });
+  document.getElementById('addModModal').classList.remove('open');
+  loadModerators();
+});
 
-loadStats();
-loadNextTask();
+document.getElementById('openCreateType').addEventListener('click', () => document.getElementById('createTypeModal').classList.add('open'));
+document.getElementById('createTypeBtn').addEventListener('click', async () => {
+  const id = document.getElementById('typeId').value;
+  const name = document.getElementById('typeName').value;
+  const price = Number(document.getElementById('typePrice').value);
+  if (!id || !name || !price) return alert('Заполните поля');
+  await apiPost('/api/admin/task-types/create', { id, name, unit_price: price });
+  document.getElementById('createTypeModal').classList.remove('open');
+  loadTaskTypes();
+});
+
+async function loadAll() {
+  await loadDashboard();
+  await loadTopups();
+  await loadWithdraws();
+  await loadTasksAdmin();
+  await loadUsersAdmin();
+  await loadModerators();
+  await loadTaskTypes();
+}
+
+loadAll();
+
+// Socket realtime
+const socket = io({ transports: ['websocket'] });
+socket.on('connect', () => console.log('admin socket', socket.id));
+socket.on('new_topup', loadTopups);
+socket.on('update_topup', loadTopups);
+socket.on('new_withdraw', loadWithdraws);
+socket.on('task_update', loadTasksAdmin);
+socket.on('task_type_update', loadTaskTypes);
 </script>
 </body>
 </html>
