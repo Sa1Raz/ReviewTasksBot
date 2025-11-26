@@ -7,158 +7,111 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    :root{
-      --bg: #141e2f; --panel: #1e293b; --panel-light: #223353; --accent: #3b82f6; --success: #10b981;
-      --error: #ef4444; --text: #e8effa; --muted: #a1accf; --radius: 18px; --transition:.19s cubic-bezier(.67,1.3,.22,0.85);
-    }
-    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0;}
-    .container{max-width:520px;margin:33px auto;padding:18px;}
-    .main-title{font-weight:900;font-size:24px;letter-spacing:.01em;margin-bottom:7px;}
-    .subtitle{font-size:15px;color:var(--muted);margin-bottom:16px;}
-    .card{background:var(--panel);border-radius:var(--radius);box-shadow:0 10px 45px rgba(16,24,32,0.22);padding:25px 23px 20px;margin-bottom:22px;}
-    .review-id-title{font-weight:600;font-size:14px;color:var(--muted);}
-    .review-user{font-size:13px;color:var(--accent);margin-bottom:5px;}
-    .review-title{font-weight:700;font-size:18px;margin:5px 0 8px 0;}
-    .review-meta{font-size:13px;color:var(--muted);}
-    .review-link{display:block;background:var(--panel-light);padding:8px 10px 4px 10px;border-radius:12px;margin-bottom:6px;font-size:14px;word-break:break-all;}
-    .proof-box{background:var(--panel-light);border-radius:11px;padding:13px 9px;margin-bottom:10px;}
-    .proof-link{color:var(--accent);}
-    .proof-img{border-radius:12px;max-width: 100%;}
-    .actions{display:flex;gap:9px;margin:20px 0 12px;}
-    .btn{border:none;outline:none;font-family:inherit;font-weight:800;font-size:17px;padding:15px 0;border-radius:12px;flex:1;cursor:pointer;transition:var(--transition);}
-    .btn-approve{background:linear-gradient(90deg,var(--success) 60%,#28ffc1 110%);color:#111;}
-    .btn-reject{background:linear-gradient(90deg,var(--error) 60%,#ff4c4c 120%);color:#fff;}
-    .btn:active{transform:scale(0.98);}
-    .stats{display:flex;gap:11px;margin-top:24px;}
-    .stat-box{background:var(--panel-light);padding:11px 0;border-radius:11px;flex:1;text-align:center;}
-    .stat-num{font-weight:900;font-size:22px;color:var(--accent);}
-    .stat-label{font-size:13px;color:var(--muted);}
-    .empty-state{text-align:center;padding:66px 0 34px;color:var(--muted);}
-    .modal{position:fixed;inset:0;backdrop-filter:blur(1.5px);background:rgba(30,38,60,0.82);display:none;align-items:center;justify-content:center;}
-    .modal.active{display:flex;}
-    .modal-card{background:var(--panel);border-radius:16px;box-shadow:0 10px 45px rgba(30,40,60,0.15);padding:30px 28px 21px;width:90vw;max-width:400px;text-align:center;}
-    .modal-btn{margin-top:25px;font-size:16px;padding:10px 26px;}
-    @media (max-width: 600px){
-      .container{padding:0;}
-      .card{padding:17px 7px;}
-    }
+    :root{ --bg:#141e2f; --panel:#1e293b; --panel-light:#223353; --accent:#3b82f6; --success:#10b981; --error:#ef4444; --text:#e8effa; --muted:#a1accf; --radius:18px;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}
+    .container{max-width:520px;margin:32px auto;padding:18px}
+    .main-title{font-weight:900;font-size:24px;margin-bottom:7px}
+    .subtitle{font-size:15px;color:var(--muted);margin-bottom:16px}
+    .card{background:var(--panel);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+    .review-title{font-weight:700;font-size:18px;margin:8px 0}
+    .review-link{display:block;background:var(--panel-light);padding:8px;border-radius:10px;margin-bottom:6px;word-break:break-all}
+    .proof-img{border-radius:12px;max-width:100%}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    .btn{flex:1;padding:12px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+    .btn-approve{background:linear-gradient(90deg,var(--success),#28ffc1);color:#042016}
+    .btn-reject{background:linear-gradient(90deg,var(--error),#ff7b7b);color:#fff}
+    .stats{display:flex;gap:10px;margin-top:12px}
+    .stat-box{background:var(--panel-light);padding:10px;border-radius:10px;flex:1;text-align:center}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)}
+    .modal.open{display:flex}
+    .modal-card{background:var(--panel);padding:18px;border-radius:12px}
   </style>
 </head>
 <body>
   <div class="container">
-    <div>
-      <div class="main-title">🛡 Модерация отзывов</div>
-      <div class="subtitle" id="adminName">Вы проверяете: —</div>
-    </div>
-    <div id="reviewCard" class="card" style="display:none;">
-      <div class="review-id-title" id="reviewId">ID: —</div>
-      <div class="review-user">Пользователь: <span id="userId">—</span></div>
+    <div><div class="main-title">🛡 Модерация отзывов</div><div class="subtitle" id="adminName">Вы проверяете: —</div></div>
+
+    <div id="reviewCard" class="card" style="display:none">
+      <div class="small muted" id="reviewId">ID: —</div>
       <div class="review-title" id="reviewTitle"></div>
-      <div class="review-link">
-        Ссылка<br>
-        <a href="#" id="reviewTarget" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:underline;">Перейти к отзыву</a>
-      </div>
-      <div class="review-meta" id="siteName"></div>
-      <div class="proof-box" id="proofBox"></div>
+      <div class="review-link"><a id="reviewTarget" href="#" target="_blank" style="color:var(--accent)"></a></div>
+      <div id="proofBox"></div>
       <div class="actions">
         <button class="btn btn-reject" id="btnReject">Отклонить</button>
         <button class="btn btn-approve" id="btnApprove">Подтвердить</button>
       </div>
     </div>
-    <div id="emptyState" class="empty-state" style="display:none;">
-      <div style="font-size:34px;margin-bottom:5px;">🎉</div>
-      Все заявки проверены!
-      <div style="margin:13px 0 0;"><button onclick="loadNextTask()" style="border-radius:10px;border:1px solid #334155;font-weight:600;padding:7px 21px;color:white;background:transparent;cursor:pointer;font-size:15px;">Обновить очередь</button></div>
-    </div>
+
+    <div id="emptyState" style="display:none;text-align:center;padding:40px;color:var(--muted)">Очередь пуста<br><button onclick="loadNextTask()" style="margin-top:10px">Обновить</button></div>
+
     <div class="stats">
-      <div class="stat-box">
-        <div class="stat-num" id="statDone">0</div>
-        <div class="stat-label">Проверено вами</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num" id="statQueue">0</div>
-        <div class="stat-label">В очереди</div>
-      </div>
+      <div class="stat-box"><div id="statDone">0</div><div class="small muted">Проверено вами</div></div>
+      <div class="stat-box"><div id="statQueue">0</div><div class="small muted">В очереди</div></div>
     </div>
   </div>
-  <!-- Модалка -->
-  <div id="modal" class="modal">
-    <div class="modal-card">
-      <div id="modalMsg"></div>
-      <button class="btn btn-approve modal-btn" onclick="closeModal()">OK</button>
-    </div>
-  </div>
+
+  <div id="modal" class="modal"><div class="modal-card"><div id="modalMsg"></div><div style="margin-top:12px"><button onclick="closeModal()" class="btn btn-approve">OK</button></div></div></div>
+
 <script>
-const token = new URLSearchParams(location.search).get('token');
-let currentAssignmentId = null;
+const token = new URLSearchParams(location.search).get('token') || '';
 async function api(path, method='GET', body=null){
   try {
     const opts = {headers: {'Authorization':'Bearer '+token}};
-    if(method!=='GET'){opts.method=method;opts.headers['Content-Type']='application/json';if(body)opts.body=JSON.stringify(body);}
+    if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
     const res = await fetch(path + '?token=' + token, opts); return await res.json();
-  } catch(e){return null;}
+  } catch(e){ return null; }
 }
-async function loadStats() {
+
+async function loadStats(){
   const res = await api('/api/moderator/me');
-  if(res && res.ok) {
-    document.getElementById('adminName').textContent = `Вы: ${res.name || 'Модератор'}`;
+  if (res && res.ok) {
+    document.getElementById('adminName').textContent = 'Вы: ' + (res.name || 'Модератор');
     document.getElementById('statDone').textContent = res.tasks_reviewed || 0;
   }
 }
-function showModal(msg){
-  document.getElementById('modalMsg').textContent = msg;
-  document.getElementById('modal').classList.add('active');
-}
-function closeModal(){
-  document.getElementById('modal').classList.remove('active');
-}
-async function loadNextTask() {
+function showModal(msg){ document.getElementById('modalMsg').textContent = msg; document.getElementById('modal').classList.add('open'); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+let currentAssignmentId = null;
+async function loadNextTask(){
   const res = await api('/api/moderator/queue');
-  if(!res || !res.ok || !res.assignment){
-    document.getElementById('reviewCard').style.display = 'none';
-    document.getElementById('emptyState').style.display = 'block';
-    document.getElementById('statQueue').textContent = '0';
-    return;
-  }
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('reviewCard').style.display = 'block';
-  const a = res.assignment;
-  currentAssignmentId = a.id;
-  document.getElementById('statQueue').textContent = res.queue_length || 1;
-  document.getElementById('reviewId').textContent = `ID: ${a.id}`;
-  document.getElementById('userId').textContent = a.user_id || '—';
+  if (!res || !res.ok || !res.assignment){ document.getElementById('reviewCard').style.display='none'; document.getElementById('emptyState').style.display='block'; document.getElementById('statQueue').textContent = '0'; return; }
+  document.getElementById('emptyState').style.display='none'; document.getElementById('reviewCard').style.display='block';
+  const a = res.assignment; currentAssignmentId = a.id;
+  document.getElementById('reviewId').textContent = 'ID: ' + a.id;
   document.getElementById('reviewTitle').textContent = a.task_title || '';
-  document.getElementById('reviewTarget').href = a.review_target || "#";
-  document.getElementById('reviewTarget').textContent = (a.review_target || '').substring(0, 80) || '-';
-  document.getElementById('siteName').textContent = a.site_name || '';
-  // Доказательство:
+  document.getElementById('reviewTarget').href = a.review_target || '#'; document.getElementById('reviewTarget').textContent = (a.review_target || '').slice(0,80);
   const proofBox = document.getElementById('proofBox');
-  if(a.proof_type === 'image' && a.proof_data) {
-    proofBox.innerHTML = `<img src="${a.proof_data}" alt="Фото" class="proof-img">`;
+  if (a.proof_type === 'image' && a.proof_data) {
+    proofBox.innerHTML = `<img src="${a.proof_data}" class="proof-img">`;
   } else if (a.proof_type === 'link' && a.proof_data) {
-    proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank" class="proof-link">${a.proof_data}</a>
-      <div style="color:var(--muted);font-size:12px;">Кликните для перехода</div>`;
+    proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank">${a.proof_data}</a>`;
   } else {
-    proofBox.innerHTML = `<div style="color:var(--muted);font-style:italic;">Нет доказательства (текст или пусто)</div>
-      <div style="margin-top:8px;font-size:14px;color:#fff;">${a.proof_data || ''}</div>`;
+    proofBox.innerHTML = `<div class="small muted">Нет доказательства</div><div style="margin-top:6px">${a.proof_data || ''}</div>`;
   }
+  document.getElementById('statQueue').textContent = res.queue_length || 0;
 }
-document.getElementById('btnApprove').onclick = async ()=>{
-  if(!currentAssignmentId)return;
-  if(!confirm('Подтвердить выполнение отзыва? Автоматически зачислить награду.'))return;
-  const resp = await api('/api/moderator/approve','POST',{id: currentAssignmentId});
-  if(resp && resp.ok){ showModal("Заявка подтверждена! Пользователь получил награду."); loadNextTask(); loadStats(); } else { showModal("Ошибка обработки!"); }
-};
-document.getElementById('btnReject').onclick = async ()=>{
-  if(!currentAssignmentId)return;
-  const reason = prompt('Причина отказа для пользователя:','Неверный/Удалённый отзыв');
-  if(!reason)return;
-  const resp = await api('/api/moderator/reject','POST',{id:currentAssignmentId,reason});
-  if(resp && resp.ok){ showModal("Заявка отклонена."); loadNextTask(); loadStats(); } else { showModal("Ошибка обработки!"); }
-};
-const socket = io({ auth: { token }, transports: ['websocket'] });
-socket.on('new_work', ()=>loadNextTask());
-socket.on('disconnect', ()=>console.log('Socket disconnect'));
+
+document.getElementById('btnApprove').addEventListener('click', async ()=>{
+  if (!currentAssignmentId) return;
+  if (!confirm('Подтвердить выполнение?')) return;
+  const r = await api('/api/moderator/approve','POST',{id: currentAssignmentId});
+  if (r && r.ok){ showModal('Подтверждено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
+});
+document.getElementById('btnReject').addEventListener('click', async ()=>{
+  if (!currentAssignmentId) return;
+  const reason = prompt('Причина отказа','Неверный отзыв');
+  if (!reason) return;
+  const r = await api('/api/moderator/reject','POST',{id: currentAssignmentId, reason});
+  if (r && r.ok){ showModal('Отклонено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
+});
+
+try {
+  const socket = io({ transports: ['websocket'] });
+  socket.on('connect', ()=> console.log('connected', socket.id));
+  socket.on('new_review', ()=> loadNextTask());
+} catch(e){ console.warn(e); }
+
 loadStats();
 loadNextTask();
 </script>
