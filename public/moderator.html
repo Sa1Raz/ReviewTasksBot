@@ -1,110 +1,119 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>🛡 ReviewCash — Модератор</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-<style>
-body { font-family:'Inter',sans-serif; background:#111; color:#ccc; margin:0; }
-.header { display:flex; justify-content:space-between; padding:16px; background:#222; }
-.btn { padding:10px 14px; border-radius:12px; border:none; background:#38bdf8; color:#fff; cursor:pointer; font-weight:600; transition:background 0.2s; margin-top:10px; }
-.btn:hover { background:#4ccaff; }
-section { display:none; padding:16px; }
-section.active { display:block; }
-table { width:100%; border-collapse: collapse; }
-th, td { padding:8px; border-bottom:1px solid #444; font-size:13px; }
-th { background:#333; font-weight:600; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <title>Модерация отзывов — ReviewCash</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root{ --bg:#141e2f; --panel:#1e293b; --panel-light:#223353; --accent:#3b82f6; --success:#10b981; --error:#ef4444; --text:#e8effa; --muted:#a1accf; --radius:18px;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}
+    .container{max-width:520px;margin:32px auto;padding:18px}
+    .main-title{font-weight:900;font-size:24px;margin-bottom:7px}
+    .subtitle{font-size:15px;color:var(--muted);margin-bottom:16px}
+    .card{background:var(--panel);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+    .review-title{font-weight:700;font-size:18px;margin:8px 0}
+    .review-link{display:block;background:var(--panel-light);padding:8px;border-radius:10px;margin-bottom:6px;word-break:break-all}
+    .proof-img{border-radius:12px;max-width:100%}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    .btn{flex:1;padding:12px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+    .btn-approve{background:linear-gradient(90deg,var(--success),#28ffc1);color:#042016}
+    .btn-reject{background:linear-gradient(90deg,var(--error),#ff7b7b);color:#fff}
+    .stats{display:flex;gap:10px;margin-top:12px}
+    .stat-box{background:var(--panel-light);padding:10px;border-radius:10px;flex:1;text-align:center}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)}
+    .modal.open{display:flex}
+    .modal-card{background:var(--panel);padding:18px;border-radius:12px}
+  </style>
 </head>
 <body>
-<div class="header"><h1>🛡 Модератор</h1>
-<button id="refreshBtn">🔄 Обновить</button></div>
-<div style="display:flex; gap:8px; padding:16px;">
-  <button class="btn" data-tab="queue">📋 Очередь</button>
-  <button class="btn" data-tab="proofs">📸 Документы</button>
-  <button class="btn" data-tab="stats">📊 Статистика</button>
-</div>
-<!-- Очередь -->
-<section id="tab-queue" class="active">
-<h2>Очередь ревью</h2>
-<div id="queueList"></div>
-</section>
-<!-- Документы -->
-<section id="tab-proofs">
-<h2>Доказательства</h2>
-<div id="proofsList"></div>
-</section>
-<!-- Статистика -->
-<section id="tab-stats">
-<h2>Статистика модератора</h2>
-<div id="statsData"></div>
-</section>
+  <div class="container">
+    <div><div class="main-title">🛡 Модерация отзывов</div><div class="subtitle" id="adminName">Вы проверяете: —</div></div>
+
+    <div id="reviewCard" class="card" style="display:none">
+      <div class="small muted" id="reviewId">ID: —</div>
+      <div class="review-title" id="reviewTitle"></div>
+      <div class="review-link"><a id="reviewTarget" href="#" target="_blank" style="color:var(--accent)"></a></div>
+      <div id="proofBox"></div>
+      <div class="actions">
+        <button class="btn btn-reject" id="btnReject">Отклонить</button>
+        <button class="btn btn-approve" id="btnApprove">Подтвердить</button>
+      </div>
+    </div>
+
+    <div id="emptyState" style="display:none;text-align:center;padding:40px;color:var(--muted)">Очередь пуста<br><button onclick="loadNextTask()" style="margin-top:10px">Обновить</button></div>
+
+    <div class="stats">
+      <div class="stat-box"><div id="statDone">0</div><div class="small muted">Проверено вами</div></div>
+      <div class="stat-box"><div id="statQueue">0</div><div class="small muted">В очереди</div></div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal"><div class="modal-card"><div id="modalMsg"></div><div style="margin-top:12px"><button onclick="closeModal()" class="btn btn-approve">OK</button></div></div></div>
+
 <script>
-const tabs=document.querySelectorAll('[data-tab]');
-let currentTab='queue';
-tabs.forEach(t=>{
-  t.onclick=()=>{
-    document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('tab-'+t.dataset['tab']).classList.add('active');
-    currentTab=t.dataset['tab'];
-    loadCurrentTab();
+const token = new URLSearchParams(location.search).get('token') || '';
+async function api(path, method='GET', body=null){
+  try {
+    const opts = {headers: {'Authorization':'Bearer '+token}};
+    if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
+    const res = await fetch(path + '?token=' + token, opts); return await res.json();
+  } catch(e){ return null; }
+}
+
+async function loadStats(){
+  const res = await api('/api/moderator/me');
+  if (res && res.ok) {
+    document.getElementById('adminName').textContent = 'Вы: ' + (res.name || 'Модератор');
+    document.getElementById('statDone').textContent = res.tasks_reviewed || 0;
   }
+}
+function showModal(msg){ document.getElementById('modalMsg').textContent = msg; document.getElementById('modal').classList.add('open'); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+let currentAssignmentId = null;
+async function loadNextTask(){
+  const res = await api('/api/moderator/queue');
+  if (!res || !res.ok || !res.assignment){ document.getElementById('reviewCard').style.display='none'; document.getElementById('emptyState').style.display='block'; document.getElementById('statQueue').textContent = '0'; return; }
+  document.getElementById('emptyState').style.display='none'; document.getElementById('reviewCard').style.display='block';
+  const a = res.assignment; currentAssignmentId = a.id;
+  document.getElementById('reviewId').textContent = 'ID: ' + a.id;
+  document.getElementById('reviewTitle').textContent = a.task_title || '';
+  document.getElementById('reviewTarget').href = a.review_target || '#'; document.getElementById('reviewTarget').textContent = (a.review_target || '').slice(0,80);
+  const proofBox = document.getElementById('proofBox');
+  if (a.proof_type === 'image' && a.proof_data) {
+    proofBox.innerHTML = `<img src="${a.proof_data}" class="proof-img">`;
+  } else if (a.proof_type === 'link' && a.proof_data) {
+    proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank">${a.proof_data}</a>`;
+  } else {
+    proofBox.innerHTML = `<div class="small muted">Нет доказательства</div><div style="margin-top:6px">${a.proof_data || ''}</div>`;
+  }
+  document.getElementById('statQueue').textContent = res.queue_length || 0;
+}
+
+document.getElementById('btnApprove').addEventListener('click', async ()=>{
+  if (!currentAssignmentId) return;
+  if (!confirm('Подтвердить выполнение?')) return;
+  const r = await api('/api/moderator/approve','POST',{id: currentAssignmentId});
+  if (r && r.ok){ showModal('Подтверждено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
 });
-document.getElementById('refreshBtn').onclick=()=>loadCurrentTab();
+document.getElementById('btnReject').addEventListener('click', async ()=>{
+  if (!currentAssignmentId) return;
+  const reason = prompt('Причина отказа','Неверный отзыв');
+  if (!reason) return;
+  const r = await api('/api/moderator/reject','POST',{id: currentAssignmentId, reason});
+  if (r && r.ok){ showModal('Отклонено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
+});
 
-function loadCurrentTab() {
-  if(currentTab==='queue') loadQueue();
-  if(currentTab==='proofs') loadProofs();
-  if(currentTab==='stats') loadStats();
-}
+try {
+  const socket = io({ transports: ['websocket'] });
+  socket.on('connect', ()=> console.log('connected', socket.id));
+  socket.on('new_review', ()=> loadNextTask());
+} catch(e){ console.warn(e); }
 
-function loadQueue() {
-  fetch('/api/moderator/queue').then(r=>r.json()).then(d=>{
-    const container=document.getElementById('queueList'); container.innerHTML='';
-    d.items.forEach(i=>{
-      const div=document.createElement('div');
-      div.innerHTML=`<b>${i.title}</b> (${i.type})<br>
-      Пользователь: ${i.user_id}<br>
-      <button onclick='acceptReview("${i.id}")'>Принять</button>
-      <button onclick='rejectReview("${i.id}")'>Отклонить</button>`;
-      container.appendChild(div);
-    });
-  });
-}
-function loadProofs() {
-  fetch('/api/moderator/proofs').then(r=>r.json()).then(d=>{
-    const container=document.getElementById('proofsList'); container.innerHTML='';
-    d.items.forEach(p=>{
-      const div=document.createElement('div');
-      div.style.background='#222'; div.style.margin='8px 0'; div.style.padding='8px'; div.style.borderRadius='12px';
-      if(p.type==='image') {
-        div.innerHTML=`<img src="${p.data}" style="max-width:100%"><br>`;
-      } else {
-        div.innerHTML=`<a href="${p.data}" target="_blank">${p.data}</a>`;
-      }
-      div.innerHTML+=`<br>
-      <button onclick='acceptProof("${p.id}")'>Принять</button>
-      <button onclick='rejectProof("${p.id}")'>Отклонить</button>`;
-      container.appendChild(div);
-    });
-  });
-}
-function loadStats() {
-  fetch('/api/moderator/stats').then(r=>r.json()).then(d=>{
-    const c=document.getElementById('statsData'); c.innerHTML='';
-    d.admins.forEach(a=>{
-      c.innerHTML+=`<div>${a.name || a.id} — проверил: ${a.tasks_reviewed}</div>`;
-    });
-  });
-}
-
-function acceptReview(id){ fetch('/api/moderator/review/'+id+'/accept',{method:'POST'}).then(()=>loadCurrentTab()); }
-function rejectReview(id){ fetch('/api/moderator/review/'+id+'/reject',{method:'POST'}).then(()=>loadCurrentTab()); }
-function acceptProof(id){ fetch('/api/moderator/proof/'+id+'/accept',{method:'POST'}).then(()=>loadCurrentTab()); }
-function rejectProof(id){ fetch('/api/moderator/proof/'+id+'/reject',{method:'POST'}).then(()=>loadCurrentTab()); }
-
-loadCurrentTab();
+loadStats();
+loadNextTask();
 </script>
 </body>
 </html>
