@@ -2,7 +2,7 @@
   function qs(name){ return new URLSearchParams(location.search).get(name); }
   const token = qs('token') || '';
   if(typeof io === 'undefined') return;
-  const socket = io({ auth: { token }, transports: ['websocket'] });
+  const socket = io({ auth: { token }, transports: ['websocket'], reconnection: true, reconnectionAttempts: 5 });
   socket.on('connect', () => console.log('socket connected', socket.id));
   socket.on('connect_error', (err) => console.error('socket connect_error', err));
   socket.on('new_topup', (data) => { console.log('new_topup', data); });
@@ -12,5 +12,6 @@
   socket.on('new_topup_user', (data) => { alert('Заявка на пополнение принята'); });
   socket.on('new_work_user', (data) => { alert('Ваша заявка принята на проверку'); });
   socket.on('disconnect', (reason) => console.log('socket disconnected', reason));
+  socket.on('reconnect', () => console.log('reconnected'));
   window.__RC_SOCKET = socket;
 })();
