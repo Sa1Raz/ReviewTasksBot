@@ -41,9 +41,9 @@ REVIEWS_FILE = os.path.join(DATA_DIR, "reviews.json")
 TASK_TYPES_FILE = os.path.join(DATA_DIR, "task_types.json")
 ADMINS_FILE = os.path.join(DATA_DIR, "admins.json")
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")
 CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
-ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS","").split(",") if s.strip()]
+ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS","6482440657").split(",") if s.strip()]
 ADMIN_JWT_SECRET = os.environ.get("ADMIN_JWT_SECRET", "replace_with_strong_secret")
 MIN_TOPUP = int(os.environ.get("MIN_TOPUP", "150"))
 
