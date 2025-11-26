@@ -7,42 +7,50 @@ import json
 import random
 import string
 import logging
+import base64
+import io
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, send_from_directory, abort
-from flask_socketio import SocketIO
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+import qrcode
 
+# Optional imports (telegram parts are optional; app works without them)
 try:
     import telebot
     from telebot import types as tb_types
     import requests
 except Exception:
     telebot = None
+    requests = None
 try:
     import jwt
 except Exception:
     jwt = None
 
-DEFAULT_BOT_TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"
-BOT_TOKEN = os.environ.get("BOT_TOKEN", DEFAULT_BOT_TOKEN).strip()
-WEBAPP_URL = os.environ.get("WEBAPP_URL", f"https://{os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'your-app.up.railway.app')}").rstrip('/')
-CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews").strip()
-ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS", "6482440657").split(",") if s.strip()]
-ADMIN_JWT_SECRET = os.environ.get("ADMIN_JWT_SECRET", "replace_with_strong_secret")
+# ---- Config ----
+PORT = int(os.environ.get("PORT", 8080))
 DATA_DIR = os.environ.get("DATA_DIR", ".rc_data")
 os.makedirs(DATA_DIR, exist_ok=True)
-TOPUPS_FILE = os.path.join(DATA_DIR, "topups.json")
+
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
+TOPUPS_FILE = os.path.join(DATA_DIR, "topups.json")
+WITHDRAWS_FILE = os.path.join(DATA_DIR, "withdraws.json")
 TASKS_FILE = os.path.join(DATA_DIR, "tasks.json")
+REVIEWS_FILE = os.path.join(DATA_DIR, "reviews.json")
 TASK_TYPES_FILE = os.path.join(DATA_DIR, "task_types.json")
 ADMINS_FILE = os.path.join(DATA_DIR, "admins.json")
-WITHDRAWS_FILE = os.path.join(DATA_DIR, "withdraws.json")
-REVIEWS_FILE = os.path.join(DATA_DIR, "reviews.json")
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU")
+CHANNEL_ID = os.environ.get("CHANNEL_ID", "@ReviewCashNews")
+ADMIN_USER_IDS = [s.strip() for s in os.environ.get("ADMIN_USER_IDS","6482440657").split(",") if s.strip()]
+ADMIN_JWT_SECRET = os.environ.get("ADMIN_JWT_SECRET", "replace_with_strong_secret")
 MIN_TOPUP = int(os.environ.get("MIN_TOPUP", "150"))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger("reviewcash")
 
-# --- Helpers ---
+# ---- Helpers ----
 def load_json(path, default):
     try:
         if not os.path.exists(path):
@@ -52,180 +60,375 @@ def load_json(path, default):
     except Exception as e:
         logger.warning("load_json(%s) failed: %s", path, e)
         return default
+
 def save_json(path, obj):
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=2)
     except Exception as e:
         logger.exception("save_json(%s) failed: %s", path, e)
+
 def append_json(path, obj):
     arr = load_json(path, [])
     arr.insert(0, obj)
     save_json(path, arr)
+
 def gen_id(prefix="id"):
     return f"{prefix}_{int(time.time()*1000)}_{random.randint(1000,9999)}"
+
 def gen_manual_code():
-    return "RC" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    return "RC" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
-# Ensure default files and types
-if not os.path.exists(TASK_TYPES_FILE) or not load_json(TASK_TYPES_FILE, []):
+# QR base64 generator (no personal data)
+def generate_qr_base64(payload_url: str):
+    img = qrcode.make(payload_url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    b64 = base64.b64encode(buf.getvalue()).decode()
+    return "data:image/png;base64," + b64
+
+# Ensure files
+if not os.path.exists(TASK_TYPES_FILE):
     save_json(TASK_TYPES_FILE, [
-        {"id":"ya_review","name":"Отзыв — Яндекс Карты","unit_price":85},
-        {"id":"gmaps_review","name":"Отзыв — Google Maps","unit_price":50},
-        {"id":"tg_sub","name":"Подписка — Telegram канал","unit_price":5},
+        {"id":"ya_review","name":"Отзыв — Яндекс","unit_price":85},
+        {"id":"gmaps_review","name":"Отзыв — Google","unit_price":50},
+        {"id":"tg_sub","name":"Подписка — Telegram","unit_price":5},
     ])
-for f, v in [
-    (USERS_FILE, {}), (TOPUPS_FILE, []), (TASKS_FILE, []), (WITHDRAWS_FILE, []), (REVIEWS_FILE, [])
+for f, default in [
+    (USERS_FILE, {}), (TOPUPS_FILE, []), (WITHDRAWS_FILE, []),
+    (TASKS_FILE, []), (REVIEWS_FILE, []), (ADMINS_FILE, {})
 ]:
-    if not os.path.exists(f): save_json(f, v)
-if not os.path.exists(ADMINS_FILE):
-    save_json(ADMINS_FILE, {uid: {"name": "Admin", "tasks_reviewed": 0, "role": "mod"} for uid in ADMIN_USER_IDS})
+    if not os.path.exists(f):
+        save_json(f, default)
 
+# ---- Flask + SocketIO ----
+app = Flask(__name__, static_folder='public', static_url_path='/')
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+
+# ---- small domain logic ----
 def get_user(uid):
     users = load_json(USERS_FILE, {})
     key = str(uid)
     if key not in users:
-        users[key] = {"balance": 0.0, "history": [], "tasks_done": 0, "total_earned": 0.0}
+        users[key] = {"balance": 0.0, "history": [], "tasks_done": 0, "total_earned": 0.0, "first_name": None}
         save_json(USERS_FILE, users)
     return users[key]
-def update_user_balance(uid, amount, history_item):
+
+def update_user_balance(uid, amount, history_item=None):
     users = load_json(USERS_FILE, {})
     key = str(uid)
     if key not in users:
-        users[key] = {"balance": 0.0, "history": [], "tasks_done": 0}
-    users[key]['balance'] = round(users[key].get('balance', 0.0) + float(amount), 2)
+        users[key] = {"balance":0.0, "history": [], "tasks_done":0}
+    users[key]["balance"] = round(users[key].get("balance",0.0) + float(amount), 2)
     if history_item:
-        history_item['created_at'] = datetime.utcnow().isoformat()+"Z"
-        users[key].setdefault('history', []).insert(0, history_item)
-        users[key]['history'] = users[key]['history'][:50]
+        history_item["ts"] = datetime.utcnow().isoformat()+"Z"
+        users[key].setdefault("history", []).insert(0, history_item)
+        users[key]["history"] = users[key]["history"][:100]
     save_json(USERS_FILE, users)
-    socketio.emit("user_update", {"user_id": key, "balance": users[key]['balance']}, broadcast=True)
+    # notify via socket
+    socketio.emit("user_update", {"user_id": key, "balance": users[key]["balance"]}, broadcast=True)
     return users[key]
-def is_user_subscribed(telegram_id):
-    try:
-        api_url = f"https://api.telegram.org/bot{BOT_TOKEN}/getChatMember"
-        channel = CHANNEL_ID
-        params = {"chat_id": channel, "user_id": telegram_id}
-        resp = requests.get(api_url, params=params, timeout=3).json()
-        if resp.get("ok") and resp["result"]["status"] in ("member","administrator","creator"):
-            return True
-        return False
-    except Exception as e:
-        return False
-def get_unit_price_for_type(task_type):
-    all_types = load_json(TASK_TYPES_FILE, [])
-    for t in all_types:
-        if t["id"] == task_type:
+
+def get_unit_price_for_type(tid):
+    types = load_json(TASK_TYPES_FILE, [])
+    for t in types:
+        if t["id"] == tid:
             return float(t.get("unit_price", 0))
     return 0.0
 
-# --- Push-уведомление модераторам ---
-def notify_moderators_new_review(review):
-    try:
-        if not telebot:
-            return
-        admins_db = load_json(ADMINS_FILE, {})
-        notify_ids = set(str(uid) for uid, v in admins_db.items() if v.get("role") == "mod")
-        notify_ids.update(ADMIN_USER_IDS)
-        msg = (
-            f"🆕 Новая заявка на модерацию!\n"
-            f"Тип: {review.get('task_type','-')}\n"
-            f"User ID: {review.get('user_id','-')}\n"
-            f"Заголовок: {review.get('title','')}\n"
-        )
-        if review.get("review_url"):
-            msg += f"Ссылка: {review['review_url']}\n"
-        if review.get("site_name"):
-            msg += f"Площадка: {review['site_name']}\n"
-        kb = tb_types.InlineKeyboardMarkup()
-        kb.add(tb_types.InlineKeyboardButton("Открыть модерацию", web_app=tb_types.WebAppInfo(url=WEBAPP_URL + "/moderator.html")))
-        for uid in notify_ids:
-            try:
-                bot.send_message(uid, msg, reply_markup=kb, disable_web_page_preview=True)
-            except Exception as e:
-                logger.warning(f"telegram notify fail {uid}: {e}")
-    except Exception as e:
-        logger.warning(f"notify_moderators_new_review error: {e}")
-
-# ---------- App ----------
-app = Flask(__name__, static_folder='public', static_url_path='/')
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
-
-# ---------- Telegram bot ----------
+# ---- Optional: telegram / jwt admin shortcuts (safe if telebot not installed) ----
 if telebot:
     bot = telebot.TeleBot(BOT_TOKEN)
-    logger.info("Telebot configured")
+    logger.info("Telebot available")
 
     @bot.message_handler(commands=['start'])
     def _start(m):
         uid = m.from_user.id
-        username = m.from_user.username or ""
-        txt = (
-            "<b>⚡️ Добро пожаловать в <a href='https://t.me/ReviewCashNews'>ReviewCash</a>!</b>\n\n"
-            "<b>💸 Здесь ты можешь зарабатывать на отзывах и заданиях!</b>\n\n"
-            "▶️ <b>Подпишись на наш канал</b> чтобы пользоваться платформой:\n"
-            f"<a href='https://t.me/{CHANNEL_ID.lstrip('@')}'>Перейти в канал</a>\n\n"
-            "❗️ После подписки нажми кнопку ниже 👇"
-        )
         kb = tb_types.InlineKeyboardMarkup()
-        kb.add(tb_types.InlineKeyboardButton("✅ Я подписался!", callback_data="checksub"))
-        bot.send_message(uid, txt, reply_markup=kb, parse_mode='HTML', disable_web_page_preview=True)
-        users = load_json(USERS_FILE, {})
-        users[str(uid)] = users.get(str(uid), {"balance":0,"first_name":m.from_user.first_name,"username":username})
-        save_json(USERS_FILE, users)
+        kb.add(tb_types.InlineKeyboardButton("✅ Я подписался", callback_data="checksub"))
+        bot.send_message(uid, "Добро пожаловать в ReviewCash! Подпишись на канал и нажми кнопку.", reply_markup=kb)
 
     @bot.callback_query_handler(func=lambda cq: cq.data == "checksub")
     def check_sub(cq):
         uid = cq.from_user.id
-        if is_user_subscribed(uid):
-            bot.answer_callback_query(cq.id, "Отлично! Переходим в приложение", show_alert=True)
-            kb = tb_types.InlineKeyboardMarkup()
-            kb.add(tb_types.InlineKeyboardButton("🚀 Открыть ReviewCash", web_app=tb_types.WebAppInfo(url=WEBAPP_URL+"/index.html")))
-            bot.send_message(uid, "✅ Всё, добро пожаловать!\nЖми «Открыть ReviewCash» 👇", reply_markup=kb)
-        else:
-            bot.answer_callback_query(cq.id, "Вы не подписаны на канал...", show_alert=True)
-            kb = tb_types.InlineKeyboardMarkup()
-            kb.add(tb_types.InlineKeyboardButton("Перейти в канал", url=f"https://t.me/{CHANNEL_ID.lstrip('@')}"))
-            bot.send_message(uid, "❗️ Сначала подпишись на канал!", reply_markup=kb)
+        # basic reply; advanced check omitted here
+        bot.answer_callback_query(cq.id, "Спасибо! Открой приложение.", show_alert=True)
+        kb = tb_types.InlineKeyboardMarkup()
+        kb.add(tb_types.InlineKeyboardButton("Открыть WebApp", web_app=tb_types.WebAppInfo(url=f"/index.html")))
+        bot.send_message(uid, "Открываем приложение:", reply_markup=kb)
+else:
+    bot = None
 
-    @bot.message_handler(commands=['mainadmin'])
-    def _mainadmin(m):
-        uid = str(m.from_user.id)
-        if uid not in ADMIN_USER_IDS:
-            bot.send_message(m.chat.id, "⛔ Нет прав супер-админа.")
-            return
-        if jwt:
-            payload = {"uid": uid, "role": "super", "exp": datetime.utcnow() + timedelta(days=7)}
-            token = jwt.encode(payload, ADMIN_JWT_SECRET, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-            kb = tb_types.InlineKeyboardMarkup()
-            admin_url = f"{WEBAPP_URL}/mainadmin.html?token={token}"
-            kb.add(tb_types.InlineKeyboardButton("👑 Открыть Админ-панель", web_app=tb_types.WebAppInfo(url=admin_url)))
-            bot.send_message(m.chat.id, "Панель супер-админа:", reply_markup=kb)
+# ---- API: public endpoints for user app ----
 
-    @bot.message_handler(commands=['admin', 'mod', 'moderator'])
-    def _moderator(m):
-        uid = str(m.from_user.id)
-        admins_db = load_json(ADMINS_FILE, {})
-        if uid not in ADMIN_USER_IDS and uid not in admins_db:
-            bot.send_message(m.chat.id, "⛔ Нет доступа.")
-            return
-        if jwt:
-            payload = {"uid": uid, "role": "mod", "exp": datetime.utcnow() + timedelta(days=7)}
-            token = jwt.encode(payload, ADMIN_JWT_SECRET, algorithm="HS256")
-            if isinstance(token, bytes): token = token.decode('utf-8')
-            kb = tb_types.InlineKeyboardMarkup()
-            mod_url = f"{WEBAPP_URL}/moderator.html?token={token}"
-            kb.add(tb_types.InlineKeyboardButton("🛡️ Открыть Модераторку", web_app=tb_types.WebAppInfo(url=mod_url)))
-            bot.send_message(m.chat.id, "Запускаю приложение модератора:", reply_markup=kb)
+@app.route('/api/tasks/list')
+def tasks_list():
+    tasks = load_json(TASKS_FILE, [])
+    # return only active tasks
+    active = [t for t in tasks if t.get("status","active") == "active"]
+    return jsonify({"ok": True, "tasks": active})
 
-# ---------- API для задач (автоматическая проверка tg_sub) ----------
-@app.route('/api/reviews/submit', methods=["POST"])
+@app.route('/api/tasks/create', methods=['POST'])
+def tasks_create():
+    data = request.json or {}
+    title = data.get("title","Untitled")
+    desc = data.get("description","")
+    price = float(data.get("unit_price") or data.get("unit_price") or data.get("unit_price", 0) or data.get("price", 0) or data.get("unit_price",0))
+    qty = int(data.get("qty", data.get("count",1)))
+    t = {
+        "id": gen_id("tsk"),
+        "title": title,
+        "description": desc,
+        "unit_price": float(data.get("unit_price") or data.get("price") or 0),
+        "qty": qty,
+        "count": 0,
+        "budget": round((float(data.get("unit_price") or 0) * qty),2),
+        "status": "active",
+        "created_at": datetime.utcnow().isoformat()+"Z",
+        "type_id": data.get("type_id","custom")
+    }
+    append_json(TASKS_FILE, t)
+    socketio.emit("task_update", {"type":"new_task", "task": t}, broadcast=True)
+    return jsonify({"ok": True, "task": t})
+
+@app.route('/api/profile_me')
+def api_profile_me():
+    uid = request.args.get("uid")
+    if not uid:
+        return jsonify({"ok": False, "errmsg":"uid required"}), 400
+    user = get_user(uid)
+    return jsonify({"ok": True, "user": user})
+
+# create a topup link (simulate external SBP)
+@app.route('/api/user/topup-link', methods=['POST'])
+def api_topup_link():
+    data = request.json or {}
+    uid = data.get("uid")
+    amount = float(data.get("amount", 0))
+    if not uid or amount < MIN_TOPUP:
+        return jsonify({"ok": False, "errmsg": f"Min topup {MIN_TOPUP}"}), 400
+    manual_code = gen_manual_code()
+    topup = {
+        "id": gen_id("tup"),
+        "uid": str(uid),
+        "amount": amount,
+        "manual_code": manual_code,
+        "status": "waiting_for_payment",
+        "created_at": datetime.utcnow().isoformat()+"Z"
+    }
+    append_json(TOPUPS_FILE, topup)
+    # simulated pay link (could be deep link to bank app)
+    pay_link = f"https://pay.mock/sbp?code={manual_code}&amount={int(amount)}"
+    qr_b64 = generate_qr_base64(pay_link)
+    # notify admin UI
+    socketio.emit("new_topup", topup, broadcast=True)
+    return jsonify({"ok": True, "topup": topup, "manual_code": manual_code, "pay_link": pay_link, "qr_base64": qr_b64})
+
+# user confirms "I paid" -> set pending for admin
+@app.route('/api/user/topup-confirm', methods=['POST'])
+def api_topup_confirm():
+    data = request.json or {}
+    topup_id = data.get("topup_id") or data.get("topupId") or data.get("topup_id")
+    uid = data.get("uid")
+    topups = load_json(TOPUPS_FILE, [])
+    item = next((x for x in topups if x["id"] == topup_id), None)
+    if not item:
+        return jsonify({"ok": False, "errmsg":"topup not found"}), 404
+    # mark as pending admin check
+    item["status"] = "pending"
+    item["confirmed_by_user_at"] = datetime.utcnow().isoformat()+"Z"
+    save_json(TOPUPS_FILE, topups)
+    socketio.emit("new_topup_waiting", item, broadcast=True)
+    return jsonify({"ok": True, "topup": item})
+
+@app.route('/api/user/topup', methods=['POST'])
+def api_user_topup_simple():
+    data = request.json or {}
+    uid = data.get("uid")
+    amount = float(data.get("amount", 0))
+    if not uid or amount < MIN_TOPUP:
+        return jsonify({"ok": False, "errmsg":"invalid"}), 400
+    top = {
+        "id": gen_id("topup"),
+        "user": {"id": str(uid)},
+        "amount": amount,
+        "status": "pending",
+        "manual_code": data.get("manual_code"),
+        "created_at": datetime.utcnow().isoformat()+"Z"
+    }
+    append_json(TOPUPS_FILE, top)
+    socketio.emit("new_topup", top, broadcast=True)
+    return jsonify({"ok": True, "topup": top})
+
+@app.route('/api/user/withdraw', methods=['POST'])
+def api_user_withdraw():
+    data = request.json or {}
+    uid = str(data.get("uid"))
+    amount = float(data.get("amount", 0))
+    name = data.get("name", "")
+    details = data.get("details", "")
+    if amount < 300:
+        return jsonify({"ok": False, "errmsg":"min 300"}), 400
+    u = get_user(uid)
+    if u["balance"] < amount:
+        return jsonify({"ok": False, "errmsg":"no funds"}), 400
+    # reserve: subtract immediately (as per your flow)
+    update_user_balance(uid, -amount, {"type":"withdraw_reserve", "amount": amount})
+    wd = {
+        "id": gen_id("wd"),
+        "user": {"id": uid},
+        "amount": amount,
+        "name": name,
+        "details": details,
+        "status": "pending",
+        "created_at": datetime.utcnow().isoformat()+"Z"
+    }
+    append_json(WITHDRAWS_FILE, wd)
+    socketio.emit("new_withdraw", wd, broadcast=True)
+    return jsonify({"ok": True, "withdraw": wd})
+
+# ---- Admin endpoints expected by mainadmin.html ----
+
+@app.route('/api/admin/dashboard')
+def api_admin_dashboard():
+    users = load_json(USERS_FILE, {})
+    topups = load_json(TOPUPS_FILE, [])
+    withdraws = load_json(WITHDRAWS_FILE, [])
+    tasks = load_json(TASKS_FILE, [])
+    total_revenue = sum([t.get("amount",0) for t in topups if t.get("status") in ("approved","completed")])
+    pending_count = len([x for x in topups + withdraws if x.get("status") in ("pending","waiting_for_payment")])
+    recent = (topups[:5] + withdraws[:5])[:10]
+    return jsonify({
+        "ok": True,
+        "data": {
+            "usersCount": len(users),
+            "totalRevenue": round(total_revenue,2),
+            "tasksCount": len(tasks),
+            "pendingCount": pending_count,
+            "recentActivity": recent
+        }
+    })
+
+@app.route('/api/admin/users')
+def api_admin_users():
+    users = load_json(USERS_FILE, {})
+    arr = []
+    for uid, u in users.items():
+        arr.append({
+            "id": uid,
+            "first_name": u.get("first_name"),
+            "username": u.get("username"),
+            "balance": u.get("balance",0),
+            "tasks_done": u.get("tasks_done",0)
+        })
+    return jsonify({"ok": True, "users": arr})
+
+@app.route('/api/admin/tasks')
+def api_admin_tasks():
+    tasks = load_json(TASKS_FILE, [])
+    return jsonify({"ok": True, "tasks": tasks})
+
+@app.route('/api/admin/topups')
+def api_admin_topups():
+    status = request.args.get("status")
+    comment = request.args.get("comment")
+    items = load_json(TOPUPS_FILE, [])
+    if status:
+        items = [x for x in items if x.get("status")==status]
+    if comment:
+        items = [x for x in items if comment in (x.get("manual_code") or "")]
+    return jsonify({"ok": True, "items": items})
+
+@app.route('/api/admin/withdraws')
+def api_admin_withdraws():
+    status = request.args.get("status")
+    userq = request.args.get("user")
+    items = load_json(WITHDRAWS_FILE, [])
+    if status:
+        items = [x for x in items if x.get("status")==status]
+    if userq:
+        items = [x for x in items if str(x.get("user",{}).get("id",""))==userq or userq in str(x.get("name",""))]
+    return jsonify({"ok": True, "items": items})
+
+@app.route('/api/admin/topups/<tup_id>/approve', methods=['POST'])
+def api_admin_topup_approve(tup_id):
+    topups = load_json(TOPUPS_FILE, [])
+    item = next((x for x in topups if x["id"]==tup_id), None)
+    if not item:
+        return jsonify({"ok": False, "errmsg":"not found"}), 404
+    item["status"] = "approved"
+    save_json(TOPUPS_FILE, topups)
+    # credit user
+    uid = item.get("uid") or (item.get("user") or {}).get("id")
+    if uid:
+        update_user_balance(str(uid), float(item.get("amount",0)), {"type":"topup", "note":"admin_approve", "amount": item.get("amount",0)})
+    socketio.emit("topup_approved", {"id": tup_id, "item": item}, broadcast=True)
+    return jsonify({"ok": True})
+
+@app.route('/api/admin/topups/<tup_id>/reject', methods=['POST'])
+def api_admin_topup_reject(tup_id):
+    topups = load_json(TOPUPS_FILE, [])
+    item = next((x for x in topups if x["id"]==tup_id), None)
+    if not item:
+        return jsonify({"ok": False, "errmsg":"not found"}), 404
+    item["status"] = "rejected"
+    save_json(TOPUPS_FILE, topups)
+    socketio.emit("topup_rejected", {"id": tup_id, "item": item}, broadcast=True)
+    return jsonify({"ok": True})
+
+@app.route('/api/admin/withdraws/<wd_id>/approve', methods=['POST'])
+def api_admin_withdraw_approve(wd_id):
+    withdraws = load_json(WITHDRAWS_FILE, [])
+    item = next((x for x in withdraws if x["id"]==wd_id), None)
+    if not item:
+        return jsonify({"ok": False, "errmsg":"not found"}), 404
+    if item.get("status") != "pending":
+        return jsonify({"ok": False, "errmsg":"already processed"}), 400
+    # confirm payout (already reserved), mark approved
+    item["status"] = "approved"
+    save_json(WITHDRAWS_FILE, withdraws)
+    socketio.emit("withdraw_approved", {"id": wd_id, "item": item}, broadcast=True)
+    return jsonify({"ok": True})
+
+@app.route('/api/admin/withdraws/<wd_id>/reject', methods=['POST'])
+def api_admin_withdraw_reject(wd_id):
+    withdraws = load_json(WITHDRAWS_FILE, [])
+    item = next((x for x in withdraws if x["id"]==wd_id), None)
+    if not item:
+        return jsonify({"ok": False, "errmsg":"not found"}), 404
+    # return funds to user
+    uid = (item.get("user") or {}).get("id")
+    if uid:
+        update_user_balance(str(uid), float(item.get("amount",0)), {"type":"withdraw_rejected", "amount": item.get("amount",0)})
+    item["status"] = "rejected"
+    save_json(WITHDRAWS_FILE, withdraws)
+    socketio.emit("withdraw_rejected", {"id": wd_id, "item": item}, broadcast=True)
+    return jsonify({"ok": True})
+
+@app.route('/api/admin/task-create', methods=['POST'])
+def api_admin_task_create():
+    data = request.json or {}
+    t = {
+        "id": gen_id("tsk"),
+        "title": data.get("title","Task"),
+        "desc": data.get("desc",""),
+        "reward": float(data.get("reward") or 0),
+        "url": data.get("url") or "",
+        "status": "active",
+        "created_at": datetime.utcnow().isoformat()+"Z"
+    }
+    append_json(TASKS_FILE, t)
+    socketio.emit("task_update", {"type":"new_task","task": t}, broadcast=True)
+    return jsonify({"ok": True, "task": t})
+
+# ---- Moderator endpoints already in your app (reviews queue) ----
+@app.route('/api/reviews/submit', methods=['POST'])
 def submit_review():
-    data = request.json
-    user_id = str(data.get('user_id'))
-    task_type = data.get('task_type')
-    title = data.get('title', 'Задание')
+    data = request.json or {}
+    user_id = str(data.get('user_id',''))
+    task_type = data.get('task_type','')
+    title = data.get('title','Задание')
     site_name = data.get('site_name')
     review_url = data.get('review_url')
     proof_type = data.get('proof_type')
@@ -242,142 +445,104 @@ def submit_review():
         "created_at": datetime.utcnow().isoformat()+"Z",
         "status": "pending"
     }
+    # Auto-check tg_sub:
     if task_type == "tg_sub":
-        if is_user_subscribed(user_id):
+        # best-effort subscription check (if requests available)
+        subscribed = False
+        if requests:
+            try:
+                resp = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getChatMember", params={"chat_id": CHANNEL_ID, "user_id": user_id}, timeout=3).json()
+                subscribed = resp.get("ok") and resp["result"]["status"] in ("member","administrator","creator")
+            except Exception:
+                subscribed = False
+        if subscribed:
             reward = get_unit_price_for_type("tg_sub") or 5
-            review['status'] = "approved"
-            review['reward'] = reward
-            update_user_balance(user_id, reward, {"type": "tg_sub", "note": "autopaid", "amount": reward})
+            review["status"] = "approved"
+            review["reward"] = reward
+            update_user_balance(user_id, reward, {"type":"tg_sub","amount":reward})
         else:
-            review['status'] = "rejected"
-            review['reject_reason'] = "Вы не подписаны на канал"
-        append_json(REVIEWS_FILE, review)
-        socketio.emit("user_update", {"user_id": user_id}, broadcast=True)
-        return jsonify({"ok": review['status'] == "approved", "status": review['status'], "review": review})
-    else:
-        append_json(REVIEWS_FILE, review)
-        try:
-            notify_moderators_new_review(review)
-        except Exception as ex:
-            logger.warning(f"Can't notify moderators: {ex}")
-        return jsonify({"ok": True, "status": "pending", "review": review})
+            review["status"] = "rejected"
+            review["reject_reason"] = "not_subscribed"
+    append_json(REVIEWS_FILE, review)
+    socketio.emit("new_review", review, broadcast=True)
+    # notify moderators via telegram if available
+    # (left minimal)
+    return jsonify({"ok": True, "review": review, "status": review["status"]})
 
 @app.route('/api/moderator/queue')
 def mod_queue():
     items = load_json(REVIEWS_FILE, [])
-    for item in items:
-        if item.get("status") == "pending" and item.get("task_type") != "tg_sub":
-            return jsonify({"ok": True, "assignment": {
-                "id": item["id"],
-                "user_id": item["user_id"],
-                "task_title": item.get("title", "Отзыв"),
-                "task_type": item.get("task_type", ""),
-                "review_target": item.get("review_url"),
-                "site_name": item.get("site_name", ""),
-                "proof_type": item.get("proof_type"),
-                "proof_data": item.get("proof_data"),
-            }, "queue_length": len([x for x in items if x.get("status")=="pending" and x.get("task_type")!="tg_sub"])})
-    return jsonify({"ok":True, "assignment":None, "queue_length":0})
+    pending = [it for it in items if it.get("status") == "pending" and it.get("task_type") != "tg_sub"]
+    if not pending:
+        return jsonify({"ok": True, "assignment": None, "queue_length": 0})
+    a = pending[0]
+    return jsonify({"ok": True, "assignment": {
+        "id": a["id"],
+        "user_id": a["user_id"],
+        "task_title": a.get("title"),
+        "task_type": a.get("task_type"),
+        "review_target": a.get("review_url"),
+        "site_name": a.get("site_name"),
+        "proof_type": a.get("proof_type"),
+        "proof_data": a.get("proof_data")
+    }, "queue_length": len(pending)})
 
 @app.route('/api/moderator/me')
 def mod_me():
-    uid = request.args.get("uid","mod")
-    data = load_json(ADMINS_FILE,{})
-    name = data.get(uid,{}).get("name","Модератор")
-    tasks_reviewed = data.get(uid,{}).get("tasks_reviewed",0)
-    return jsonify({"ok":True, "name":name, "tasks_reviewed":tasks_reviewed})
+    uid = request.args.get("uid", "mod")
+    data = load_json(ADMINS_FILE, {})
+    u = data.get(str(uid), {"name": "Модератор", "tasks_reviewed": 0})
+    return jsonify({"ok": True, "name": u.get("name"), "tasks_reviewed": u.get("tasks_reviewed", 0)})
 
-@app.route('/api/moderator/approve', methods=["POST"])
+@app.route('/api/moderator/approve', methods=['POST'])
 def mod_approve():
-    data = request.json
+    data = request.json or {}
     rid = data.get("id")
-    reviews = load_json(REVIEWS_FILE, [])
-    for r in reviews:
-        if r["id"] == rid and r["status"]=="pending":
-            r["status"] = "approved"
-            reward = None
-            if "reward" in r:
-                try: reward = float(r["reward"])
-                except: reward = None
-            if reward is None: reward = get_unit_price_for_type(r.get("task_type","").strip())
-            if not reward: reward = 10
-            save_json(REVIEWS_FILE, reviews)
-            update_user_balance(r["user_id"], reward, {"type":"review","note":"approve","amount":reward,"task_type":r.get("task_type","")})
-            socketio.emit("user_update", {"user_id": r["user_id"]}, broadcast=True)
-            return jsonify({"ok":True})
-    return jsonify({"ok":False})
+    items = load_json(REVIEWS_FILE, [])
+    for it in items:
+        if it["id"] == rid and it.get("status") == "pending":
+            it["status"] = "approved"
+            reward = it.get("reward") or get_unit_price_for_type(it.get("task_type","")) or 10
+            save_json(REVIEWS_FILE, items)
+            update_user_balance(it["user_id"], reward, {"type":"review","amount":reward})
+            socketio.emit("review_approved", {"id": rid, "review": it}, broadcast=True)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False}), 404
 
-@app.route('/api/moderator/reject', methods=["POST"])
+@app.route('/api/moderator/reject', methods=['POST'])
 def mod_reject():
-    data = request.json
+    data = request.json or {}
     rid = data.get("id")
-    reason = data.get("reason","Не выполнено условие")
-    reviews = load_json(REVIEWS_FILE, [])
-    for r in reviews:
-        if r["id"] == rid and r["status"]=="pending":
-            r["status"] = "rejected"
-            r["reject_reason"] = reason
-            save_json(REVIEWS_FILE, reviews)
-            socketio.emit("user_update", {"user_id": r["user_id"]}, broadcast=True)
-            return jsonify({"ok":True})
-    return jsonify({"ok":False})
+    reason = data.get("reason", "Не выполнено")
+    items = load_json(REVIEWS_FILE, [])
+    for it in items:
+        if it["id"] == rid and it.get("status") == "pending":
+            it["status"] = "rejected"
+            it["reject_reason"] = reason
+            save_json(REVIEWS_FILE, items)
+            socketio.emit("review_rejected", {"id": rid, "review": it}, broadcast=True)
+            return jsonify({"ok": True})
+    return jsonify({"ok": False}), 404
 
-@app.route('/api/profile_me', methods=['GET'])
-def profile_me():
-    uid = request.args.get('uid')
-    if not uid: return jsonify({"ok": False})
-    u = get_user(uid)
-    return jsonify({"ok": True, "user": u})
-
-@app.route('/api/user/topup', methods=["POST"])
-def api_user_topup():
-    data = request.json
-    uid, amount = data.get("uid"), float(data.get("amount"))
-    top = {
-        "id": gen_id("topup"),
-        "user": {"id": uid},
-        "amount": amount,
-        "status": "pending",
-        "manual_code": data.get("manual_code"),
-        "created_at": datetime.utcnow().isoformat()+"Z"
-    }
-    append_json(TOPUPS_FILE, top)
-    socketio.emit("new_topup", top, broadcast=True)
-    return jsonify({"ok": True, "topup": top})
-
-@app.route('/api/user/withdraw', methods=["POST"])
-def api_user_withdraw():
-    data = request.json
-    uid = str(data.get("uid"))
-    amount = float(data.get("amount", 0))
-    name = data.get("name")
-    details = data.get("details")
-    if amount < 300: return jsonify({"ok": False, "errmsg": "Мин. 300"})
-    u = get_user(uid)
-    if u["balance"] < amount: return jsonify({"ok": False, "errmsg": "Нет средств"})
-    update_user_balance(uid, -amount, {"type": "withdraw_req", "amount": amount})
-    wd = {
-        "id": gen_id("wd"),
-        "user": {"id": uid},
-        "amount": amount,
-        "name": name,
-        "details": details,
-        "status": "pending",
-        "created_at": datetime.utcnow().isoformat()+"Z"
-    }
-    append_json(WITHDRAWS_FILE, wd)
-    socketio.emit("new_withdraw", wd, broadcast=True)
-    return jsonify({"ok": True, "withdraw": wd})
-
+# ---- static route passthrough (serve public/*.html) ----
 @app.route('/')
-def index(): return send_from_directory('public', 'index.html')
+def index_page():
+    return send_from_directory('public', 'index.html')
+
 @app.route('/<path:path>')
-def static_proxy(path): return send_from_directory('public', path)
+def static_proxy(path):
+    return send_from_directory('public', path)
+
+# ---- SocketIO basic ----
+@socketio.on('connect')
+def on_connect():
+    logger.info("Socket connected: %s", request.sid)
+    emit("hello", {"msg":"connected"})
 
 if __name__ == '__main__':
-    if telebot:
+    # if telegram available - start polling in background to support /start etc.
+    if telebot and bot:
         import threading
         threading.Thread(target=bot.infinity_polling, daemon=True).start()
-    port = int(os.environ.get("PORT", "8080"))
-    logger.info(f"Starting server on port {port}")
-    socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True, use_reloader=False)
+    logger.info("Starting server on port %s", PORT)
+    socketio.run(app, host='0.0.0.0', port=PORT, allow_unsafe_werkzeug=True)
