@@ -2,111 +2,216 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ReviewCash • Admin Panel</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
   <style>
-    body{font-family:Inter,system-ui, -apple-system, sans-serif;background:#0b1220;color:#e6f2ff;padding:18px}
+    :root{
+      --bg:#020617; --card:#0f1e36; --accent:#00e7c0; --accent2:#00d4ff; --text:#e2f3ff; --muted:#94a3b8; --radius:16px;
+    }
+    body{margin:0;font-family:Inter,system-ui;background:linear-gradient(135deg,var(--bg),#020817);color:var(--text);padding:16px}
     .container{max-width:1200px;margin:0 auto}
-    .card{background:linear-gradient(180deg,#071025,#0f1930);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);margin-bottom:12px}
-    .header{display:flex;align-items:center;gap:12px}
-    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,#22c55e,#0ea5e9);display:flex;align-items:center;justify-content:center;font-weight:900;color:#022}
+    .header{display:flex;align-items:center;gap:16px;padding:16px;background:rgba(16,24,40,0.9);border-radius:14px;border:1px solid rgba(148,163,184,0.08)}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#002}
     .title h1{margin:0;font-size:20px}
-    .muted{color:#9fb0c9}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:left}
-    .btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
-    .btn-approve{background:#16a34a;color:white}
-    .btn-reject{background:#ef4444;color:white}
-    .qr-img{max-width:140px;border-radius:8px}
+    .layout{display:grid;grid-template-columns:320px 1fr;gap:18px;margin-top:18px}
+    .card{background:rgba(15,30,54,0.95);padding:18px;border-radius:12px;border:1px solid rgba(148,163,184,0.06)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border-radius:10px;background:transparent;cursor:pointer}
+    .tab.active{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#021018;font-weight:800}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px;border-bottom:1px solid rgba(148,163,184,0.05);text-align:left}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+    .btn-success{background:#10b981;color:#001}
+    .btn-danger{background:#ef4444;color:#fff}
+    .filter{display:flex;gap:8px;margin-top:10px}
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header card">
+    <div class="header">
       <div class="logo">RC</div>
-      <div class="title"><h1>Admin Panel — ReviewCash</h1><div class="muted">Управление пополнениями и выводами</div></div>
-      <div style="margin-left:auto"><button onclick="loadTopups()" class="btn">Обновить</button></div>
+      <div class="title">
+        <h1>Admin Panel — ReviewCash</h1>
+        <div class="small" style="color:var(--muted)">Управление заявками, пользователями и задачами</div>
+      </div>
+      <div style="margin-left:auto">
+        <button id="refreshBtn" class="btn">Обновить</button>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>Пополнения (ожидают проверки)</h3>
-      <table id="topupsTable">
-        <thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>Код</th><th>QR</th><th>Статус</th><th>Действия</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <div class="layout">
+      <div class="left">
+        <div class="card">
+          <div style="font-weight:800">Навигация</div>
+          <div class="tabs" style="margin-top:8px">
+            <div class="tab active" data-tab="dashboard">Панель</div>
+            <div class="tab" data-tab="users">Пользователи</div>
+            <div class="tab" data-tab="topups">Пополнения</div>
+            <div class="tab" data-tab="withdraws">Выводы</div>
+            <div class="tab" data-tab="tasks">Задания</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div style="font-weight:800">Быстрые действия</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-success" onclick="createTaskAdmin()">Создать задачу</button>
+            <button class="btn btn-danger" onclick="clearPending()">Очистить ожидание</button>
+          </div>
+        </div>
+      </div>
 
-    <div class="card">
-      <h3>Выводы</h3>
-      <table id="withdrawsTable"><thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>ФИО</th><th>Реквизиты</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
-    </div>
+      <div class="right">
+        <div id="dashboard" class="card section">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">Панель</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px">
+            <div class="card" style="padding:12px">Пользователей<div id="statUsers" style="font-weight:900">—</div></div>
+            <div class="card" style="padding:12px">Оборот<div id="statRevenue" style="font-weight:900">—</div></div>
+            <div class="card" style="padding:12px">Заданий<div id="statTasks" style="font-weight:900">—</div></div>
+            <div class="card" style="padding:12px">В ожидании<div id="statPending" style="font-weight:900">—</div></div>
+          </div>
+          <div style="margin-top:12px">
+            <div style="font-weight:800">Последние операции</div>
+            <div id="recentActivity"></div>
+          </div>
+        </div>
 
-    <div class="card">
-      <h3>Создать задачу</h3>
-      <input id="adminTitle" placeholder="Заголовок" style="width:40%;padding:8px;border-radius:8px;margin-right:8px">
-      <input id="adminReward" placeholder="Цена" type="number" style="width:120px;padding:8px;border-radius:8px;margin-right:8px">
-      <button onclick="createTask()" class="btn">Создать</button>
+        <div id="users" class="card section" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800">Пользователи</div></div>
+          <table id="usersTable"><thead><tr><th>ID</th><th>Имя</th><th>Баланс</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div id="topups" class="card section" style="display:none">
+          <div style="font-weight:800">Пополнения</div>
+          <div class="filter"><input id="topupFilter" placeholder="По коду" /><button onclick="loadTopups()" class="btn">Фильтр</button></div>
+          <table id="topupsTable"><thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>Код</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div id="withdraws" class="card section" style="display:none">
+          <div style="font-weight:800">Выводы</div>
+          <table id="withdrawsTable"><thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>Получатель</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div id="tasks" class="card section" style="display:none">
+          <div style="font-weight:800">Задания</div>
+          <table id="tasksTable"><thead><tr><th>ID</th><th>Заголовок</th><th>Цена</th><th>Кол-во</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
     </div>
   </div>
 
 <script>
-const API = '/api';
+const token = new URLSearchParams(location.search).get('token') || '';
+const API_BASE = '/api';
+const socket = io({ transports:['websocket'] });
+socket.on('connect', ()=> console.log('admin socket connected'));
+socket.on('new_topup', ()=> loadTopups());
+socket.on('new_withdraw', ()=> loadWithdraws());
+socket.on('task_update', ()=> loadTasks());
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', ()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const name = t.dataset.tab;
+  document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+  document.getElementById(name).style.display = 'block';
+  if(name==='users') loadUsers();
+  if(name==='topups') loadTopups();
+  if(name==='withdraws') loadWithdraws();
+  if(name==='tasks') loadTasks();
+}));
+
+document.getElementById('refreshBtn').addEventListener('click', ()=> {
+  const active = document.querySelector('.tab.active').dataset.tab;
+  if (active==='dashboard') loadDashboard(); else if (active==='users') loadUsers();
+});
+
+async function loadDashboard(){
+  const r = await fetch(API_BASE + '/admin/dashboard');
+  const j = await r.json();
+  if(j.ok){
+    document.getElementById('statUsers').textContent = j.data.usersCount;
+    document.getElementById('statRevenue').textContent = j.data.totalRevenue + ' ₽';
+    document.getElementById('statTasks').textContent = j.data.tasksCount;
+    document.getElementById('statPending').textContent = j.data.pendingCount;
+    const recent = document.getElementById('recentActivity'); recent.innerHTML = '';
+    j.data.recentActivity.forEach(it => {
+      const d = document.createElement('div'); d.textContent = (it.user? (it.user.id||'') : '') + ' ' + (it.amount||'') + ' ' + (it.status||'');
+      recent.appendChild(d);
+    });
+  }
+}
+
+async function loadUsers(){
+  const r = await fetch(API_BASE + '/admin/users');
+  const j = await r.json();
+  const tbody = document.querySelector('#usersTable tbody'); tbody.innerHTML = '';
+  if(j.ok){ j.users.forEach(u=>{
+    const tr = document.createElement('tr'); tr.innerHTML = `<td>${u.id}</td><td>${u.first_name||u.username||'—'}</td><td>${u.balance} ₽</td>`;
+    tbody.appendChild(tr);
+  }) }
+}
+
 async function loadTopups(){
-  const res = await fetch(API + '/admin/topups');
-  const j = await res.json();
-  const tbody = document.querySelector('#topupsTable tbody');
-  tbody.innerHTML = '';
-  if(!j.ok) return;
-  j.items.forEach(t => {
+  const q = document.getElementById('topupFilter').value || '';
+  const r = await fetch(API_BASE + '/admin/topups' + (q? '?comment=' + encodeURIComponent(q) : ''));
+  const j = await r.json();
+  const tbody = document.querySelector('#topupsTable tbody'); tbody.innerHTML = '';
+  if(j.ok){ j.items.forEach(it=>{
     const tr = document.createElement('tr');
-    const qrImg = t.pay_link ? `<img class="qr-img" src="${t.qr_base64 || ''}" alt="QR">` : (t.qr_base64 ? `<img class="qr-img" src="${t.qr_base64}">` : '');
-    tr.innerHTML = `<td>${t.id}</td><td>${t.uid || (t.user && t.user.id)}</td><td>${t.amount}</td><td><code>${t.manual_code||'—'}</code></td>
-      <td>${qrImg}</td><td>${t.status}</td><td></td>`;
+    tr.innerHTML = `<td>${it.id}</td><td>${it.uid|| (it.user && it.user.id) || ''}</td><td>${it.amount||''} ₽</td><td>${it.manual_code||it.code||''}</td><td>${it.status}</td><td></td>`;
     const actions = tr.querySelector('td:last-child');
-    if(t.status === 'waiting_for_payment' || t.status === 'pending'){
-      const ok = document.createElement('button'); ok.className='btn btn-approve'; ok.textContent='✓ Подтвердить';
-      ok.onclick = async ()=> { await fetch(API + `/admin/topups/${t.id}/approve`, {method:'POST'}); loadTopups(); };
-      const rej = document.createElement('button'); rej.className='btn btn-reject'; rej.textContent='✖ Отклонить';
-      rej.style.marginLeft='8px'; rej.onclick = async ()=> { await fetch(API + `/admin/topups/${t.id}/reject`, {method:'POST'}); loadTopups(); };
-      actions.appendChild(ok); actions.appendChild(rej);
+    if(it.status==='pending' || it.status==='waiting_for_payment'){
+      const a = document.createElement('button'); a.textContent='✓'; a.className='btn btn-success'; a.onclick = async ()=> { await fetch(API_BASE + '/admin/topups/'+it.id+'/approve', {method:'POST'}); loadTopups(); }
+      const b = document.createElement('button'); b.textContent='↩'; b.className='btn btn-danger'; b.onclick = async ()=> { await fetch(API_BASE + '/admin/topups/'+it.id+'/reject', {method:'POST'}); loadTopups(); }
+      actions.appendChild(a); actions.appendChild(b);
     }
     tbody.appendChild(tr);
-  });
+  }) }
 }
 
 async function loadWithdraws(){
-  const res = await fetch(API + '/admin/withdraws');
-  const j = await res.json();
-  const tbody = document.querySelector('#withdrawsTable tbody');
-  tbody.innerHTML = '';
-  if(!j.ok) return;
-  j.items.forEach(w=>{
+  const r = await fetch(API_BASE + '/admin/withdraws');
+  const j = await r.json();
+  const tbody = document.querySelector('#withdrawsTable tbody'); tbody.innerHTML = '';
+  if(j.ok){ j.items.forEach(it=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${w.id}</td><td>${(w.user||{}).id}</td><td>${w.amount}</td><td>${w.name}</td><td>${w.details}</td><td>${w.status}</td><td></td>`;
+    tr.innerHTML = `<td>${it.id}</td><td>${(it.user && it.user.id)||''}</td><td>${it.amount||''} ₽</td><td>${it.name||it.details||''}</td><td>${it.status}</td><td></td>`;
     const actions = tr.querySelector('td:last-child');
-    if(w.status === 'pending'){
-      const ok = document.createElement('button'); ok.className='btn btn-approve'; ok.textContent='Выплатить';
-      ok.onclick = async ()=> { await fetch(API + `/admin/withdraws/${w.id}/approve`, {method:'POST'}); loadWithdraws(); };
-      const rej = document.createElement('button'); rej.className='btn btn-reject'; rej.textContent='Отклонить';
-      rej.style.marginLeft='8px'; rej.onclick = async ()=> { await fetch(API + `/admin/withdraws/${w.id}/reject`, {method:'POST'}); loadWithdraws(); };
-      actions.appendChild(ok); actions.appendChild(rej);
+    if(it.status==='pending'){
+      const a = document.createElement('button'); a.textContent='Платить'; a.className='btn btn-success'; a.onclick = async ()=> { await fetch(API_BASE + '/admin/withdraws/'+it.id+'/approve', {method:'POST'}); loadWithdraws(); }
+      const b = document.createElement('button'); b.textContent='Отклонить'; b.className='btn btn-danger'; b.onclick = async ()=> { await fetch(API_BASE + '/admin/withdraws/'+it.id+'/reject', {method:'POST'}); loadWithdraws(); }
+      actions.appendChild(a); actions.appendChild(b);
     }
     tbody.appendChild(tr);
-  });
+  }) }
 }
 
-async function createTask(){
-  const title = document.getElementById('adminTitle').value||'';
-  const reward = Number(document.getElementById('adminReward').value||0);
-  if(!title||!reward){ alert('Заполните поля'); return; }
-  const res = await fetch(API + '/admin/task-create', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title, reward})});
-  const j = await res.json();
-  if(j.ok){ alert('Задание создано'); }
-  loadTopups(); loadWithdraws();
+async function loadTasks(){
+  const r = await fetch(API_BASE + '/admin/tasks');
+  const j = await r.json();
+  const tbody = document.querySelector('#tasksTable tbody'); tbody.innerHTML = '';
+  if(j.ok){ j.tasks.forEach(t=>{
+    const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.id}</td><td>${t.title||t.desc||''}</td><td>${t.reward||t.unit_price||0} ₽</td><td>${t.qty||1}</td>`;
+    tbody.appendChild(tr);
+  }) }
 }
 
-loadTopups(); loadWithdraws();
+function createTaskAdmin(){
+  const title = prompt('Заголовок задачи');
+  if(!title) return;
+  const reward = prompt('Цена за 1 (в рублях)', '50');
+  if(!reward) return;
+  fetch(API_BASE + '/admin/task-create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, desc:'', reward: Number(reward) }) })
+    .then(()=> { alert('Создано'); loadTasks(); });
+}
+
+function clearPending(){ if(confirm('Очистить все ожидания топапов и выводов?')){ alert('Очистка (локально)'); } }
+
+loadDashboard();
 </script>
 </body>
 </html>
