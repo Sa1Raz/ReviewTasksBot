@@ -8,48 +8,40 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    :root{ --bg:#020617; --card:rgba(15,23,42,0.96); --accent1:#22c55e; --accent2:#0ea5e9; --muted:#94a3b8; --text:#e2f3ff; --radius:18px; --glass-border:1px solid rgba(148,163,184,0.14); --shadow:0 4px 30px rgba(0,0,0,0.1); }
-    *{box-sizing:border-box; transition:all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); will-change: transform, opacity; } /* Плавные анимации без лагов */
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:var(--text);background:linear-gradient(145deg,#020617,#020817);padding:16px;min-height:100vh; touch-action: manipulation; -webkit-tap-highlight-color: transparent; } /* Mobile optimizations */
+    :root{ --bg:#020617; --card:rgba(15,23,42,0.96); --accent1:#22c55e; --accent2:#0ea5e9; --muted:#94a3b8; --text:#e2f3ff; --radius:18px; --glass-border:1px solid rgba(148,163,184,0.14); --shadow:0 8px 40px rgba(0,0,0,0.35); }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:var(--text);background:linear-gradient(145deg,#020617,#020817);padding:16px;min-height:100vh}
     .container{max-width:760px;margin:0 auto}
-    .status-bar{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:999px;border:var(--glass-border);background:rgba(255,255,255,0.02);margin-bottom:18px; box-shadow:var(--shadow);}
+    .status-bar{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:999px;border:var(--glass-border);background:rgba(255,255,255,0.02);margin-bottom:18px; box-shadow:var(--shadow)}
     .app-pill{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-weight:700}
     .balance-chip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);display:flex;align-items:center;gap:8px}
-    .card{background:var(--card);border-radius:20px;padding:20px;border:var(--glass-border);margin-bottom:18px; box-shadow:var(--shadow); opacity:0; transform: translateY(20px); animation: fadeIn 0.5s forwards; }
-    @keyframes fadeIn { to { opacity:1; transform: translateY(0); } }
+    .card{background:var(--card);border-radius:20px;padding:20px;border:var(--glass-border);margin-bottom:18px;box-shadow:var(--shadow)}
     .tabs{display:flex;gap:8px;margin-bottom:12px}
-    .tab{flex:1;padding:10px;border-radius:999px;text-align:center;background:rgba(255,255,255,0.02);cursor:pointer;font-weight:800; min-height:50px; touch-action: pan-y; } /* Touch optimization */
+    .tab{flex:1;padding:10px;border-radius:999px;text-align:center;background:rgba(255,255,255,0.02);cursor:pointer;font-weight:800}
     .tab.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018}
-    .avatar{width:92px;height:92px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(180deg,#0f1724,#020617);display:flex;align-items:center;justify-content:center;border:4px solid rgba(34,197,94,0.14); box-shadow:var(--shadow);}
+    .avatar{width:92px;height:92px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(180deg,#0f1724,#020617);display:flex;align-items:center;justify-content:center;border:4px solid rgba(34,197,94,0.14)}
     .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
     .balance{font-weight:900;font-size:44px;text-align:center;background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .action-row{display:flex;gap:10px;margin-top:12px}
-    .action-btn{flex:1;padding:12px;border-radius:999px;text-align:center;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018;border:none; min-height:60px; touch-action: pan-y; }
+    .action-btn{flex:1;padding:12px;border-radius:999px;text-align:center;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018;border:none}
     .action-btn.ghost{background:rgba(255,255,255,0.02);border:var(--glass-border);color:var(--text)}
-    .action-btn:hover { transform: scale(1.05); }
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.75);backdrop-filter:blur(6px);z-index:9999;padding:16px; opacity:0; transition:opacity 0.3s ease;}
-    .modal.open{display:flex; opacity:1;}
-    .modal-card{width:100%;max-width:640px;background:var(--card);border-radius:16px;padding:20px;border:var(--glass-border); box-shadow:var(--shadow); transform:scale(0.95); transition:transform 0.3s ease;}
-    .modal.open .modal-card { transform:scale(1); }
-    .close-btn { background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer; padding:10px; }
-    input[type="number"], input[type="text"]{width:100%;padding:12px;border-radius:12px;border:var(--glass-border);background:rgba(255,255,255,0.02);color:var(--text);margin-top:8px; font-size:16px; touch-action: pan-y; }
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.75);backdrop-filter:blur(6px);z-index:9999;padding:16px}
+    .modal.open{display:flex}
+    .modal-card{width:100%;max-width:640px;background:var(--card);border-radius:16px;padding:20px;border:var(--glass-border)}
+    .close-btn{position:absolute;right:12px;top:10px;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer}
+    input[type="number"], input[type="text"], textarea{width:100%;padding:12px;border-radius:12px;border:var(--glass-border);background:rgba(255,255,255,0.02);color:var(--text);margin-top:8px}
     .topup-amount-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
-    .amount-btn{padding:12px;border-radius:12px;background:rgba(255,255,255,0.02);border:var(--glass-border);font-weight:800;cursor:pointer; min-height:60px; touch-action: pan-y; }
-    .sbp-details{background:linear-gradient(90deg, rgba(14,165,233,0.03), rgba(34,197,94,0.03));padding:12px;border-radius:10px;margin-top:12px; box-shadow:var(--shadow);}
+    .amount-btn{padding:12px;border-radius:12px;background:rgba(255,255,255,0.02);border:var(--glass-border);font-weight:800;cursor:pointer}
+    .sbp-details{background:linear-gradient(90deg, rgba(14,165,233,0.03), rgba(34,197,94,0.03));padding:12px;border-radius:10px;margin-top:12px}
     .tasks-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
-    .task-item{background:rgba(255,255,255,0.02);padding:12px;border-radius:12px;display:flex;justify-content:space-between;align-items:center; box-shadow:var(--shadow);}
-    .fab{position:fixed;right:20px;bottom:90px;width:56px;height:56px;border-radius:999px;background:linear-gradient(90deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#021018;cursor:pointer; min-width:70px; min-height:70px; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:rgba(255,255,255,0.02);padding:8px;border-radius:999px;border:var(--glass-border);display:flex;gap:8px; box-shadow:var(--shadow); }
-    .nav-item{padding:8px 12px;border-radius:999px;color:var(--muted);cursor:pointer; min-width:80px; touch-action: pan-y; }
+    .task-item{background:rgba(255,255,255,0.02);padding:12px;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
+    .fab{position:fixed;right:20px;bottom:120px;width:56px;height:56px;border-radius:999px;background:linear-gradient(90deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#021018;cursor:pointer}
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:rgba(255,255,255,0.02);padding:8px;border-radius:999px;border:var(--glass-border);display:flex;gap:8px}
+    .nav-item{padding:8px 12px;border-radius:999px;color:var(--muted);cursor:pointer}
     .nav-item.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021018}
     .muted{color:var(--muted)}
     .small{font-size:13px}
-    .qr-img{max-width:180px;border-radius:12px;display:block;margin:12px auto; box-shadow:var(--shadow);}
-    .spinner{display:inline-block;width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--text);animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .filter-input { width:100%; padding:10px; margin-bottom:12px; border-radius:12px; border:var(--glass-border); background:rgba(255,255,255,0.02); color:var(--text); font-size:16px; }
-    @media(max-width:520px){ .balance{font-size:36px} .avatar{width:80px;height:80px} .action-btn{min-height:50px; font-size:16px;} .tab{min-height:45px; font-size:15px;} .bottom-nav { gap: 4px; padding: 4px; } .nav-item { padding: 6px 10px; min-width: 70px; font-size: 12px; } } /* Mobile responsive */
+    .qr-img{max-width:220px;border-radius:12px;display:block;margin:12px auto}
+    @media(max-width:520px){ .balance{font-size:36px} .avatar{width:80px;height:80px} }
   </style>
 </head>
 <body>
@@ -59,33 +51,35 @@
       <div class="balance-chip" aria-live="polite"><span id="headerBalanceText">0 ₽</span></div>
     </div>
 
-    <!-- Tabs -->
     <div class="card">
       <div class="tabs" role="tablist">
         <div class="tab active" data-tab="tasks">Мои задания</div>
         <div class="tab" data-tab="perform">Выполнить задания</div>
       </div>
 
-      <!-- Tasks content (Мои задания) -->
+      <!-- Мои задания -->
       <div id="tasksPanel">
-        <input type="text" class="filter-input" id="tasksFilter" placeholder="Поиск по заголовку или описанию...">
-        <div id="tasksEmpty" class="empty-state" style="text-align:center;padding:40px;border-radius:12px;background:rgba(255,255,255,0.01);">Очередь пуста<br><button onclick="loadTasks()" style="margin-top:10px">Обновить</button></div>
+        <input id="tasksFilter" type="text" placeholder="Поиск...">
+        <div id="tasksEmpty" class="empty-state" style="text-align:center;padding:24px;border-radius:12px;background:rgba(255,255,255,0.01);">
+          <div style="font-weight:800;font-size:18px;margin-bottom:8px">Задания появятся здесь</div>
+          <div class="small muted">Нажмите + чтобы создать</div>
+        </div>
         <div class="tasks-list" id="tasksList" style="display:none"></div>
       </div>
 
-      <!-- Perform tasks content (Выполнить задания) -->
+      <!-- Выполнить -->
       <div id="performPanel" style="display:none">
-        <input type="text" class="filter-input" id="performFilter" placeholder="Поиск по заголовку или описанию...">
+        <input id="performFilter" type="text" placeholder="Поиск...">
         <div class="tasks-list" id="performList"></div>
       </div>
 
-      <!-- Profile content -->
+      <!-- Профиль (в модальном окне сверху) -->
       <div id="profilePanel" style="display:none">
         <div style="text-align:center">
           <div class="avatar"><img id="userPhoto" src="" alt="Аватар"></div>
-          <h2 id="userName" style="margin:6px 0 0">Пользователь</h2>
+          <h2 id="userName">Пользователь</h2>
           <div id="userHandle" class="muted small">@user</div>
-          <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.02);padding-top:12px">
+          <div style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.02);padding-top:12px">
             <div class="small muted">Текущий баланс</div>
             <div class="balance" id="balance">0 ₽</div>
             <div class="action-row">
@@ -106,24 +100,20 @@
     <div class="nav-item" data-nav="profile">Профиль</div>
   </div>
 
-  <!-- TOPUP Modal -->
+  <!-- POPUPS / MODALS -->
   <div id="topupModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <button class="close-btn" data-close>×</button>
       <h3>Пополнить через СБП</h3>
-      <p class="small muted">Выберите сумму или введите свою. Система создаст заявку и сгенерирует ссылку/QR для оплаты.</p>
+      <p class="small muted">Выберите сумму или введите свою. Система сгенерирует QR и код для перевода.</p>
       <div id="sbpStep1">
-        <div class="label-row">
-          <div class="small">Быстрый выбор</div>
-          <div class="small muted">Мин. 150 ₽</div>
-        </div>
         <div class="topup-amount-grid">
           <button class="amount-btn" data-amount="300">300 ₽</button>
           <button class="amount-btn" data-amount="500">500 ₽</button>
           <button class="amount-btn" data-amount="1000">1 000 ₽</button>
           <button class="amount-btn" data-amount="2000">2 000 ₽</button>
         </div>
-        <label class="small muted" style="margin-top:12px">Своя сумма</label>
+        <label class="small muted">Своя сумма</label>
         <input type="number" id="customAmount" placeholder="Введите сумму (от 150 ₽)" min="150">
         <div style="display:flex;gap:10px;margin-top:12px">
           <button class="action-btn" id="toSBP">Перевести через СБП</button>
@@ -132,41 +122,38 @@
       </div>
       <div id="sbpStep2" style="display:none">
         <div class="sbp-details">
-          <div style="font-weight:700">Реквизиты для перевода</div>
-          <div style="margin-top:8px">Получатель: <strong>Компания ReviewCash</strong></div>
-          <div>Договор: <strong>—</strong></div>
+          <div style="font-weight:700">Реквизиты (без номера телефона)</div>
+          <div style="margin-top:8px">Получатель: <strong>ReviewCash</strong></div>
           <div style="margin-top:8px">Сумма: <strong id="sbpAmount">— ₽</strong></div>
         </div>
         <img id="qrImg" class="qr-img" src="" alt="QR код">
-        <label class="small muted" style="margin-top:12px">Комментарий к переводу (скопируйте)</label>
+        <label class="small muted" style="margin-top:12px">Комментарий к переводу (обязательно)</label>
         <input type="text" id="transferComment" readonly value="">
-        <a id="openBankLink" href="#" target="_blank" class="action-btn" style="display:block;margin-top:12px">Открыть банк</a>
+        <a id="openBankLink" class="action-btn" href="#" target="_blank" rel="noopener" style="display:block;margin-top:12px">Открыть банк</a>
         <button class="action-btn ghost" id="iPaidBtn" style="margin-top:8px">Я оплатил</button>
       </div>
     </div>
   </div>
 
-  <!-- Withdraw Modal -->
   <div id="withdrawModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <button class="close-btn" data-close>×</button>
       <h3>Вывести средства</h3>
-      <p class="small muted">Мин. 300 ₽. Укажите реквизиты.</p>
+      <p class="small muted">Мин. 300 ₽. Укажите реквизиты (карта/СБП). Номер телефона не сохраняется публично.</p>
       <input type="number" id="wAmount" placeholder="Сумма (от 300 ₽)" min="300">
-      <input type="text" id="wName" placeholder="Имя получателя">
-      <input type="text" id="wDetails" placeholder="Реквизиты (карта/СБП)">
+      <input type="text" id="wName" placeholder="ФИО или ник в банке">
+      <input type="text" id="wDetails" placeholder="Реквизиты (карта / СБП) — не будет публично отображён">
       <button class="action-btn" id="sendWithdrawBtn" style="width:100%;margin-top:12px">Отправить</button>
     </div>
   </div>
 
-  <!-- Create Task Modal -->
   <div id="createTaskModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <button class="close-btn" data-close>×</button>
       <h3>Создать задание</h3>
-      <input id="adminTaskTitle" placeholder="Заголовок" style="width:100%;padding:8px;margin-top:8px;border-radius:8px">
-      <input id="adminTaskReward" placeholder="Цена" type="number" style="width:100%;padding:8px;margin-top:8px;border-radius:8px">
-      <textarea id="adminTaskDesc" placeholder="Описание" style="width:100%;margin-top:8px;border-radius:8px;padding:8px"></textarea>
+      <input id="adminTaskTitle" placeholder="Заголовок" />
+      <input id="adminTaskReward" placeholder="Цена" type="number" />
+      <textarea id="adminTaskDesc" placeholder="Описание"></textarea>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="action-btn" id="createAdminTask">Создать</button>
         <button class="action-btn ghost" data-close>Отмена</button>
@@ -175,145 +162,216 @@
   </div>
 
 <script>
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
-const my_uid = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 'test_user';
-const tgUser = tg.initDataUnsafe.user || { first_name: 'Test', username: 'test', photo_url: '' };
-const BASE_URL = '/api'; // Или ваш полный URL backend
+(function(){
+  'use strict';
+  // Telegram WebApp safety if present
+  const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  try { tg?.ready?.(); tg?.expand?.(); } catch(e){}
 
-// SocketIO for real-time
-const socket = io({ transports: ['websocket'] });
-socket.on('connect', () => console.log('connected', socket.id));
-socket.on('user_update', data => { if (data.user_id === my_uid) updateBalanceUI(data.balance); });
-socket.on('task_update', loadTasks);
-socket.on('disconnect', reason => console.log('disconnected', reason));
+  // user id from Telegram WebApp (or fallback test id)
+  const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {id: 'test_user', first_name: 'Гость', username: 'guest'};
+  const my_uid = tgUser.id || 'test_user';
 
-const balanceEl = document.getElementById('balance');
-const headerBalanceText = document.getElementById('headerBalanceText');
-const userPhoto = document.getElementById('userPhoto');
-const userNameEl = document.getElementById('userName');
-const userHandleEl = document.getElementById('userHandle');
-const tasksList = document.getElementById('tasksList');
-const tasksEmpty = document.getElementById('tasksEmpty');
-const tabs = document.querySelectorAll('.tab');
-const navItems = document.querySelectorAll('.nav-item');
+  const BASE = '/api';
+  const tasksList = document.getElementById('tasksList');
+  const tasksEmpty = document.getElementById('tasksEmpty');
+  const performList = document.getElementById('performList');
+  const balanceEl = document.getElementById('balance');
+  const headerBalanceText = document.getElementById('headerBalanceText');
 
-function fmtRub(n){ return Number(n||0).toLocaleString('ru-RU') + ' ₽'; }
-function showModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
-function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
-
-document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', e => closeModal(e.target.closest('.modal'))));
-
-// profile
-userPhoto.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${my_uid}`;
-userNameEl.textContent = tgUser.first_name || 'Пользователь';
-userHandleEl.textContent = tgUser.username ? '@' + tgUser.username : '@user';
-
-// tabs navigation
-tabs.forEach(t => t.addEventListener('click', ()=> {
-  tabs.forEach(x => x.classList.toggle('active', x===t));
-  const tabName = t.dataset.tab;
-  document.getElementById('tasksPanel').style.display = tabName==='tasks' ? 'block' : 'none';
-  document.getElementById('performPanel').style.display = tabName==='perform' ? 'block' : 'none';
-}));
-
-navItems.forEach(n => n.addEventListener('click', ()=> {
-  navItems.forEach(x => x.classList.toggle('active', x===n));
-  const navName = n.dataset.nav;
-  if (navName === 'tasks') document.querySelector('.tab[data-tab="tasks"]').click();
-  if (navName === 'perform') document.querySelector('.tab[data-tab="perform"]').click();
-  document.getElementById('tasksTab').style.display = navName === 'profile' ? 'none' : 'block';
-  document.getElementById('profilePanel').style.display = navName === 'profile' ? 'block' : 'none';
-}));
-
-// fab -> create task
-document.getElementById('createFab').addEventListener('click', ()=> showModal(document.getElementById('createTaskModal')));
-
-// load tasks (Мои задания)
-async function loadTasks(){
-  const res = await fetch('/api/tasks/list');
-  const j = await res.json();
-  if (j.ok){
-    let tasks = j.tasks || [];
-    if (!tasks.length){ tasksList.style.display='none'; tasksEmpty.style.display='block'; return; }
-    tasksList.innerHTML = '';
-    tasks.forEach(t => {
-      const item = document.createElement('div'); item.className = 'task-item';
-      item.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description || t.desc || ''}</div></div>
-        <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||t.reward||0)} ₽</div><div class="small muted">${t.qty||t.count||1} шт</div></div>`;
-      tasksList.appendChild(item);
+  // socket
+  let socket = null;
+  try {
+    socket = io({ transports: ['websocket'] });
+    socket.on('connect', ()=> console.log('socket connected', socket.id));
+    socket.on('task_update', ()=> loadTasks());
+    socket.on('user_update', data => {
+      if(String(data.user_id) === String(my_uid)) updateBalanceUI(data.balance);
     });
-    tasksList.style.display='flex'; tasksEmpty.style.display='none';
+  } catch(e){ console.warn('socket init', e); }
+
+  // helpers
+  function fmtRub(n){ return Number(n||0).toLocaleString('ru-RU') + ' ₽'; }
+  function showModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
+  function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', e => {
+    const modal = e.target.closest('.modal');
+    if(modal) closeModal(modal);
+  }));
+
+  // profile
+  document.getElementById('userPhoto').src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${my_uid}`;
+  document.getElementById('userName').textContent = tgUser.first_name || 'Пользователь';
+  document.getElementById('userHandle').textContent = tgUser.username ? '@'+tgUser.username : '@user';
+
+  // tabs and bottom nav
+  const tabs = document.querySelectorAll('.tab'), navs = document.querySelectorAll('.nav-item');
+  tabs.forEach(t => t.addEventListener('click', ()=> {
+    tabs.forEach(x=>x.classList.toggle('active', x===t));
+    const name = t.dataset.tab;
+    document.getElementById('tasksPanel').style.display = name==='tasks' ? 'block' : 'none';
+    document.getElementById('performPanel').style.display = name==='perform' ? 'block' : 'none';
+  }));
+  navs.forEach(n => n.addEventListener('click', ()=> {
+    navs.forEach(x => x.classList.toggle('active', x===n));
+    const nav = n.dataset.nav;
+    document.querySelector(`.tab[data-tab="${nav==='profile' ? 'tasks' : nav}"]`).click();
+    document.getElementById('profilePanel').style.display = nav==='profile' ? 'block' : 'none';
+  }));
+
+  // FAB open create task (limited UX: requires admin)
+  document.getElementById('createFab').addEventListener('click', ()=> showModal(document.getElementById('createTaskModal')));
+
+  // load tasks (my tasks listing)
+  async function loadTasks(){
+    try{
+      const res = await fetch(BASE + '/tasks/list');
+      const j = await res.json();
+      if(j.ok){
+        const tasks = j.tasks || [];
+        if(!tasks.length){ tasksList.style.display='none'; tasksEmpty.style.display='block'; return; }
+        tasksList.innerHTML = '';
+        tasks.forEach(t => {
+          const div = document.createElement('div'); div.className = 'task-item';
+          div.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description||t.desc||''}</div></div>
+            <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||t.reward||0)} ₽</div><div class="small muted">${t.qty||t.count||1} шт</div></div>`;
+          tasksList.appendChild(div);
+        });
+        tasksList.style.display='flex'; tasksEmpty.style.display='none';
+      }
+    } catch(e){ console.warn(e) }
   }
-  // Фильтр
-  document.getElementById('tasksFilter').addEventListener('input', e => {
+
+  // load perform tasks (same endpoint for now)
+  async function loadPerformTasks(){
+    try{
+      const res = await fetch(BASE + '/tasks/list');
+      const j = await res.json();
+      if(j.ok){
+        performList.innerHTML = '';
+        (j.tasks || []).forEach(t => {
+          const div = document.createElement('div'); div.className = 'task-item';
+          const btn = document.createElement('button'); btn.className = 'action-btn'; btn.textContent = 'Выполнить';
+          btn.onclick = ()=> alert('Открыть инструкцию выполнения в WebApp/ссылке (реализуйте кастомно)');
+          div.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description||t.desc||''}</div></div>
+            <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||t.reward||0)} ₽</div><div class="small muted">${t.qty||t.count||1} шт</div></div>`;
+          div.appendChild(btn);
+          performList.appendChild(div);
+        });
+      }
+    } catch(e){ console.warn(e) }
+  }
+
+  // profile/balance
+  async function loadProfile(){
+    try{
+      const res = await fetch(BASE + '/profile_me?uid=' + encodeURIComponent(my_uid));
+      const j = await res.json();
+      if(j.ok && j.user){
+        updateBalanceUI(j.user.balance);
+      }
+    } catch(e){ console.warn(e) }
+  }
+  function updateBalanceUI(bal){ const txt = fmtRub(bal); balanceEl.textContent = txt; headerBalanceText.textContent = txt; }
+
+  // topup flow
+  let currentTopup = null;
+  document.querySelectorAll('.amount-btn').forEach(b => b.addEventListener('click', ()=> prepareSBPTransfer(Number(b.dataset.amount))));
+  document.getElementById('toSBP').addEventListener('click', ()=> {
+    const v = Number(document.getElementById('customAmount').value || 0);
+    prepareSBPTransfer(v);
+  });
+
+  async function prepareSBPTransfer(amount){
+    if(!amount || amount < 150){ alert('Минимум 150 ₽'); return; }
+    try{
+      const res = await fetch(BASE + '/user/topup-link', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: my_uid, amount })
+      });
+      const j = await res.json();
+      if(!j.ok){ alert(j.errmsg || 'Ошибка'); return; }
+      currentTopup = j.topup;
+      document.getElementById('sbpAmount').textContent = amount.toLocaleString() + ' ₽';
+      document.getElementById('transferComment').value = j.manual_code;
+      document.getElementById('qrImg').src = j.qr_base64;
+      document.getElementById('openBankLink').href = j.pay_link;
+      document.getElementById('sbpStep1').style.display='none';
+      document.getElementById('sbpStep2').style.display='block';
+      showModal(document.getElementById('topupModal'));
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
+  }
+
+  document.getElementById('iPaidBtn').addEventListener('click', async ()=>{
+    if(!currentTopup){ alert('Нет активной заявки'); return; }
+    try{
+      const res = await fetch(BASE + '/user/topup-confirm', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: my_uid, topup_id: currentTopup.id })
+      });
+      const j = await res.json();
+      if(!j.ok){ alert(j.errmsg || 'Ошибка'); return; }
+      alert('Заявка создана — ожидает проверки администратора.');
+      closeModal(document.getElementById('topupModal'));
+      document.getElementById('sbpStep1').style.display='block';
+      document.getElementById('sbpStep2').style.display='none';
+      currentTopup = null;
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
+  });
+
+  // withdraw
+  document.getElementById('sendWithdrawBtn').addEventListener('click', async ()=>{
+    const amount = Number(document.getElementById('wAmount').value||0);
+    const name = document.getElementById('wName').value||'';
+    const details = document.getElementById('wDetails').value||'';
+    if(amount < 300) { alert('Минимум 300 ₽'); return; }
+    try{
+      const res = await fetch(BASE + '/user/withdraw', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: my_uid, amount, name, details })
+      });
+      const j = await res.json();
+      if(!j.ok){ alert(j.errmsg || 'Ошибка'); return; }
+      alert('Заявка отправлена на проверку администратору.');
+      closeModal(document.getElementById('withdrawModal'));
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
+  });
+
+  // create task (admin in-app)
+  document.getElementById('createAdminTask').addEventListener('click', async ()=>{
+    const title = document.getElementById('adminTaskTitle').value || '';
+    const reward = Number(document.getElementById('adminTaskReward').value || 0);
+    const desc = document.getElementById('adminTaskDesc').value || '';
+    if(!title || !reward) return alert('Заполните заголовок и цену');
+    try{
+      const res = await fetch(BASE + '/tasks/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ title, description: desc, unit_price: reward, qty: 1 })
+      });
+      const j = await res.json();
+      if(j.ok){ alert('Задание создано'); closeModal(document.getElementById('createTaskModal')); loadTasks(); }
+      else alert(j.errmsg || 'Ошибка');
+    } catch(e){ console.error(e); alert('Ошибка сети'); }
+  });
+
+  // initial
+  loadTasks(); loadPerformTasks(); loadProfile();
+  setInterval(loadProfile, 60_000);
+
+  // small filters
+  document.getElementById('tasksFilter').addEventListener('input', e=>{
     const q = e.target.value.toLowerCase();
-    Array.from(tasksList.children).forEach(item => item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none');
+    Array.from(tasksList.children).forEach(it => it.style.display = it.textContent.toLowerCase().includes(q) ? '' : 'none');
   });
-}
-
-// load perform tasks (Выполнить задания)
-async function loadPerformTasks(){
-  const list = document.getElementById('performList');
-  list.innerHTML = '';
-  const res = await fetch('/api/tasks/list'); // Замените на /api/tasks/available если добавите
-  const j = await res.json();
-  if (j.ok) {
-    const tasks = j.tasks || [];
-    tasks.forEach(t => {
-      const item = document.createElement('div'); item.className = 'task-item';
-      item.innerHTML = `<div><div style="font-weight:800">${t.title}</div><div class="small muted">${t.description || t.desc || ''}</div></div>
-        <div style="text-align:right"><div style="font-weight:900">${(t.unit_price||t.reward||0)} ₽</div><div class="small muted">${t.qty||t.count||1} шт</div></div>`;
-      list.appendChild(item);
-    });
-  }
-  // Фильтр
-  document.getElementById('performFilter').addEventListener('input', e => {
+  document.getElementById('performFilter').addEventListener('input', e=>{
     const q = e.target.value.toLowerCase();
-    Array.from(list.children).forEach(item => item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none');
+    Array.from(performList.children).forEach(it => it.style.display = it.textContent.toLowerCase().includes(q) ? '' : 'none');
   });
-}
 
-// load profile
-async function loadProfile(){
-  const res = await fetch(`/api/profile_me?uid=${encodeURIComponent(my_uid)}`);
-  const j = await res.json();
-  if (j.ok && j.user){
-    updateBalanceUI(j.user.balance);
-  }
-}
-
-function updateBalanceUI(bal){
-  const txt = fmtRub(bal);
-  balanceEl.textContent = txt;
-  headerBalanceText.textContent = txt;
-}
-
-// Create task
-document.getElementById('createAdminTask').addEventListener('click', async () => {
-  const title = document.getElementById('adminTaskTitle').value || '';
-  const reward = Number(document.getElementById('adminTaskReward').value || 0);
-  const desc = document.getElementById('adminTaskDesc').value || '';
-  if (!title || !reward) return alert('Заполните заголовок и цену');
-  const res = await fetch('/api/tasks/create', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ title, description: desc, unit_price: reward, qty: 1 }) // Пример qty
-  });
-  const j = await res.json();
-  if (j.ok) {
-    alert('Задание создано!');
-    closeModal(document.getElementById('createTaskModal'));
-    loadTasks();
-  } else alert(j.errmsg || 'Ошибка');
-});
-
-// init
-loadPerformTasks();
-loadTasks();
-loadProfile();
-setInterval(loadProfile, 60_000);
+  // expose profile topup/withdraw buttons
+  document.getElementById('topupBtn').addEventListener('click', ()=> { document.getElementById('sbpStep1').style.display='block'; document.getElementById('sbpStep2').style.display='none'; showModal(document.getElementById('topupModal')); });
+  document.getElementById('withdrawBtn').addEventListener('click', ()=> showModal(document.getElementById('withdrawModal')));
+})();
 </script>
 </body>
 </html>
