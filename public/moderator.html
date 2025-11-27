@@ -3,141 +3,106 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-  <title>Модерация отзывов — ReviewCash</title>
+  <title>Модерация — ReviewCash</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    :root { --bg: #141e2f; --panel: #1e293b; --panel-light: #223353; --accent: #3b82f6; --success: #10b981; --error: #ef4444; --text: #e8effa; --muted: #a1accf; --radius: 18px; --shadow: 0 4px 30px rgba(0,0,0,0.1); }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-    .container { max-width: 520px; margin: 32px auto; padding: 18px; }
-    .main-title { font-weight: 900; font-size: 24px; margin-bottom: 7px; }
-    .subtitle { font-size: 15px; color: var(--muted); margin-bottom: 16px; }
-    .card { background: var(--panel); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
-    .review-title { font-weight: 700; font-size: 18px; margin: 8px 0; }
-    .review-link { display: block; background: var(--panel-light); padding: 8px; border-radius: 10px; margin-bottom: 6px; word-break: break-all; box-shadow: var(--shadow); }
-    .proof-img { border-radius: 12px; max-width: 100%; box-shadow: var(--shadow); }
-    .actions { display: flex; gap: 8px; margin-top: 12px; }
-    .btn { flex: 1; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: 800; box-shadow: var(--shadow); }
-    .btn:hover { transform: scale(1.02); }
-    .btn-approve { background: linear-gradient(90deg, var(--success), #28ffc1); color: #042016; }
-    .btn-reject { background: linear-gradient(90deg, var(--error), #ff7b7b); color: #fff; }
-    .stats { display: flex; gap: 10px; margin-top: 12px; }
-    .stat-box { background: var(--panel-light); padding: 10px; border-radius: 10px; flex: 1; text-align: center; box-shadow: var(--shadow); }
-    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.3s ease; z-index: 999; }
-    .modal.open { display: flex; opacity: 1; }
-    .modal-card { background: var(--panel); padding: 18px; border-radius: 12px; box-shadow: var(--shadow); transform: scale(0.95); transition: transform 0.3s ease; }
-    .modal.open .modal-card { transform: scale(1); }
+    body{font-family:'Inter',sans-serif;background:#0d1624;color:#e6f2ff;margin:0;padding:18px}
+    .container{max-width:720px;margin:0 auto}
+    .card{background:#091227;padding:18px;border-radius:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+    .title{font-weight:800;font-size:20px;margin-bottom:8px}
+    .muted{color:#9fb0c9}
+    .proof-img{max-width:100%;border-radius:8px;margin-top:8px}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:8px;border:none;cursor:pointer}
+    .btn-approve{background:#16a34a;color:#011}
+    .btn-reject{background:#ef4444;color:white}
   </style>
 </head>
 <body>
   <div class="container">
-    <div><div class="main-title">🛡 Модерация отзывов</div><div class="subtitle" id="adminName">Вы: —</div></div>
+    <div class="card">
+      <div class="title">🛡 Модерация отзывов</div>
+      <div class="muted" id="adminName">Вы: —</div>
+    </div>
 
-    <div id="reviewCard" class="card" style="display:none">
-      <div class="small muted" id="reviewId">ID: —</div>
-      <div class="review-title" id="reviewTitle"></div>
-      <div class="review-link"><a id="reviewTarget" href="#" target="_blank" style="color:var(--accent)"></a></div>
-      <div id="proofBox"></div>
+    <div id="reviewCard" class="card" style="display:none;">
+      <div>ID: <b id="reviewId">—</b></div>
+      <div>Пользователь: <span id="userId">—</span></div>
+      <div style="font-weight:700;margin-top:8px" id="reviewTitle">—</div>
+      <div class="muted" id="siteName"></div>
+      <div class="proof" id="proofBox"></div>
       <div class="actions">
-        <button class="btn btn-reject" id="btnReject"><i class="fas fa-times"></i> Отклонить</button>
-        <button class="btn btn-approve" id="btnApprove"><i class="fas fa-check"></i> Подтвердить</button>
+        <button class="btn btn-reject" id="btnReject">Отклонить</button>
+        <button class="btn btn-approve" id="btnApprove">Подтвердить</button>
       </div>
     </div>
 
-    <div id="emptyState" style="display:none;text-align:center;padding:40px;color:var(--muted)">Очередь пуста<br><button onclick="loadNextTask()" style="margin-top:10px">Обновить</button></div>
+    <div id="empty" class="card" style="display:none">Очередь пуста. <button onclick="loadNextTask()">Обновить</button></div>
 
-    <div class="stats">
-      <div class="stat-box"><div id="statDone">0</div><div class="small muted">Проверено вами</div></div>
-      <div class="stat-box"><div id="statQueue">0</div><div class="small muted">В очереди</div></div>
-    </div>
-  </div>
-
-  <div id="modal" class="modal"><div class="modal-card"><div id="modalMsg"></div><div style="margin-top:12px"><button onclick="closeModal()" class="btn btn-approve">OK</button></div></div></div>
-
-  <div id="rejectReasonModal" class="modal">
-    <div class="modal-card">
-      <h3>Причина отказа</h3>
-      <textarea id="rejectReason" placeholder="Введите причину"></textarea>
-      <button class="btn btn-reject" id="confirmReject">Подтвердить</button>
+    <div class="card">
+      <div>Статистика</div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <div style="flex:1;background:#071028;padding:10px;border-radius:8px">Проверено: <b id="statDone">0</b></div>
+        <div style="flex:1;background:#071028;padding:10px;border-radius:8px">В очереди: <b id="statQueue">0</b></div>
+      </div>
     </div>
   </div>
 
 <script>
 const token = new URLSearchParams(location.search).get('token') || '';
-async function api(path, method = 'GET', body = null) {
-  try {
-    const opts = { headers: { 'Authorization': 'Bearer ' + token } };
-    if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body || {}); }
-    const res = await fetch(path + '?token=' + token, opts);
-    return await res.json();
-  } catch (e) { return null; }
+async function api(path, method='GET', body=null){
+  const opts = {headers: {}};
+  if(method !== 'GET'){ opts.method = method; opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const res = await fetch(path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token), opts);
+  return await res.json();
 }
 
-async function loadStats() {
+async function loadStats(){
   const res = await api('/api/moderator/me');
-  if (res && res.ok) {
-    document.getElementById('adminName').textContent = 'Вы: ' + (res.name || 'Модератор');
-    document.getElementById('statDone').textContent = res.tasks_reviewed || 0;
-  }
+  if(res && res.ok){ document.getElementById('adminName').textContent = 'Вы: ' + (res.name || 'Модератор'); document.getElementById('statDone').textContent = res.tasks_reviewed || 0; }
 }
-
-function showModal(msg) { document.getElementById('modalMsg').textContent = msg; document.getElementById('modal').classList.add('open'); }
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
 let currentAssignmentId = null;
-async function loadNextTask() {
+async function loadNextTask(){
   const res = await api('/api/moderator/queue');
-  if (!res || !res.ok || !res.assignment) { 
-    document.getElementById('reviewCard').style.display = 'none'; 
-    document.getElementById('emptyState').style.display = 'block'; 
-    document.getElementById('statQueue').textContent = '0'; 
-    return; 
-  }
-  document.getElementById('emptyState').style.display = 'none'; 
-  document.getElementById('reviewCard').style.display = 'block';
-  const a = res.assignment; 
+  if(!res || !res.ok || !res.assignment){ document.getElementById('reviewCard').style.display='none'; document.getElementById('empty').style.display='block'; document.getElementById('statQueue').textContent='0'; return; }
+  document.getElementById('empty').style.display='none';
+  document.getElementById('reviewCard').style.display='block';
+  const a = res.assignment;
   currentAssignmentId = a.id;
-  document.getElementById('reviewId').textContent = 'ID: ' + a.id;
-  document.getElementById('reviewTitle').textContent = a.task_title || '';
-  document.getElementById('reviewTarget').href = a.review_target || '#'; 
-  document.getElementById('reviewTarget').textContent = (a.review_target || '').slice(0, 80);
-  const proofBox = document.getElementById('proofBox');
-  proofBox.innerHTML = '';
-  if (a.proof_type === 'image' && a.proof_data) {
-    proofBox.innerHTML = `<img src="${a.proof_data}" class="proof-img">`;
-  } else if (a.proof_type === 'link' && a.proof_data) {
-    proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank">${a.proof_data}</a>`;
-  } else {
-    proofBox.innerHTML = `<div class="small muted">Нет доказательства</div><div style="margin-top:6px">${a.proof_data || ''}</div>`;
-  }
   document.getElementById('statQueue').textContent = res.queue_length || 0;
+  document.getElementById('reviewId').textContent = a.id;
+  document.getElementById('userId').textContent = a.user_id;
+  document.getElementById('reviewTitle').textContent = a.task_title || '';
+  document.getElementById('siteName').textContent = a.site_name || '';
+  const proofBox = document.getElementById('proofBox');
+  if(a.proof_type === 'image' && a.proof_data){
+    proofBox.innerHTML = `<img src="${a.proof_data}" class="proof-img">`;
+  } else if(a.proof_type === 'link' && a.proof_data){
+    proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank">${a.proof_data}</a>`;
+  } else { proofBox.innerHTML = `<div class="muted">Нет доказательств</div><div>${a.proof_data||''}</div>`; }
 }
 
-document.getElementById('btnApprove').addEventListener('click', async () => {
-  if (!currentAssignmentId) return;
-  if (!confirm('Подтвердить?')) return;
-  const r = await api('/api/moderator/approve', 'POST', { id: currentAssignmentId });
-  if (r && r.ok) { showModal('Подтверждено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
+document.getElementById('btnApprove').addEventListener('click', async ()=>{
+  if(!currentAssignmentId) return;
+  if(!confirm('Подтвердить отзыв?')) return;
+  const res = await api('/api/moderator/approve','POST',{id: currentAssignmentId});
+  if(res && res.ok){ alert('Подтверждено'); loadNextTask(); loadStats(); } else alert('Ошибка');
 });
 
-document.getElementById('btnReject').addEventListener('click', () => {
-  document.getElementById('rejectReasonModal').classList.add('open');
+document.getElementById('btnReject').addEventListener('click', async ()=>{
+  if(!currentAssignmentId) return;
+  const reason = prompt('Причина отказа','Неверный отзыв');
+  if(!reason) return;
+  const res = await api('/api/moderator/reject','POST',{id: currentAssignmentId, reason});
+  if(res && res.ok){ alert('Отклонено'); loadNextTask(); loadStats(); } else alert('Ошибка');
 });
 
-document.getElementById('confirmReject').addEventListener('click', async () => {
-  if (!currentAssignmentId) return;
-  const reason = document.getElementById('rejectReason').value.trim();
-  if (!reason) return alert('Введите причину');
-  const r = await api('/api/moderator/reject', 'POST', { id: currentAssignmentId, reason });
-  if (r && r.ok) { showModal('Отклонено'); loadNextTask(); loadStats(); } else showModal('Ошибка');
-  document.getElementById('rejectReasonModal').classList.remove('open');
-  document.getElementById('rejectReason').value = '';
-});
-
-const socket = io({ transports: ['websocket'] });
-socket.on('connect', () => console.log('connected', socket.id));
-socket.on('new_review', loadNextTask);
+const sock = io({ transports: ['websocket'] });
+sock.on('connect', ()=> console.log('sock connected'));
+sock.on('new_review', ()=> loadNextTask());
+sock.on('disconnect', ()=> console.log('sock disconnected'));
 
 loadStats();
 loadNextTask();
