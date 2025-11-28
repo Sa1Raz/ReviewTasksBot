@@ -14,14 +14,22 @@
     :root {
       --bg: linear-gradient(180deg, #f0f4f8, #ffffff); --panel: rgba(255,255,255,0.9); --accent1: #4CAF50; --accent2: #8BC34A;
       --muted: #555555; --text: #333333; --glass: 1px solid rgba(0,0,0,0.05);
+      --neon-glow: 0 0 10px #4CAF50, 0 0 20px #8BC34A, 0 0 30px #4CAF50;
       --radius: 20px; --shadow: 0 4px 20px rgba(0,0,0,0.1); --transition: all 0.3s ease; --animation-timing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    body.dark {
+      --bg: linear-gradient(180deg, #121212, #000000); --panel: rgba(18,18,18,0.9); --accent1: #00FF00; --accent2: #00FF99;
+      --muted: #aaaaaa; --text: #ffffff; --glass: 1px solid rgba(255,255,255,0.05);
+      --neon-glow: 0 0 10px #00FF00, 0 0 20px #00FF99, 0 0 30px #00FF00;
+      --shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     * { box-sizing: border-box; transition: var(--transition); }
     body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
     .wrap { max-width: 820px; margin: 0 auto; padding: 12px; display: none; }
-    .card { background: var(--panel); border-radius: var(--radius); padding: 20px; border: var(--glass); box-shadow: var(--shadow); margin-bottom: 16px; animation: fadeIn 0.4s var(--animation-timing); opacity: 1; transform: translateY(0); position: relative; }
+    .card { background: var(--panel); border-radius: var(--radius); padding: 20px; border: var(--glass); box-shadow: var(--shadow), var(--neon-glow); margin-bottom: 16px; animation: fadeIn 0.4s var(--animation-timing); opacity: 1; transform: translateY(0); position: relative; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes neonPulse { 0% { text-shadow: var(--neon-glow); } 50% { text-shadow: 0 0 5px #4CAF50, 0 0 10px #8BC34A; } 100% { text-shadow: var(--neon-glow); } }
     .row { display: flex; gap: 14px; align-items: center; }
     .avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent1); box-shadow: var(--shadow); }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -36,6 +44,7 @@
     .sub-tab { flex: 1; padding: 12px; border-radius: 999px; text-align: center; background: rgba(0,0,0,0.05); cursor: pointer; font-weight: 800; color: var(--text); }
     .sub-tab.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
     .task-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.8); margin-bottom: 10px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    body.dark .task-item { background: rgba(0,0,0,0.8); }
     .task-item:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(0,0,0,0.15); }
     .small { font-size: 14px; color: var(--muted); }
     .progress { background: rgba(0,0,0,0.1); border-radius: 10px; height: 8px; margin-top: 6px; }
@@ -43,22 +52,34 @@
     .fab { position: fixed; right: 20px; bottom: 100px; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 900; font-size: 24px; cursor: pointer; box-shadow: 0 6px 25px rgba(76,175,80,0.3); }
     .fab:hover { transform: scale(1.1); }
     .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 999px; border: var(--glass); display: flex; gap: 10px; box-shadow: var(--shadow); }
+    body.dark .tabbar { background: rgba(0,0,0,0.9); }
     .nav-item { padding: 10px 16px; border-radius: 999px; color: var(--muted); cursor: pointer; font-weight: 700; }
     .nav-item.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
     .modal-bg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+    body.dark .modal-bg { background: rgba(255,255,255,0.5); }
     .modal-bg.open { display: flex; opacity: 1; }
     .modal { width: 100%; max-width: 680px; background: var(--panel); padding: 20px; border-radius: 20px; border: var(--glass); box-shadow: var(--shadow); transform: scale(1); animation: scaleIn 0.3s ease; }
     .type-btn { padding: 12px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.05); background: rgba(255,255,255,0.8); cursor: pointer; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); }
+    body.dark .type-btn { background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.05); }
     .type-btn.active { border: 2px solid var(--accent1); background: rgba(76,175,80,0.1); }
+    body.dark .type-btn.active { background: rgba(0,255,0,0.1); }
     .type-btn:hover { transform: scale(1.02); }
     input, textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: #ffffff; color: var(--text); margin-top: 10px; font-size: 16px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+    body.dark input, body.dark textarea { background: #222222; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
     input:focus, textarea:focus { border-color: var(--accent1); outline: none; }
     .qr { display: block; margin: 14px auto; max-width: 240px; border-radius: 12px; box-shadow: var(--shadow); }
     .note { font-size: 14px; color: var(--muted); margin-top: 10px; }
     /* loader */
-    .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; }
+    .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; }
     .loader.hidden { opacity: 0; pointer-events: none; display: none; }
-    canvas#particleCanvas { width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle at 30% 0, rgba(76,175,80,0.1), transparent 40%); box-shadow: var(--shadow); }
+    .loader-text { font-size: 32px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.5s infinite; text-shadow: var(--neon-glow); transform: scale(1); }
+    @keyframes loaderAnim { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    .loader { animation: fadeIn 1s ease; }
+    .loader-text { animation: loaderAnim 2s ease, neonPulse 1.5s infinite alternate; }
+    /* url checker spinner */
+    .url-check { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--accent1); border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; vertical-align: middle; display: none; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .url-status { margin-left: 10px; font-size: 16px; vertical-align: middle; }
     .error { color: #ff5252; }
     .ok { color: #4CAF50; }
     @media (max-width: 520px) {
@@ -71,7 +92,7 @@
 <body>
   <!-- Loader -->
   <div class="loader" id="appLoader">
-    <canvas id="particleCanvas" width="240" height="240"></canvas>
+    <div class="loader-text">ReviewCashBot</div>
   </div>
   <!-- Main app content -->
   <div class="wrap" id="appContent" aria-hidden="true">
@@ -101,22 +122,19 @@
           <div class="sub-tab active" data-sub="my">Мои задания</div>
           <div class="sub-tab" data-sub="perform">Выполнить задания</div>
         </div>
-        <div style="display:flex;gap:10px;margin-bottom:12px">
-          <input id="filterInput" placeholder="Поиск по заданиям" style="flex:1">
-          <button class="btn" id="searchBtn">Поиск</button>
-          <button class="btn ghost" id="newTaskBtn">Создать задание</button>
-        </div>
+        <!-- Removed search and newTaskBtn -->
         <div id="tasksList">
           <div class="small">Загрузка…</div>
         </div>
       </div>
       <!-- PROFILE PANEL -->
       <div id="profilePanel" style="display:none; position:relative">
-        <button id="supportBtn" style="position:absolute;top:10px;right:10px;background:transparent;border:none;font-size:24px;cursor:pointer;color:var(--accent1)">❓</button>
+        <button id="supportBtn" style="position:absolute;top:10px;right:10px;background:transparent;border:none;font-size:24px;cursor:pointer;color:var(--accent1)">🎧</button>
         <div class="small">Имя</div>
         <div style="font-weight:800;font-size:20px" id="pName">—</div>
         <div class="small" style="margin-top:10px">История операций</div>
         <div id="history" style="margin-top:10px"></div>
+        <button class="btn ghost" id="themeToggle" style="margin-top:20px">Сменить тему</button>
       </div>
     </div>
   </div>
@@ -167,7 +185,11 @@
       <h3>Создать задание</h3>
       <div class="note">Выберите тип — цена проставится автоматически</div>
       <div id="typesBox" style="margin-top:10px"></div>
-      <input id="taskUrl" placeholder="Ссылка (проверьте)" />
+      <div style="position:relative">
+        <input id="taskUrl" placeholder="Ссылка (проверьте)" />
+        <span id="urlChecker" class="url-check"></span>
+        <span id="urlStatus" class="url-status"></span>
+      </div>
       <input id="taskQty" type="number" placeholder="Количество" min="1" value="1" />
       <div id="totalPrice" class="note" style="animation: scaleIn 0.3s ease;"></div>
       <div style="display:flex;gap:10px;margin-top:12px">
@@ -194,7 +216,6 @@
   const balanceEl = $('#balance');
   const pName = $('#pName');
   const tasksList = $('#tasksList');
-  const filterInput = $('#filterInput');
   const historyBox = $('#history');
   const subTabs = $('#subTabs');
   // modals
@@ -217,14 +238,17 @@
   const taskUrlInput = $('#taskUrl');
   const taskQtyInput = $('#taskQty');
   const totalPriceEl = $('#totalPrice');
+  const urlChecker = $('#urlChecker');
+  const urlStatus = $('#urlStatus');
   // withdraw elements
   const wAmount = $('#wAmount');
   const wName = $('#wName');
   const wDetails = $('#wDetails');
   const sendWithdrawBtn = $('#sendWithdraw');
   const withdrawMsg = $('#withdrawMsg');
-  // support btn
+  // support btn and theme toggle
   const supportBtn = $('#supportBtn');
+  const themeToggle = $('#themeToggle');
   // profile from Telegram or fallback
   const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
   const uid = tgUser.id ? String(tgUser.id) : (new URLSearchParams(location.search)).get('uid') || 'guest_' + String(Math.floor(Math.random()*99999));
@@ -232,42 +256,6 @@
   userName.textContent = tgUser.first_name || 'Пользователь';
   userHandle.textContent = tgUser.username ? '@' + tgUser.username : '';
   pName.textContent = userName.textContent;
-  // Particles loader (light theme)
-  const canvas = $('#particleCanvas');
-  const ctx = canvas.getContext('2d');
-  function resizeCanvas() { canvas.width = 240; canvas.height = 240; }
-  resizeCanvas();
-  let particles = [];
-  class Particle {
-    constructor() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.size = Math.random() * 4 + 1;
-      this.vx = Math.random() * 2 - 1;
-      this.vy = Math.random() * 2 - 1;
-      this.c = `rgba(76,175,80,${Math.random()*0.6+0.2})`;
-    }
-    update() {
-      this.x += this.vx; this.y += this.vy;
-      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-      this.size = Math.max(0.5, this.size - 0.01);
-    }
-    draw() {
-      ctx.fillStyle = this.c;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-  function animateParticles() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    if (particles.length < 80) particles.push(new Particle());
-    particles.forEach(p => { p.update(); p.draw(); });
-    particles = particles.filter(p => p.size > 0.6);
-    requestAnimationFrame(animateParticles);
-  }
-  animateParticles();
   // Socket.IO
   let socket = null;
   try {
@@ -292,8 +280,6 @@
   }
   function renderBalance(bal) {
     balanceEl.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
-    const headerBalanceText = $('#headerBalanceText');
-    if (headerBalanceText) headerBalanceText.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
     window.__USER_BALANCE = Number(bal||0);
   }
   // Load profile
@@ -335,12 +321,7 @@
   }
   let currentSub = 'my';
   function renderTasks() {
-    const q = (filterInput.value || '').toLowerCase();
-    let filtered = allTasks.filter(t => {
-      const title = (t.title || t.name || '').toLowerCase();
-      const descr = (t.description || t.desc || '').toLowerCase();
-      return !q || title.includes(q) || descr.includes(q);
-    });
+    let filtered = allTasks;
     if (currentSub === 'my') {
       filtered = filtered.filter(t => t.owner_uid === uid);
     } else {
@@ -382,7 +363,6 @@
   }));
   // FAB and create
   $('#fab').addEventListener('click', openCreate);
-  $('#newTaskBtn').addEventListener('click', openCreate);
   $('#cancelCreate').addEventListener('click', closeCreate);
   $('#closeCreate').addEventListener('click', closeCreate);
   // Types loading
@@ -399,9 +379,9 @@
     } catch(e) { console.warn('loadTypes', e); types = []; }
     if (!types.length) {
       types = [
-        {id:"ya_review", name:"Отзыв — Яндекс Карты", unit_price:85},
-        {id:"gmaps_review", name:"Отзыв — Google Maps", unit_price:50},
-        {id:"tg_sub", name:"Подписка — Telegram канал", unit_price:5}
+        {id:"ya_review", name:"Отзыв — Яндекс Карты", unit_price:85, max_qty:150},
+        {id:"gmaps_review", name:"Отзыв — Google Maps", unit_price:50, max_qty:200},
+        {id:"tg_sub", name:"Подписка — Telegram канал", unit_price:5, max_qty:100000}
       ];
     }
     renderTypes();
@@ -434,6 +414,8 @@
     taskUrlInput.value = '';
     taskQtyInput.value = 1;
     totalPriceEl.textContent = '';
+    urlChecker.style.display = 'none';
+    urlStatus.textContent = '';
   }
   function updateTotal() {
     if (selectedType) {
@@ -444,25 +426,49 @@
     }
   }
   taskQtyInput.addEventListener('input', updateTotal);
+  let checkTimeout;
+  taskUrlInput.addEventListener('input', () => {
+    clearTimeout(checkTimeout);
+    const url = taskUrlInput.value.trim();
+    if (!url) {
+      urlChecker.style.display = 'none';
+      urlStatus.textContent = '';
+      return;
+    }
+    urlChecker.style.display = 'inline-block';
+    urlStatus.textContent = '';
+    checkTimeout = setTimeout(async () => {
+      const chk = await checkUrl(url);
+      urlChecker.style.display = 'none';
+      if (chk.ok) {
+        urlStatus.classList.add('ok');
+        urlStatus.textContent = '✅';
+      } else {
+        urlStatus.classList.add('error');
+        urlStatus.textContent = '❌ ' + chk.message;
+      }
+    }, 500);
+  });
   async function checkUrl(url) {
     if (!url) return { ok: false, message: 'Пустая ссылка' };
-    if (!url.startsWith('http://') && !url.startsWith('https://')) return { ok: false, message: 'Ссылка должна начинаться с http:// или https://' };
-    if (url.length > 2048) return { ok: false, message: 'Ссылка слишком длинная' };
+    if (!url.startsWith('http://') && !url.startsWith('https://')) return { ok: false, message: 'Должна начинаться с http:// или https://' };
+    if (url.length > 2048) return { ok: false, message: 'Слишком длинная' };
     try {
       const res = await fetch(url, { method: 'HEAD' });
-      return { ok: res.ok, message: res.ok ? '' : 'Ссылка не работает (ошибка ' + res.status + ')' };
+      return { ok: res.ok, message: res.ok ? '' : 'Не работает (ошибка ' + res.status + ')' };
     } catch (e) {
-      return { ok: false, message: 'Не удалось проверить ссылку (ошибка сети или CORS)' };
+      return { ok: false, message: 'Не удалось проверить (сеть или CORS)' };
     }
   }
   submitTaskBtn.addEventListener('click', async () => {
     const url = taskUrlInput.value.trim();
     const qty = Number(taskQtyInput.value || 0);
-    if (!selectedType) return alert('Выберите тип задания');
+    if (!selectedType) return alert('Выберите тип');
     if (!url) return alert('Введите ссылку');
-    if (!qty || qty < 1) return alert('Укажите корректное количество');
+    if (!qty || qty < 1) return alert('Корректное количество');
+    if (selectedType.max_qty && qty > selectedType.max_qty) return alert(`Макс. количество для ${selectedType.name}: ${selectedType.max_qty}`);
     const chk = await checkUrl(url);
-    if (!chk.ok) return alert(chk.message + '. Исправьте ссылку.');
+    if (!chk.ok) return alert(chk.message);
     try {
       const body = {
         title: selectedType.name,
@@ -480,7 +486,7 @@
         await loadTasks();
         alert('Задание создано');
       } else {
-        alert((j && j.errmsg) || 'Ошибка создания');
+        alert((j && j.errmsg) || 'Ошибка');
       }
     } catch (e) {
       console.error(e); alert('Ошибка сети');
@@ -560,19 +566,22 @@
       withdrawMsg.textContent = 'Ошибка сети';
     }
   });
-  // Search
-  $('#searchBtn').addEventListener('click', renderTasks);
-  filterInput.addEventListener('keyup', e => { if (e.key === 'Enter') renderTasks(); });
   // Support chat
   supportBtn.addEventListener('click', () => {
     if (tg) tg.openTelegramLink('tg://user?id=7233175676');
-    else window.open('https://t.me/user?id=7233175676', '_blank');
+    else window.open('https://t.me/+7233175676', '_blank'); // fallback for browser
   });
+  // Theme toggle
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  });
+  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
   // Initial load
   (async function init() {
     showLoader(true);
     await Promise.allSettled([ loadProfile(), loadTasks(), loadTypes() ]);
-    setTimeout(()=> showLoader(false), 600);
+    setTimeout(()=> showLoader(false), 2000); // longer for animation
   })();
   window.addEventListener('resize', () => {});
   window.loadProfile = loadProfile;
