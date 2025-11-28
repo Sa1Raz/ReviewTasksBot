@@ -1,53 +1,58 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash — Кабинет</title>
-
-<!-- Telegram WebApp -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Socket.IO -->
-<script src="/socket.io/socket.io.js"></script>
-
-<style>
-  :root{
-    --bg:#040204; --panel:rgba(9,7,6,0.6); --accent1:#b8860b; --accent2:#ffd27f;
-    --muted:#9fb7c7; --text:#eaf9ff; --glass:1px solid rgba(255,255,255,0.04);
-    --radius:16px;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#000,#07060a);color:var(--text);-webkit-font-smoothing:antialiased}
-  .wrap{max-width:820px;margin:18px auto;padding:12px}
-  .card{background:var(--panel);border-radius:var(--radius);padding:18px;border:var(--glass);box-shadow:0 10px 30px rgba(0,0,0,0.6);margin-bottom:14px;animation:fadeIn .35s ease}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .row{display:flex;gap:12px;align-items:center}
-  .avatar{width:74px;height:74px;border-radius:50%;overflow:hidden;border:2px solid rgba(184,134,11,0.14)}
-  .avatar img{width:100%;height:100%;object-fit:cover}
-  .title{font-weight:800;font-size:18px}
-  .muted{color:var(--muted);font-size:13px}
-  .balance{font-weight:900;font-size:32px;background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  .btn{display:inline-block;padding:12px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#111;font-weight:800;cursor:pointer;margin-top:10px}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text)}
-  .tabs{display:flex;gap:8px;margin-bottom:12px}
-  .tab{flex:1;padding:10px;border-radius:999px;text-align:center;background:rgba(255,255,255,0.02);cursor:pointer;font-weight:800}
-  .tab.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#111}
-  .task-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px}
-  .small{font-size:13px;color:var(--muted)}
-  .fab{position:fixed;right:18px;bottom:100px;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#111;font-weight:900;cursor:pointer;box-shadow:0 10px 30px rgba(184,134,11,0.12)}
-  .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:rgba(255,255,255,0.02);padding:8px;border-radius:999px;border:var(--glass);display:flex;gap:8px}
-  .nav-item{padding:8px 12px;border-radius:999px;color:var(--muted);cursor:pointer}
-  .nav-item.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#111}
-  .modal-bg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:9999}
-  .modal{width:100%;max-width:640px;background:rgba(6,6,6,0.9);padding:18px;border-radius:14px;border:var(--glass)}
-  .type-btn{padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);cursor:pointer;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
-  .type-btn.active{background:linear-gradient(90deg,#222 0%, rgba(184,134,11,0.08) 100%);border-color:rgba(184,134,11,0.25)}
-  input, textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);margin-top:8px}
-  .qr{display:block;margin:12px auto;max-width:220px;border-radius:10px}
-  .note{font-size:13px;color:var(--muted);margin-top:8px}
-  .error{color:#ff8b8b}
-  .ok{color:#8bffcf}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>ReviewCash • Кабинет</title>
+  <!-- Telegram WebApp -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg: #040204; --panel: rgba(9,7,6,0.6); --accent1: #b8860b; --accent2: #ffd27f;
+      --muted: #9fb7c7; --text: #eaf9ff; --glass: 1px solid rgba(255,255,255,0.04);
+      --radius: 16px; --shadow: 0 10px 30px rgba(0,0,0,0.6); --transition: all 0.3s ease;
+    }
+    * { box-sizing: border-box; transition: var(--transition); }
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; background: linear-gradient(180deg, #000, #07060a); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 12px; }
+    .card { background: var(--panel); border-radius: var(--radius); padding: 18px; border: var(--glass); box-shadow: var(--shadow); margin-bottom: 14px; animation: fadeIn 0.35s ease; opacity: 0; transform: translateY(20px); }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+    .row { display: flex; gap: 12px; align-items: center; }
+    .avatar { width: 74px; height: 74px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(184,134,11,0.14); box-shadow: var(--shadow); }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .title { font-weight: 800; font-size: 18px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .balance { font-weight: 900; font-size: 32px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .btn { display: inline-block; padding: 12px; border-radius: 12px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; font-weight: 800; cursor: pointer; margin-top: 10px; min-width: 120px; text-align: center; box-shadow: var(--shadow); }
+    .btn:hover { transform: scale(1.05); }
+    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .tab { flex: 1; padding: 10px; border-radius: 999px; text-align: center; background: rgba(255,255,255,0.02); cursor: pointer; font-weight: 800; }
+    .tab.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; }
+    .task-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); margin-bottom: 8px; box-shadow: var(--shadow); animation: fadeIn 0.35s ease; }
+    .small { font-size: 13px; color: var(--muted); }
+    .fab { position: fixed; right: 18px; bottom: 100px; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; font-weight: 900; cursor: pointer; box-shadow: 0 10px 30px rgba(184,134,11,0.12); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 999px; border: var(--glass); display: flex; gap: 8px; box-shadow: var(--shadow); }
+    .nav-item { padding: 8px 12px; border-radius: 999px; color: var(--muted); cursor: pointer; }
+    .nav-item.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; }
+    .modal-bg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-bg.open { display: flex; opacity: 1; }
+    .modal { width: 100%; max-width: 640px; background: rgba(6,6,6,0.9); padding: 18px; border-radius: 14px; border: var(--glass); box-shadow: var(--shadow); transform: scale(0.95); transition: transform 0.3s ease; }
+    .modal-bg.open .modal { transform: scale(1); }
+    .type-btn { padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); cursor: pointer; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .type-btn.active { background: linear-gradient(90deg, #222 0%, rgba(184,134,11,0.08) 100%); border-color: rgba(184,134,11,0.25); }
+    input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); background: transparent; color: var(--text); margin-top: 8px; font-size: 16px; }
+    .qr { display: block; margin: 12px auto; max-width: 220px; border-radius: 10px; box-shadow: var(--shadow); }
+    .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .error { color: #ff8b8b; }
+    .ok { color: #8bffcf; }
+    .filter-input { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 12px; border: var(--glass); background: rgba(255,255,255,0.02); color: var(--text); font-size: 16px; }
+    .search-btn { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; padding: 10px; border-radius: 12px; cursor: pointer; font-weight: 800; min-width: 100px; text-align: center; }
+    @media (max-width: 520px) { .btn, .type-btn, .task-item { min-height: 50px; font-size: 14px; } .fab { width: 50px; height: 50px; } .tabs .tab { font-size: 14px; } .bottom-nav { gap: 4px; padding: 4px; } .nav-item { padding: 6px 10px; min-width: 70px; font-size: 12px; } } /* Mobile optimizations */
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -69,25 +74,23 @@
         </div>
       </div>
     </div>
-
     <!-- TABS -->
     <div class="card">
       <div class="tabs" role="tablist">
         <div class="tab active" data-tab="tasks" id="tabTasks">Задания</div>
         <div class="tab" data-tab="profile" id="tabProfile">Профиль</div>
       </div>
-
       <!-- TASKS PANEL -->
       <div id="tasksPanel">
         <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input id="filterInput" placeholder="Поиск по заданиям" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
+          <input class="filter-input" id="filterInput" placeholder="Поиск по заданиям">
+          <button class="search-btn" id="searchBtn">Поиск</button>
           <button class="btn ghost" id="newTaskBtn">Создать задание</button>
         </div>
         <div id="tasksList">
           <div class="small">Загрузка…</div>
         </div>
       </div>
-
       <!-- PROFILE PANEL (вкладка) -->
       <div id="profilePanel" style="display:none">
         <div class="small">Имя</div>
@@ -97,14 +100,11 @@
       </div>
     </div>
   </div>
-
   <div class="fab" id="fab">+</div>
-
   <div class="tabbar" role="navigation">
     <div class="nav-item active" data-nav="tasks">Задания</div>
     <div class="nav-item" data-nav="profile">Профиль</div>
   </div>
-
   <!-- TOPUP Modal -->
   <div id="topupModal" class="modal-bg">
     <div class="modal">
@@ -115,7 +115,6 @@
         <input id="topupAmount" type="number" placeholder="Сумма" min="150" style="flex:1">
         <button class="btn" id="createTopupBtn">Создать заявку</button>
       </div>
-
       <div id="topupStep" style="display:none;margin-top:12px">
         <div class="note">Ссылка для оплаты / QR (скопируйте комментарий)</div>
         <img id="qrImg" class="qr" src="" alt="QR">
@@ -128,7 +127,6 @@
       </div>
     </div>
   </div>
-
   <!-- WITHDRAW Modal -->
   <div id="withdrawModal" class="modal-bg">
     <div class="modal">
@@ -142,7 +140,6 @@
       <div id="withdrawMsg" class="note"></div>
     </div>
   </div>
-
   <!-- CREATE TASK Modal -->
   <div id="createModal" class="modal-bg">
     <div class="modal">
@@ -150,7 +147,6 @@
       <h3>Создать задание</h3>
       <div class="note">Выберите тип — цена проставится автоматически</div>
       <div id="typesBox" style="margin-top:8px"></div>
-
       <input id="taskUrl" placeholder="Ссылка (проверьте)"/>
       <input id="taskQty" type="number" placeholder="Количество" min="1" value="1"/>
       <div style="display:flex;gap:8px;margin-top:10px">
@@ -160,16 +156,13 @@
       <div id="createMsg" class="note"></div>
     </div>
   </div>
-
 <script>
 (() => {
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   try { tg?.ready?.(); tg?.expand?.(); } catch(e){}
-
   const uid = tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : (new URLSearchParams(location.search)).get('uid') || 'guest';
   const username = tg?.initDataUnsafe?.user?.username || tg?.initDataUnsafe?.user?.first_name || 'Пользователь';
   const avatarUrl = tg?.initDataUnsafe?.user?.photo_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${uid}`;
-
   // DOM
   const avatar = document.getElementById('avatar');
   const userName = document.getElementById('userName');
@@ -178,18 +171,15 @@
   const pName = document.getElementById('pName');
   const tasksList = document.getElementById('tasksList');
   const filterInput = document.getElementById('filterInput');
-
   // modals
   const topupModal = document.getElementById('topupModal');
   const withdrawModal = document.getElementById('withdrawModal');
   const createModal = document.getElementById('createModal');
-
   // init profile UI
   avatar.src = avatarUrl;
   userName.textContent = tg?.initDataUnsafe?.user?.first_name || 'Пользователь';
   userHandle.textContent = tg?.initDataUnsafe?.user?.username ? '@'+tg.initDataUnsafe.user.username : '';
   pName.textContent = userName.textContent;
-
   // socket
   const socket = io();
   socket.on('connect', ()=>console.log('socket connected'));
@@ -202,7 +192,6 @@
   });
   socket.on('task_update', ()=> loadTasks());
   socket.on('new_topup', ()=> loadAdminInfo && loadAdminInfo()); // admin-side
-
   // load profile
   async function loadProfile(){
     try{
@@ -218,7 +207,6 @@
     }catch(e){ console.warn(e) }
   }
   loadProfile();
-
   // tasks
   let allTasks = [];
   let currentTab = 'tasks';
@@ -231,7 +219,6 @@
       renderTasks();
     }catch(e){ tasksList.innerHTML = '<div class="small error">Ошибка сети</div>'; }
   }
-
   function renderTasks(){
     const q = (filterInput.value||'').toLowerCase();
     const filtered = allTasks.filter(t => (!q) || (t.title && t.title.toLowerCase().includes(q)) || (t.description && t.description.toLowerCase().includes(q)));
@@ -245,9 +232,8 @@
       tasksList.appendChild(div);
     });
   }
-
   filterInput.addEventListener('input', renderTasks);
-
+  document.getElementById('searchBtn').addEventListener('click', renderTasks); // Optional, but for mobile keyboard hide
   // tabs navigation
   document.querySelectorAll('.tab').forEach(el=>{
     el.addEventListener('click', ()=> {
@@ -265,16 +251,13 @@
     document.querySelector(`.tab[data-tab="${nav==='profile'?'profile':'tasks'}"]`).click();
     window.scrollTo({top:0,behavior:'smooth'});
   }));
-
   // FAB + create button
-  document.getElementById('fab').addEventListener('click', openCreate);
-  document.getElementById('newTaskBtn').addEventListener('click', openCreate);
-
+  document.getElementById('fab').addEventListener('click', ()=> openCreate());
+  document.getElementById('newTaskBtn').addEventListener('click', ()=> openCreate());
   // Create task modal logic
   const typesBox = document.getElementById('typesBox');
   let types = [];
   let selectedType = null;
-
   async function loadTypes(){
     try{
       const res = await fetch('/task_types.json');
@@ -288,7 +271,6 @@
     }
     renderTypes();
   }
-
   function renderTypes(){
     typesBox.innerHTML = '';
     types.forEach(t=>{
@@ -305,13 +287,10 @@
     // select first by default
     if(types.length && !selectedType){ selectedType = types[0]; typesBox.firstChild.classList.add('active') }
   }
-
   function openCreate(){ document.getElementById('createModal').style.display = 'flex'; loadTypes(); document.getElementById('createMsg').textContent=''; }
   function closeCreate(){ document.getElementById('createModal').style.display = 'none'; selectedType = null; document.getElementById('taskUrl').value=''; document.getElementById('taskQty').value=1; }
-
   document.getElementById('closeCreate').addEventListener('click', closeCreate);
   document.getElementById('cancelCreate').addEventListener('click', closeCreate);
-
   // URL check helper (best-effort)
   async function checkUrl(url){
     if (!url) return { ok:false, message:'Пустая ссылка' };
@@ -325,19 +304,16 @@
       return { ok:true, message: 'Не удалось проверить (CORS) — убедитесь, что ссылка рабочая' };
     }
   }
-
   document.getElementById('submitTask').addEventListener('click', async ()=>{
     const url = document.getElementById('taskUrl').value.trim();
     const qty = Number(document.getElementById('taskQty').value || 0);
     if (!selectedType) return alert('Выберите тип задания');
     if (!url) return alert('Введите ссылку');
     if (!qty || qty < 1) return alert('Укажите корректное количество');
-
     const chk = await checkUrl(url);
     if (!chk.ok) {
       if (!confirm('Ссылка не прошла проверку. Создать задание всё равно?')) return;
     }
-
     // create task (user-facing endpoint)
     try{
       const body = {
@@ -358,11 +334,8 @@
       } else {
         alert(j.errmsg || 'Ошибка создания задания');
       }
-    }catch(e){
-      alert('Ошибка сети при создании');
-    }
+    }catch(e){ alert('Ошибка сети при создании'); }
   });
-
   // TOPUP flow
   const minTopup = 150;
   document.getElementById('minTopup').textContent = minTopup;
@@ -373,7 +346,6 @@
     document.getElementById('topupStep').style.display = 'none';
     topupModal.style.display = 'flex';
   }
-
   document.getElementById('createTopupBtn').addEventListener('click', async ()=>{
     const amount = Number(document.getElementById('topupAmount').value || 0);
     if (!amount || amount < minTopup) return alert('Мин. пополнение ' + minTopup + ' ₽');
@@ -396,7 +368,6 @@
       }
     }catch(e){ alert('Ошибка сети'); }
   });
-
   const topupState = { current: null };
   document.getElementById('confirmPaidBtn').addEventListener('click', async ()=>{
     if (!topupState.current) {
@@ -414,7 +385,6 @@
       }
     }catch(e){ alert('Ошибка сети'); }
   });
-
   // WITHDRAW
   document.getElementById('withdrawBtn').addEventListener('click', ()=> withdrawModal.style.display='flex');
   document.getElementById('closeWithdraw').addEventListener('click', ()=> withdrawModal.style.display='none');
@@ -434,7 +404,6 @@
       }
     }catch(e){ document.getElementById('withdrawMsg').textContent = 'Ошибка сети'; }
   });
-
   // initial loads
   loadTypes();
   loadTasks();
