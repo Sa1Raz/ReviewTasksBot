@@ -15,13 +15,13 @@
       --radius: 16px; --shadow: 0 10px 30px rgba(0,0,0,0.6); --transition: all 0.3s ease; --animation-timing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
     * { box-sizing: border-box; transition: var(--transition); }
-    body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; background: linear-gradient(180deg, #000, #07060a); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow: hidden; } /* Prevent scroll bugs on mobile */
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow: hidden; } /* Prevent scroll bugs on mobile */
     .wrap { max-width: 820px; margin: 0 auto; padding: 12px; }
     .card { background: var(--panel); border-radius: var(--radius); padding: 18px; border: var(--glass); box-shadow: var(--shadow); margin-bottom: 14px; animation: fadeIn 0.35s var(--animation-timing); opacity: 0; transform: translateY(20px); }
     @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
     .row { display: flex; gap: 12px; align-items: center; }
     .avatar { width: 74px; height: 74px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(184,134,11,0.14); box-shadow: var(--shadow); animation: glow 2s ease-in-out infinite; }
-    @keyframes glow { 0%, 100% { box-shadow: 0 0 10px rgba(184,134,11,0.2); } 50% { box-shadow: 0 0 20px rgba(184,134,11,0.5); } }
+    @keyframes glow { 0%, 100% { border-color: rgba(184,134,11,0.14); } 50% { border-color: rgba(184,134,11,0.4); } }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .title { font-weight: 800; font-size: 18px; text-shadow: 0 2px 4px rgba(184,134,11,0.2); }
     .muted { color: var(--muted); font-size: 13px; }
@@ -30,7 +30,7 @@
     .btn { display: inline-block; padding: 12px; border-radius: 12px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; font-weight: 800; cursor: pointer; margin-top: 10px; min-width: 120px; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden; }
     .btn::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); transform: rotate(30deg); animation: buttonRotate 4s linear infinite; }
     @keyframes buttonRotate { to { transform: rotate(390deg); } }
-    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.04); color: var(--text); animation: none; }
     .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
     .tab { flex: 1; padding: 10px; border-radius: 999px; text-align: center; background: rgba(255,255,255,0.02); cursor: pointer; font-weight: 800; animation: tabHover 1.5s ease-in-out infinite; }
     @keyframes tabHover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
@@ -64,9 +64,10 @@
     @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
     .ok { color: #8bffcf; animation: successGlow 1s ease; }
     @keyframes successGlow { 0% { text-shadow: 0 0 5px #8bffcf; } 50% { text-shadow: 0 0 15px #8bffcf; } 100% { text-shadow: 0 0 5px #8bffcf; } }
-    .loader { display: none; text-align: center; margin: 20px 0; }
-    .loader.active { display: block; }
-    .loader canvas { margin: 0 auto; }
+    .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; }
+    .loader.hidden { opacity: 0; pointer-events: none; }
+    .loader canvas { animation: loaderRotate 2s linear infinite; }
+    @keyframes loaderRotate { to { transform: rotate(360deg); } }
     .filter-input { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 12px; border: var(--glass); background: rgba(255,255,255,0.02); color: var(--text); font-size: 16px; animation: inputGlow 2s ease infinite alternate; }
     @keyframes inputGlow { 0% { box-shadow: 0 0 5px rgba(184,134,11,0.1); } 100% { box-shadow: 0 0 15px rgba(184,134,11,0.3); } }
     .search-btn { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; padding: 10px; border-radius: 12px; cursor: pointer; font-weight: 800; min-width: 100px; text-align: center; animation: searchBtnPulse 1.5s infinite; }
@@ -75,7 +76,7 @@
   </style>
 </head>
 <body>
-  <div class="loader active" id="appLoader">
+  <div class="loader" id="appLoader">
     <canvas id="particleCanvas" width="300" height="300"></canvas>
   </div>
   <div class="wrap" style="display:none" id="appContent">
@@ -187,8 +188,6 @@
   const username = tg?.initDataUnsafe?.user?.username || tg?.initDataUnsafe?.user?.first_name || 'Пользователь';
   const avatarUrl = tg?.initDataUnsafe?.user?.photo_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${uid}`;
   // DOM
-  const appLoader = document.getElementById('appLoader');
-  const appContent = document.getElementById('appContent');
   const avatar = document.getElementById('avatar');
   const userName = document.getElementById('userName');
   const userHandle = document.getElementById('userHandle');
@@ -213,14 +212,17 @@
       this.size = Math.random() * 5 + 1;
       this.speedX = Math.random() * 3 - 1.5;
       this.speedY = Math.random() * 3 - 1.5;
+      this.color = 'rgba(184,134,11,' + (Math.random() * 0.5 + 0.5) + ')';
     }
     update() {
       this.x += this.speedX;
       this.y += this.speedY;
       if (this.size > 0.2) this.size -= 0.1;
+      if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
     }
     draw() {
-      ctx.fillStyle = 'rgba(184,134,11,0.5)';
+      ctx.fillStyle = this.color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
       ctx.fill();
@@ -233,7 +235,7 @@
       p.draw();
       if (p.size <= 0.2) particles.splice(i, 1);
     });
-    particles.push(new Particle());
+    if (particles.length < 100) particles.push(new Particle());
     requestAnimationFrame(animateParticles);
   }
   animateParticles();
@@ -266,9 +268,7 @@
         const histBox = document.getElementById('history');
         histBox.innerHTML = hist.length ? hist.map(h=>`<div style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:6px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="small">${h.amount ? (h.amount+' ₽') : ''} ${h.note || ''}</div></div>`).join('') : '<div class="small">История пуста</div>';
       }
-    }catch(e){ console.warn(e) }
-    appLoader.style.display = 'none';
-    appContent.style.display = 'block';
+    }catch(e){ console.warn(e) } finally { appLoader.classList.add('hidden'); appContent.style.display = 'block'; setTimeout(() => appLoader.style.display = 'none', 500); } /* Fade out loader */
   }
   loadProfile();
   // tasks
@@ -471,6 +471,12 @@
   loadTypes();
   loadTasks();
   setInterval(loadProfile, 60_000);
+  // Hide loader after initial load (with animation)
+  setTimeout(() => {
+    appLoader.style.opacity = '0';
+    setTimeout(() => appLoader.style.display = 'none', 500);
+    appContent.style.display = 'block';
+  }, 2000); // Simulate load time, replace with actual
 })();
 </script>
 </body>
