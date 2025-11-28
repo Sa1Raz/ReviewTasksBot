@@ -4,73 +4,85 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>ReviewCash • Кабинет</title>
+  <!-- Google Fonts for beauty -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap">
   <!-- Telegram WebApp -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
   <style>
     :root {
-      --bg: #040204; --panel: rgba(9,7,6,0.6); --accent1: #b8860b; --accent2: #ffd27f;
-      --muted: #9fb7c7; --text: #eaf9ff; --glass: 1px solid rgba(255,255,255,0.04);
-      --radius: 16px; --shadow: 0 10px 30px rgba(0,0,0,0.6); --transition: all 0.3s ease; --animation-timing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      --bg: linear-gradient(180deg, #f0f4f8, #ffffff); --panel: rgba(255,255,255,0.9); --accent1: #4CAF50; --accent2: #8BC34A;
+      --muted: #555555; --text: #333333; --glass: 1px solid rgba(0,0,0,0.05);
+      --radius: 20px; --shadow: 0 4px 20px rgba(0,0,0,0.1); --transition: all 0.3s ease; --animation-timing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
     * { box-sizing: border-box; transition: var(--transition); }
-    body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+    body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
     .wrap { max-width: 820px; margin: 0 auto; padding: 12px; display: none; }
-    .card { background: var(--panel); border-radius: var(--radius); padding: 18px; border: var(--glass); box-shadow: var(--shadow); margin-bottom: 14px; animation: fadeIn 0.35s var(--animation-timing); opacity: 1; transform: translateY(0); position: relative; perspective: 1000px; }
-    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
-    .row { display: flex; gap: 12px; align-items: center; }
-    .avatar { width: 74px; height: 74px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(184,134,11,0.14); box-shadow: var(--shadow); }
+    .card { background: var(--panel); border-radius: var(--radius); padding: 20px; border: var(--glass); box-shadow: var(--shadow); margin-bottom: 16px; animation: fadeIn 0.4s var(--animation-timing); opacity: 1; transform: translateY(0); position: relative; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .row { display: flex; gap: 14px; align-items: center; }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent1); box-shadow: var(--shadow); }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .title { font-weight: 800; font-size: 18px; text-shadow: 0 2px 4px rgba(184,134,11,0.2); }
-    .muted { color: var(--muted); font-size: 13px; }
-    .balance { font-weight: 900; font-size: 32px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 4px rgba(184,134,11,0.3); }
-    .btn { display: inline-block; padding: 12px; border-radius: 12px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; font-weight: 800; cursor: pointer; margin-top: 10px; min-width: 120px; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden; }
-    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.04); color: var(--text); }
-    .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-    .tab { flex: 1; padding: 10px; border-radius: 999px; text-align: center; background: rgba(255,255,255,0.02); cursor: pointer; font-weight: 800; }
-    .tab.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; }
-    .task-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); margin-bottom: 8px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
-    .small { font-size: 13px; color: var(--muted); }
-    .fab { position: fixed; right: 18px; bottom: 100px; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; font-weight: 900; cursor: pointer; box-shadow: 0 10px 30px rgba(184,134,11,0.12); }
-    .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 999px; border: var(--glass); display: flex; gap: 8px; box-shadow: var(--shadow); }
-    .nav-item { padding: 8px 12px; border-radius: 999px; color: var(--muted); cursor: pointer; }
-    .nav-item.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #111; }
-    .modal-bg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+    .title { font-weight: 800; font-size: 20px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .muted { color: var(--muted); font-size: 14px; }
+    .balance { font-weight: 900; font-size: 36px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .btn { display: inline-block; padding: 14px 20px; border-radius: 14px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 800; cursor: pointer; margin-top: 12px; min-width: 140px; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .btn:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(76,175,80,0.3); }
+    .btn.ghost { background: transparent; border: 1px solid var(--accent1); color: var(--accent1); }
+    .btn.ghost:hover { background: rgba(76,175,80,0.1); }
+    .sub-tabs { display: flex; gap: 10px; margin-bottom: 14px; }
+    .sub-tab { flex: 1; padding: 12px; border-radius: 999px; text-align: center; background: rgba(0,0,0,0.05); cursor: pointer; font-weight: 800; color: var(--text); }
+    .sub-tab.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
+    .task-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.8); margin-bottom: 10px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .task-item:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(0,0,0,0.15); }
+    .small { font-size: 14px; color: var(--muted); }
+    .progress { background: rgba(0,0,0,0.1); border-radius: 10px; height: 8px; margin-top: 6px; }
+    .progress-bar { background: var(--accent1); height: 100%; border-radius: 10px; transition: width 0.3s ease; }
+    .fab { position: fixed; right: 20px; bottom: 100px; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 900; font-size: 24px; cursor: pointer; box-shadow: 0 6px 25px rgba(76,175,80,0.3); }
+    .fab:hover { transform: scale(1.1); }
+    .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 999px; border: var(--glass); display: flex; gap: 10px; box-shadow: var(--shadow); }
+    .nav-item { padding: 10px 16px; border-radius: 999px; color: var(--muted); cursor: pointer; font-weight: 700; }
+    .nav-item.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
+    .modal-bg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
     .modal-bg.open { display: flex; opacity: 1; }
-    .modal { width: 100%; max-width: 640px; background: rgba(6,6,6,0.9); padding: 18px; border-radius: 14px; border: var(--glass); box-shadow: var(--shadow); transform: scale(1); }
-    .type-btn { padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); cursor: pointer; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
-    input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); background: transparent; color: var(--text); margin-top: 8px; font-size: 16px; }
-    .qr { display: block; margin: 12px auto; max-width: 220px; border-radius: 10px; box-shadow: var(--shadow); }
-    .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .modal { width: 100%; max-width: 680px; background: var(--panel); padding: 20px; border-radius: 20px; border: var(--glass); box-shadow: var(--shadow); transform: scale(1); animation: scaleIn 0.3s ease; }
+    .type-btn { padding: 12px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.05); background: rgba(255,255,255,0.8); cursor: pointer; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); }
+    .type-btn.active { border: 2px solid var(--accent1); background: rgba(76,175,80,0.1); }
+    .type-btn:hover { transform: scale(1.02); }
+    input, textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: #ffffff; color: var(--text); margin-top: 10px; font-size: 16px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+    input:focus, textarea:focus { border-color: var(--accent1); outline: none; }
+    .qr { display: block; margin: 14px auto; max-width: 240px; border-radius: 12px; box-shadow: var(--shadow); }
+    .note { font-size: 14px; color: var(--muted); margin-top: 10px; }
     /* loader */
     .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; }
     .loader.hidden { opacity: 0; pointer-events: none; display: none; }
-    canvas#particleCanvas { width: 220px; height: 220px; border-radius: 220px; background: radial-gradient(circle at 30% 0, rgba(184,134,11,0.08), transparent 40%); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-    .error { color: #ff8b8b; }
-    .ok { color: #8bffcf; }
+    canvas#particleCanvas { width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle at 30% 0, rgba(76,175,80,0.1), transparent 40%); box-shadow: var(--shadow); }
+    .error { color: #ff5252; }
+    .ok { color: #4CAF50; }
     @media (max-width: 520px) {
-      .card { padding: 14px; }
-      .btn { min-width: 100px; font-size: 14px; }
-      .fab { width: 50px; height: 50px; }
+      .card { padding: 16px; }
+      .btn { min-width: 120px; font-size: 15px; }
+      .fab { width: 56px; height: 56px; }
     }
   </style>
 </head>
 <body>
   <!-- Loader -->
   <div class="loader" id="appLoader">
-    <canvas id="particleCanvas" width="220" height="220"></canvas>
+    <canvas id="particleCanvas" width="240" height="240"></canvas>
   </div>
   <!-- Main app content -->
   <div class="wrap" id="appContent" aria-hidden="true">
-    <!-- PROFILE CARD -->
+    <!-- PROFILE CARD (always visible, but content switches) -->
     <div class="card" id="profileCard">
       <div class="row">
         <div class="avatar"><img id="avatar" src="" alt="avatar"></div>
         <div style="flex:1">
           <div class="title" id="userName">Загрузка...</div>
           <div class="muted" id="userHandle">@user</div>
-          <div style="margin-top:12px">
+          <div style="margin-top:14px">
             <div class="small">Баланс</div>
             <div class="balance" id="balance">0 ₽</div>
           </div>
@@ -81,16 +93,16 @@
         </div>
       </div>
     </div>
-    <!-- TABS -->
+    <!-- CONTENT CARD -->
     <div class="card">
-      <div class="tabs" role="tablist">
-        <div class="tab active" data-tab="tasks" id="tabTasks">Задания</div>
-        <div class="tab" data-tab="profile" id="tabProfile">Профиль</div>
-      </div>
       <!-- TASKS PANEL -->
-      <div id="tasksPanel">
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input id="filterInput" placeholder="Поиск по заданиям" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
+      <div id="tasksPanel" style="display:block">
+        <div class="sub-tabs" id="subTabs" style="display:none">
+          <div class="sub-tab active" data-sub="my">Мои задания</div>
+          <div class="sub-tab" data-sub="perform">Выполнить задания</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <input id="filterInput" placeholder="Поиск по заданиям" style="flex:1">
           <button class="btn" id="searchBtn">Поиск</button>
           <button class="btn ghost" id="newTaskBtn">Создать задание</button>
         </div>
@@ -98,12 +110,13 @@
           <div class="small">Загрузка…</div>
         </div>
       </div>
-      <!-- PROFILE PANEL (вкладка) -->
-      <div id="profilePanel" style="display:none">
+      <!-- PROFILE PANEL -->
+      <div id="profilePanel" style="display:none; position:relative">
+        <button id="supportBtn" style="position:absolute;top:10px;right:10px;background:transparent;border:none;font-size:24px;cursor:pointer;color:var(--accent1)">❓</button>
         <div class="small">Имя</div>
-        <div style="font-weight:800;font-size:18px" id="pName">—</div>
-        <div class="small" style="margin-top:8px">История операций</div>
-        <div id="history" style="margin-top:8px"></div>
+        <div style="font-weight:800;font-size:20px" id="pName">—</div>
+        <div class="small" style="margin-top:10px">История операций</div>
+        <div id="history" style="margin-top:10px"></div>
       </div>
     </div>
   </div>
@@ -115,18 +128,18 @@
   <!-- TOPUP Modal -->
   <div id="topupModal" class="modal-bg" aria-hidden="true">
     <div class="modal">
-      <button id="closeTopup" style="float:right;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+      <button id="closeTopup" style="float:right;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer">×</button>
       <h3>Пополнение через SBP / QR</h3>
       <div class="note">Минимум <b id="minTopup">150</b> ₽</div>
-      <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="display:flex;gap:10px;margin-top:12px">
         <input id="topupAmount" type="number" placeholder="Сумма" min="150" style="flex:1" />
         <button class="btn" id="createTopupBtn">Создать заявку</button>
       </div>
-      <div id="topupStep" style="display:none;margin-top:12px">
+      <div id="topupStep" style="display:none;margin-top:14px">
         <div class="note">Ссылка для оплаты / QR (скопируйте комментарий)</div>
         <img id="qrImg" class="qr" src="" alt="QR" />
         <input id="manualCode" readonly />
-        <div style="display:flex;gap:8px;margin-top:8px">
+        <div style="display:flex;gap:10px;margin-top:10px">
           <a id="payLink" class="btn" target="_blank" rel="noopener noreferrer">Открыть банк</a>
           <button class="btn ghost" id="confirmPaidBtn">Я оплатил</button>
         </div>
@@ -137,7 +150,7 @@
   <!-- WITHDRAW Modal -->
   <div id="withdrawModal" class="modal-bg" aria-hidden="true">
     <div class="modal">
-      <button id="closeWithdraw" style="float:right;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+      <button id="closeWithdraw" style="float:right;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer">×</button>
       <h3>Вывести средства</h3>
       <div class="note">Мин. 300 ₽</div>
       <input id="wAmount" type="number" placeholder="Сумма" />
@@ -150,13 +163,14 @@
   <!-- CREATE TASK Modal -->
   <div id="createModal" class="modal-bg" aria-hidden="true">
     <div class="modal">
-      <button id="closeCreate" style="float:right;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+      <button id="closeCreate" style="float:right;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer">×</button>
       <h3>Создать задание</h3>
       <div class="note">Выберите тип — цена проставится автоматически</div>
-      <div id="typesBox" style="margin-top:8px"></div>
+      <div id="typesBox" style="margin-top:10px"></div>
       <input id="taskUrl" placeholder="Ссылка (проверьте)" />
       <input id="taskQty" type="number" placeholder="Количество" min="1" value="1" />
-      <div style="display:flex;gap:8px;margin-top:10px">
+      <div id="totalPrice" class="note" style="animation: scaleIn 0.3s ease;"></div>
+      <div style="display:flex;gap:10px;margin-top:12px">
         <button class="btn" id="submitTask">Создать</button>
         <button class="btn ghost" id="cancelCreate">Отмена</button>
       </div>
@@ -172,39 +186,45 @@
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   try { tg?.ready?.(); tg?.expand?.(); } catch(e){ /* ignore */ }
   // IDs and DOM
-  const appLoader = document.getElementById('appLoader');
-  const appContent = document.getElementById('appContent');
-  const avatar = document.getElementById('avatar');
-  const userName = document.getElementById('userName');
-  const userHandle = document.getElementById('userHandle');
-  const balanceEl = document.getElementById('balance');
-  const pName = document.getElementById('pName');
-  const tasksList = document.getElementById('tasksList');
-  const filterInput = document.getElementById('filterInput');
-  const historyBox = document.getElementById('history');
+  const appLoader = $('#appLoader');
+  const appContent = $('#appContent');
+  const avatar = $('#avatar');
+  const userName = $('#userName');
+  const userHandle = $('#userHandle');
+  const balanceEl = $('#balance');
+  const pName = $('#pName');
+  const tasksList = $('#tasksList');
+  const filterInput = $('#filterInput');
+  const historyBox = $('#history');
+  const subTabs = $('#subTabs');
   // modals
-  const topupModal = document.getElementById('topupModal');
-  const withdrawModal = document.getElementById('withdrawModal');
-  const createModal = document.getElementById('createModal');
+  const topupModal = $('#topupModal');
+  const withdrawModal = $('#withdrawModal');
+  const createModal = $('#createModal');
   // topup elements
-  const topupAmountInput = document.getElementById('topupAmount');
-  const createTopupBtn = document.getElementById('createTopupBtn');
-  const topupStep = document.getElementById('topupStep');
-  const qrImg = document.getElementById('qrImg');
-  const manualCodeInput = document.getElementById('manualCode');
-  const payLink = document.getElementById('payLink');
-  const confirmPaidBtn = document.getElementById('confirmPaidBtn');
-  const topupMsg = document.getElementById('topupMsg');
+  const topupAmountInput = $('#topupAmount');
+  const createTopupBtn = $('#createTopupBtn');
+  const topupStep = $('#topupStep');
+  const qrImg = $('#qrImg');
+  const manualCodeInput = $('#manualCode');
+  const payLink = $('#payLink');
+  const confirmPaidBtn = $('#confirmPaidBtn');
+  const topupMsg = $('#topupMsg');
   // create task elements
-  const typesBox = document.getElementById('typesBox');
-  const submitTaskBtn = document.getElementById('submitTask');
-  const cancelCreateBtn = document.getElementById('cancelCreate');
+  const typesBox = $('#typesBox');
+  const submitTaskBtn = $('#submitTask');
+  const cancelCreateBtn = $('#cancelCreate');
+  const taskUrlInput = $('#taskUrl');
+  const taskQtyInput = $('#taskQty');
+  const totalPriceEl = $('#totalPrice');
   // withdraw elements
-  const wAmount = document.getElementById('wAmount');
-  const wName = document.getElementById('wName');
-  const wDetails = document.getElementById('wDetails');
-  const sendWithdrawBtn = document.getElementById('sendWithdraw');
-  const withdrawMsg = document.getElementById('withdrawMsg');
+  const wAmount = $('#wAmount');
+  const wName = $('#wName');
+  const wDetails = $('#wDetails');
+  const sendWithdrawBtn = $('#sendWithdraw');
+  const withdrawMsg = $('#withdrawMsg');
+  // support btn
+  const supportBtn = $('#supportBtn');
   // profile from Telegram or fallback
   const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
   const uid = tgUser.id ? String(tgUser.id) : (new URLSearchParams(location.search)).get('uid') || 'guest_' + String(Math.floor(Math.random()*99999));
@@ -212,10 +232,10 @@
   userName.textContent = tgUser.first_name || 'Пользователь';
   userHandle.textContent = tgUser.username ? '@' + tgUser.username : '';
   pName.textContent = userName.textContent;
-  // Particles loader
-  const canvas = document.getElementById('particleCanvas');
+  // Particles loader (light theme)
+  const canvas = $('#particleCanvas');
   const ctx = canvas.getContext('2d');
-  function resizeCanvas() { canvas.width = 220; canvas.height = 220; }
+  function resizeCanvas() { canvas.width = 240; canvas.height = 240; }
   resizeCanvas();
   let particles = [];
   class Particle {
@@ -225,7 +245,7 @@
       this.size = Math.random() * 4 + 1;
       this.vx = Math.random() * 2 - 1;
       this.vy = Math.random() * 2 - 1;
-      this.c = `rgba(184,134,11,${Math.random()*0.6+0.2})`;
+      this.c = `rgba(76,175,80,${Math.random()*0.6+0.2})`;
     }
     update() {
       this.x += this.vx; this.y += this.vy;
@@ -256,7 +276,6 @@
     socket.on('user_update', data => {
       if (!data) return;
       if (String(data.user_id) === String(uid)) {
-        // prefer server-provided balance if present
         if (typeof data.balance !== 'undefined') {
           renderBalance(Number(data.balance));
         } else {
@@ -273,13 +292,11 @@
   }
   function renderBalance(bal) {
     balanceEl.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
-    const headerBalanceText = document.getElementById('headerBalanceText');
-    if (headerBalanceText) {
-      headerBalanceText.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
-    }
+    const headerBalanceText = $('#headerBalanceText');
+    if (headerBalanceText) headerBalanceText.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
     window.__USER_BALANCE = Number(bal||0);
   }
-  // Load profile from server
+  // Load profile
   async function loadProfile() {
     try {
       const res = await fetch(`/api/profile_me?uid=${encodeURIComponent(uid)}`);
@@ -289,31 +306,24 @@
         const user = j.user;
         renderBalance(user.balance || 0);
         pName.textContent = user.name || user.first_name || userHandle.textContent || 'Пользователь';
-        // render history
         const hist = (user.history || []).slice(0, 10);
-        historyBox.innerHTML = hist.length ? hist.map(h => `<div style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:6px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="small">${h.amount ? (h.amount+' ₽') : ''} ${h.note||''}</div></div>`).join('') : '<div class="small">История пуста</div>';
+        historyBox.innerHTML = hist.length ? hist.map(h => `<div style="padding:10px;border-radius:12px;background:rgba(0,0,0,0.05);margin-bottom:8px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="small">${h.amount ? (h.amount+' ₽') : ''} ${h.note||''}</div></div>`).join('') : '<div class="small">История пуста</div>';
       } else {
         renderBalance(0);
         historyBox.innerHTML = '<div class="small error">Не удалось загрузить профиль</div>';
       }
     } catch (e) {
       console.warn(e);
-      try {
-        renderBalance(0);
-        historyBox.innerHTML = '<div class="small error">Ошибка сети при загрузке профиля</div>';
-      } catch (innerE) {
-        console.warn('Render balance failed', innerE);
-      }
+      renderBalance(0);
+      historyBox.innerHTML = '<div class="small error">Ошибка сети</div>';
     }
   }
-  // Tasks loading (tries two endpoints for compatibility)
+  // Tasks loading
   let allTasks = [];
   async function loadTasks() {
     try {
       let res = await fetch('/api/tasks/list').catch(()=>null);
-      if (!res || !res.ok) {
-        res = await fetch('/api/tasks_public').catch(()=>null);
-      }
+      if (!res || !res.ok) res = await fetch('/api/tasks_public').catch(()=>null);
       if (!res) throw new Error('No tasks endpoint');
       const j = await res.json();
       allTasks = j.tasks || j || [];
@@ -323,62 +333,71 @@
       tasksList.innerHTML = '<div class="small error">Не удалось загрузить задания</div>';
     }
   }
+  let currentSub = 'my';
   function renderTasks() {
     const q = (filterInput.value || '').toLowerCase();
-    const filtered = allTasks.filter(t => {
+    let filtered = allTasks.filter(t => {
       const title = (t.title || t.name || '').toLowerCase();
       const descr = (t.description || t.desc || '').toLowerCase();
       return !q || title.includes(q) || descr.includes(q);
     });
+    if (currentSub === 'my') {
+      filtered = filtered.filter(t => t.owner_uid === uid);
+    } else {
+      filtered = filtered.filter(t => t.owner_uid !== uid);
+    }
     if (filtered.length === 0) { tasksList.innerHTML = '<div class="small">Нет заданий</div>'; return; }
     tasksList.innerHTML = '';
     filtered.forEach(t => {
       const el = document.createElement('div');
       el.className = 'task-item';
-      el.innerHTML = `<div style="flex:1"><div style="font-weight:800">${escapeHtml(t.title || t.name || 'Задание')}</div><div class="small">${escapeHtml(t.description || t.desc || '')}</div></div>
-                      <div style="text-align:right"><div style="font-weight:900">${Number(t.unit_price || t.reward || 0).toLocaleString('ru-RU')} ₽</div><div class="small">${t.qty || 1} шт</div></div>`;
+      const completed = Number(t.completed_qty || 0);
+      const qty = Number(t.qty || 1);
+      const progressWidth = (completed / qty) * 100;
+      el.innerHTML = `<div style="flex:1"><div style="font-weight:800">${escapeHtml(t.title || t.name || 'Задание')}</div><div class="small">${escapeHtml(t.description || t.desc || '')}</div>
+                      ${currentSub === 'my' ? `<div class="small">Выполнено: ${completed}/${qty}</div><div class="progress"><div class="progress-bar" style="width:${progressWidth}%"></div></div>` : ''}
+                      </div><div style="text-align:right"><div style="font-weight:900">${Number(t.unit_price || t.reward || 0).toLocaleString('ru-RU')} ₽</div><div class="small">${qty} шт</div></div>`;
       tasksList.appendChild(el);
     });
   }
   // escape helper
   function escapeHtml(s='') { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  // Tabs & nav
-  $$('.tab').forEach(el => el.addEventListener('click', () => {
-    $$('.tab').forEach(x=>x.classList.remove('active'));
-    el.classList.add('active');
-    const tab = el.dataset.tab;
-    document.getElementById('tasksPanel').style.display = tab === 'tasks' ? 'block' : 'none';
-    document.getElementById('profilePanel').style.display = tab === 'profile' ? 'block' : 'none';
-  }));
+  // Nav
   $$('.nav-item').forEach(n => n.addEventListener('click', () => {
     $$('.nav-item').forEach(x=>x.classList.remove('active'));
     n.classList.add('active');
     const nav = n.dataset.nav;
-    const targetTab = nav === 'profile' ? 'profile' : 'tasks';
-    $(`.tab[data-tab="${targetTab}"]`).click();
+    $('#tasksPanel').style.display = nav === 'tasks' ? 'block' : 'none';
+    $('#profilePanel').style.display = nav === 'profile' ? 'block' : 'none';
+    subTabs.style.display = nav === 'tasks' ? 'flex' : 'none';
+    if (nav === 'tasks') renderTasks();
     window.scrollTo({top:0,behavior:'smooth'});
   }));
+  // Sub-tabs for tasks
+  $$('.sub-tab').forEach(el => el.addEventListener('click', () => {
+    $$('.sub-tab').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    currentSub = el.dataset.sub;
+    renderTasks();
+  }));
   // FAB and create
-  document.getElementById('fab').addEventListener('click', openCreate);
-  document.getElementById('newTaskBtn').addEventListener('click', openCreate);
-  document.getElementById('cancelCreate').addEventListener('click', closeCreate);
-  document.getElementById('closeCreate').addEventListener('click', closeCreate);
+  $('#fab').addEventListener('click', openCreate);
+  $('#newTaskBtn').addEventListener('click', openCreate);
+  $('#cancelCreate').addEventListener('click', closeCreate);
+  $('#closeCreate').addEventListener('click', closeCreate);
   // Types loading
   let types = [];
   let selectedType = null;
   async function loadTypes(){
     try {
       const res = await fetch('/api/task_types').catch(()=>null);
-      if (res && res.ok) {
-        const j = await res.json();
-        types = j || [];
-      } else {
-        // fallback read from /task_types.json
+      if (res && res.ok) types = await res.json() || [];
+      else {
         const res2 = await fetch('/task_types.json').catch(()=>null);
         if (res2 && res2.ok) types = await res2.json();
       }
     } catch(e) { console.warn('loadTypes', e); types = []; }
-    if (!types || types.length === 0) {
+    if (!types.length) {
       types = [
         {id:"ya_review", name:"Отзыв — Яндекс Карты", unit_price:85},
         {id:"gmaps_review", name:"Отзыв — Google Maps", unit_price:50},
@@ -397,6 +416,7 @@
         selectedType = t;
         $$('.type-btn').forEach(x=>x.classList.remove('active'));
         div.classList.add('active');
+        updateTotal();
       });
       typesBox.appendChild(div);
       if (idx === 0 && !selectedType) { selectedType = t; div.classList.add('active'); }
@@ -405,33 +425,44 @@
   function openCreate() {
     createModal.classList.add('open'); createModal.style.display = 'flex';
     loadTypes();
-    document.getElementById('createMsg').textContent = '';
+    $('#createMsg').textContent = '';
+    updateTotal();
   }
   function closeCreate() {
     createModal.classList.remove('open'); createModal.style.display = 'none';
     selectedType = null;
-    $('#taskUrl').value = '';
-    $('#taskQty').value = 1;
+    taskUrlInput.value = '';
+    taskQtyInput.value = 1;
+    totalPriceEl.textContent = '';
   }
+  function updateTotal() {
+    if (selectedType) {
+      const qty = Number(taskQtyInput.value) || 1;
+      const total = qty * selectedType.unit_price;
+      totalPriceEl.textContent = `Общая цена: ${total} ₽`;
+      totalPriceEl.style.animation = 'scaleIn 0.3s ease';
+    }
+  }
+  taskQtyInput.addEventListener('input', updateTotal);
   async function checkUrl(url) {
-    // best-effort: try fetch, but many URLs will be blocked by CORS; if fetch fails, warn but allow
-    if (!url) return { ok:false, message:'Пустая ссылка' };
+    if (!url) return { ok: false, message: 'Пустая ссылка' };
+    if (!url.startsWith('http://') && !url.startsWith('https://')) return { ok: false, message: 'Ссылка должна начинаться с http:// или https://' };
+    if (url.length > 2048) return { ok: false, message: 'Ссылка слишком длинная' };
     try {
-      const res = await fetch(url, { method: 'HEAD', mode: 'no-cors' }).catch(()=>null);
-      // If fetch didn't error, assume OK; otherwise return ok:true but with warning
-      return { ok: true };
+      const res = await fetch(url, { method: 'HEAD' });
+      return { ok: res.ok, message: res.ok ? '' : 'Ссылка не работает (ошибка ' + res.status + ')' };
     } catch (e) {
-      return { ok: true, message: 'Не удалось проверить (CORS) — убедитесь, что ссылка рабочая' };
+      return { ok: false, message: 'Не удалось проверить ссылку (ошибка сети или CORS)' };
     }
   }
   submitTaskBtn.addEventListener('click', async () => {
-    const url = $('#taskUrl').value.trim();
-    const qty = Number($('#taskQty').value || 0);
+    const url = taskUrlInput.value.trim();
+    const qty = Number(taskQtyInput.value || 0);
     if (!selectedType) return alert('Выберите тип задания');
     if (!url) return alert('Введите ссылку');
     if (!qty || qty < 1) return alert('Укажите корректное количество');
     const chk = await checkUrl(url);
-    if (!chk.ok && !confirm('Ссылка не прошла проверку. Создать задание всё равно?')) return;
+    if (!chk.ok) return alert(chk.message + '. Исправьте ссылку.');
     try {
       const body = {
         title: selectedType.name,
@@ -449,15 +480,15 @@
         await loadTasks();
         alert('Задание создано');
       } else {
-        alert((j && j.errmsg) || 'Ошибка создания задания');
+        alert((j && j.errmsg) || 'Ошибка создания');
       }
     } catch (e) {
-      console.error(e); alert('Ошибка сети при создании задания');
+      console.error(e); alert('Ошибка сети');
     }
   });
   // TOPUP flow
   const minTopup = 150;
-  document.getElementById('minTopup').textContent = minTopup;
+  $('#minTopup').textContent = minTopup;
   $('#topupBtn').addEventListener('click', openTopupModal);
   $('#closeTopup').addEventListener('click', ()=> { topupModal.classList.remove('open'); topupModal.style.display = 'none'; });
   function openTopupModal(){
@@ -469,7 +500,7 @@
   const topupState = { current: null, manual_code: null, amount: 0 };
   createTopupBtn.addEventListener('click', async () => {
     const amount = Number(topupAmountInput.value || 0);
-    if (!amount || amount < minTopup) return alert('Мин. пополнение ' + minTopup + ' ₽');
+    if (!amount || amount < minTopup) return alert('Мин. ' + minTopup + ' ₽');
     try {
       const res = await fetch('/api/user/topup-link', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount }) });
       const j = await res.json();
@@ -481,27 +512,27 @@
         topupState.current = (j.topup && j.topup.id) || j.id || null;
         topupState.manual_code = manualCodeInput.value;
         topupState.amount = amount;
-        topupMsg.textContent = 'Скопируйте комментарий и оплатите через банк. После платежа нажмите "Я оплатил" и создастся заявка на проверку админом.';
+        topupMsg.textContent = 'Скопируйте комментарий и оплатите. Нажмите "Я оплатил" для проверки.';
       } else {
-        alert((j && j.errmsg) || 'Ошибка создания ссылки оплаты');
+        alert((j && j.errmsg) || 'Ошибка');
       }
     } catch (e) {
-      console.error(e); alert('Ошибка сети при запросе ссылки оплаты');
+      console.error(e); alert('Ошибка сети');
     }
   });
   confirmPaidBtn.addEventListener('click', async () => {
-    if (!topupState.current) return alert('Не найдена информация о созданной оплате. Пересоздайте заявку.');
+    if (!topupState.current) return alert('Пересоздайте заявку');
     try {
       const res = await fetch('/api/user/topup-confirm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ topup_id: topupState.current, uid }) });
       const j = await res.json();
       if (j && j.ok) {
-        alert('Заявка отправлена на проверку администратору. Баланс будет зачислен после подтверждения.');
+        alert('Заявка на проверку');
         topupModal.classList.remove('open'); topupModal.style.display = 'none';
       } else {
-        alert((j && j.errmsg) || 'Не удалось подтвердить оплату');
+        alert((j && j.errmsg) || 'Ошибка');
       }
     } catch (e) {
-      console.error(e); alert('Ошибка сети при подтверждении оплаты');
+      console.error(e); alert('Ошибка сети');
     }
   });
   // WITHDRAW flow
@@ -513,17 +544,16 @@
     const details = wDetails.value.trim();
     if (!amount || amount < 300) return alert('Мин. 300 ₽');
     if (amount > (window.__USER_BALANCE || 0)) return alert('Недостаточно средств');
-    if (!name || !details) return alert('Заполните все поля');
+    if (!name || !details) return alert('Заполните поля');
     try {
       const res = await fetch('/api/user/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount, name, details }) });
       const j = await res.json();
       if (j && j.ok) {
-        withdrawMsg.textContent = 'Заявка отправлена на проверку';
+        withdrawMsg.textContent = 'Заявка отправлена';
         withdrawModal.classList.remove('open'); withdrawModal.style.display = 'none';
-        // optional: notify bot endpoint
         fetch('/api/notify_bot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, msg:`Заявка на вывод ${amount} ₽` }) }).catch(()=>{});
       } else {
-        withdrawMsg.textContent = (j && j.errmsg) || 'Ошибка создания заявки';
+        withdrawMsg.textContent = (j && j.errmsg) || 'Ошибка';
       }
     } catch (e) {
       console.error(e);
@@ -533,19 +563,18 @@
   // Search
   $('#searchBtn').addEventListener('click', renderTasks);
   filterInput.addEventListener('keyup', e => { if (e.key === 'Enter') renderTasks(); });
-  // Initial load sequence
+  // Support chat
+  supportBtn.addEventListener('click', () => {
+    if (tg) tg.openTelegramLink('tg://user?id=7233175676');
+    else window.open('https://t.me/user?id=7233175676', '_blank');
+  });
+  // Initial load
   (async function init() {
     showLoader(true);
     await Promise.allSettled([ loadProfile(), loadTasks(), loadTypes() ]);
-    setTimeout(()=> {
-      showLoader(false);
-    }, 600);
+    setTimeout(()=> showLoader(false), 600);
   })();
-  // resize canvas when viewport changes to keep loader nice
-  window.addEventListener('resize', ()=> {
-    // keep canvas fixed size for design; no need to resize heavily
-  });
-  // Expose some functions if needed
+  window.addEventListener('resize', () => {});
   window.loadProfile = loadProfile;
   window.loadTasks = loadTasks;
   window.loadTypes = loadTypes;
