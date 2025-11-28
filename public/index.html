@@ -4,12 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>ReviewCash • Кабинет</title>
-
   <!-- Telegram WebApp -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
-
   <style>
     :root {
       --bg: #040204; --panel: rgba(9,7,6,0.6); --accent1: #b8860b; --accent2: #ffd27f;
@@ -45,15 +43,12 @@
     input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); background: transparent; color: var(--text); margin-top: 8px; font-size: 16px; }
     .qr { display: block; margin: 12px auto; max-width: 220px; border-radius: 10px; box-shadow: var(--shadow); }
     .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
-
     /* loader */
     .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; }
     .loader.hidden { opacity: 0; pointer-events: none; display: none; }
     canvas#particleCanvas { width: 220px; height: 220px; border-radius: 220px; background: radial-gradient(circle at 30% 0, rgba(184,134,11,0.08), transparent 40%); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-
     .error { color: #ff8b8b; }
     .ok { color: #8bffcf; }
-
     @media (max-width: 520px) {
       .card { padding: 14px; }
       .btn { min-width: 100px; font-size: 14px; }
@@ -66,7 +61,6 @@
   <div class="loader" id="appLoader">
     <canvas id="particleCanvas" width="220" height="220"></canvas>
   </div>
-
   <!-- Main app content -->
   <div class="wrap" id="appContent" aria-hidden="true">
     <!-- PROFILE CARD -->
@@ -87,14 +81,12 @@
         </div>
       </div>
     </div>
-
     <!-- TABS -->
     <div class="card">
       <div class="tabs" role="tablist">
         <div class="tab active" data-tab="tasks" id="tabTasks">Задания</div>
         <div class="tab" data-tab="profile" id="tabProfile">Профиль</div>
       </div>
-
       <!-- TASKS PANEL -->
       <div id="tasksPanel">
         <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -106,7 +98,6 @@
           <div class="small">Загрузка…</div>
         </div>
       </div>
-
       <!-- PROFILE PANEL (вкладка) -->
       <div id="profilePanel" style="display:none">
         <div class="small">Имя</div>
@@ -116,14 +107,11 @@
       </div>
     </div>
   </div>
-
   <div class="fab" id="fab">+</div>
-
   <div class="tabbar" role="navigation">
     <div class="nav-item active" data-nav="tasks">Задания</div>
     <div class="nav-item" data-nav="profile">Профиль</div>
   </div>
-
   <!-- TOPUP Modal -->
   <div id="topupModal" class="modal-bg" aria-hidden="true">
     <div class="modal">
@@ -146,7 +134,6 @@
       </div>
     </div>
   </div>
-
   <!-- WITHDRAW Modal -->
   <div id="withdrawModal" class="modal-bg" aria-hidden="true">
     <div class="modal">
@@ -160,7 +147,6 @@
       <div id="withdrawMsg" class="note"></div>
     </div>
   </div>
-
   <!-- CREATE TASK Modal -->
   <div id="createModal" class="modal-bg" aria-hidden="true">
     <div class="modal">
@@ -177,17 +163,14 @@
       <div id="createMsg" class="note"></div>
     </div>
   </div>
-
 <script>
 (() => {
   // Basic safe helpers
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
-
   // Telegram init
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   try { tg?.ready?.(); tg?.expand?.(); } catch(e){ /* ignore */ }
-
   // IDs and DOM
   const appLoader = document.getElementById('appLoader');
   const appContent = document.getElementById('appContent');
@@ -199,12 +182,10 @@
   const tasksList = document.getElementById('tasksList');
   const filterInput = document.getElementById('filterInput');
   const historyBox = document.getElementById('history');
-
   // modals
   const topupModal = document.getElementById('topupModal');
   const withdrawModal = document.getElementById('withdrawModal');
   const createModal = document.getElementById('createModal');
-
   // topup elements
   const topupAmountInput = document.getElementById('topupAmount');
   const createTopupBtn = document.getElementById('createTopupBtn');
@@ -214,28 +195,23 @@
   const payLink = document.getElementById('payLink');
   const confirmPaidBtn = document.getElementById('confirmPaidBtn');
   const topupMsg = document.getElementById('topupMsg');
-
   // create task elements
   const typesBox = document.getElementById('typesBox');
   const submitTaskBtn = document.getElementById('submitTask');
   const cancelCreateBtn = document.getElementById('cancelCreate');
-
   // withdraw elements
   const wAmount = document.getElementById('wAmount');
   const wName = document.getElementById('wName');
   const wDetails = document.getElementById('wDetails');
   const sendWithdrawBtn = document.getElementById('sendWithdraw');
   const withdrawMsg = document.getElementById('withdrawMsg');
-
   // profile from Telegram or fallback
   const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
   const uid = tgUser.id ? String(tgUser.id) : (new URLSearchParams(location.search)).get('uid') || 'guest_' + String(Math.floor(Math.random()*99999));
   avatar.src = tgUser.photo_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(uid)}`;
   userName.textContent = tgUser.first_name || 'Пользователь';
   userHandle.textContent = tgUser.username ? '@' + tgUser.username : '';
-
   pName.textContent = userName.textContent;
-
   // Particles loader
   const canvas = document.getElementById('particleCanvas');
   const ctx = canvas.getContext('2d');
@@ -267,11 +243,11 @@
   function animateParticles() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     if (particles.length < 80) particles.push(new Particle());
-    particles.forEach((p, i) => { p.update(); p.draw(); if (p.size <= 0.6) particles.splice(i,1); });
+    particles.forEach(p => { p.update(); p.draw(); });
+    particles = particles.filter(p => p.size > 0.6);
     requestAnimationFrame(animateParticles);
   }
   animateParticles();
-
   // Socket.IO
   let socket = null;
   try {
@@ -290,19 +266,19 @@
     });
     socket.on('task_update', () => loadTasks());
   } catch(e){ console.warn('Socket init failed', e); }
-
   // Utilities
   function showLoader(bool) {
-    if (bool) { appLoader.classList.remove('hidden'); appContent.style.display = 'none'; }
+    if (bool) { appLoader.classList.remove('hidden'); appContent.style.display = 'none'; appContent.setAttribute('aria-hidden', 'true'); }
     else { appLoader.classList.add('hidden'); appContent.style.display = 'block'; appContent.removeAttribute('aria-hidden'); }
   }
-
   function renderBalance(bal) {
     balanceEl.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
-    document.getElementById('headerBalanceText')?.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
+    const headerBalanceText = document.getElementById('headerBalanceText');
+    if (headerBalanceText) {
+      headerBalanceText.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
+    }
     window.__USER_BALANCE = Number(bal||0);
   }
-
   // Load profile from server
   async function loadProfile() {
     try {
@@ -322,11 +298,14 @@
       }
     } catch (e) {
       console.warn(e);
-      renderBalance(0);
-      historyBox.innerHTML = '<div class="small error">Ошибка сети при загрузке профиля</div>';
+      try {
+        renderBalance(0);
+        historyBox.innerHTML = '<div class="small error">Ошибка сети при загрузке профиля</div>';
+      } catch (innerE) {
+        console.warn('Render balance failed', innerE);
+      }
     }
   }
-
   // Tasks loading (tries two endpoints for compatibility)
   let allTasks = [];
   async function loadTasks() {
@@ -344,7 +323,6 @@
       tasksList.innerHTML = '<div class="small error">Не удалось загрузить задания</div>';
     }
   }
-
   function renderTasks() {
     const q = (filterInput.value || '').toLowerCase();
     const filtered = allTasks.filter(t => {
@@ -362,10 +340,8 @@
       tasksList.appendChild(el);
     });
   }
-
   // escape helper
   function escapeHtml(s='') { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
   // Tabs & nav
   $$('.tab').forEach(el => el.addEventListener('click', () => {
     $$('.tab').forEach(x=>x.classList.remove('active'));
@@ -382,13 +358,11 @@
     $(`.tab[data-tab="${targetTab}"]`).click();
     window.scrollTo({top:0,behavior:'smooth'});
   }));
-
   // FAB and create
   document.getElementById('fab').addEventListener('click', openCreate);
   document.getElementById('newTaskBtn').addEventListener('click', openCreate);
   document.getElementById('cancelCreate').addEventListener('click', closeCreate);
   document.getElementById('closeCreate').addEventListener('click', closeCreate);
-
   // Types loading
   let types = [];
   let selectedType = null;
@@ -413,7 +387,6 @@
     }
     renderTypes();
   }
-
   function renderTypes(){
     typesBox.innerHTML = '';
     types.forEach((t, idx) => {
@@ -429,7 +402,6 @@
       if (idx === 0 && !selectedType) { selectedType = t; div.classList.add('active'); }
     });
   }
-
   function openCreate() {
     createModal.classList.add('open'); createModal.style.display = 'flex';
     loadTypes();
@@ -441,7 +413,6 @@
     $('#taskUrl').value = '';
     $('#taskQty').value = 1;
   }
-
   async function checkUrl(url) {
     // best-effort: try fetch, but many URLs will be blocked by CORS; if fetch fails, warn but allow
     if (!url) return { ok:false, message:'Пустая ссылка' };
@@ -453,17 +424,14 @@
       return { ok: true, message: 'Не удалось проверить (CORS) — убедитесь, что ссылка рабочая' };
     }
   }
-
   submitTaskBtn.addEventListener('click', async () => {
     const url = $('#taskUrl').value.trim();
     const qty = Number($('#taskQty').value || 0);
     if (!selectedType) return alert('Выберите тип задания');
     if (!url) return alert('Введите ссылку');
     if (!qty || qty < 1) return alert('Укажите корректное количество');
-
     const chk = await checkUrl(url);
     if (!chk.ok && !confirm('Ссылка не прошла проверку. Создать задание всё равно?')) return;
-
     try {
       const body = {
         title: selectedType.name,
@@ -487,7 +455,6 @@
       console.error(e); alert('Ошибка сети при создании задания');
     }
   });
-
   // TOPUP flow
   const minTopup = 150;
   document.getElementById('minTopup').textContent = minTopup;
@@ -499,9 +466,7 @@
     topupModal.classList.add('open'); topupModal.style.display = 'flex';
     topupMsg.textContent = '';
   }
-
   const topupState = { current: null, manual_code: null, amount: 0 };
-
   createTopupBtn.addEventListener('click', async () => {
     const amount = Number(topupAmountInput.value || 0);
     if (!amount || amount < minTopup) return alert('Мин. пополнение ' + minTopup + ' ₽');
@@ -524,7 +489,6 @@
       console.error(e); alert('Ошибка сети при запросе ссылки оплаты');
     }
   });
-
   confirmPaidBtn.addEventListener('click', async () => {
     if (!topupState.current) return alert('Не найдена информация о созданной оплате. Пересоздайте заявку.');
     try {
@@ -540,7 +504,6 @@
       console.error(e); alert('Ошибка сети при подтверждении оплаты');
     }
   });
-
   // WITHDRAW flow
   $('#withdrawBtn').addEventListener('click', ()=> { withdrawModal.classList.add('open'); withdrawModal.style.display = 'flex'; withdrawMsg.textContent = ''; });
   $('#closeWithdraw').addEventListener('click', ()=> { withdrawModal.classList.remove('open'); withdrawModal.style.display = 'none'; });
@@ -551,7 +514,6 @@
     if (!amount || amount < 300) return alert('Мин. 300 ₽');
     if (amount > (window.__USER_BALANCE || 0)) return alert('Недостаточно средств');
     if (!name || !details) return alert('Заполните все поля');
-
     try {
       const res = await fetch('/api/user/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount, name, details }) });
       const j = await res.json();
@@ -568,44 +530,25 @@
       withdrawMsg.textContent = 'Ошибка сети';
     }
   });
-
   // Search
   $('#searchBtn').addEventListener('click', renderTasks);
   filterInput.addEventListener('keyup', e => { if (e.key === 'Enter') renderTasks(); });
-
   // Initial load sequence
   (async function init() {
     showLoader(true);
     await Promise.allSettled([ loadProfile(), loadTasks(), loadTypes() ]);
-    // Small delay for nicer UX
     setTimeout(()=> {
       showLoader(false);
     }, 600);
   })();
-
-  // helper to toggle loader and main UI
-  function showLoader(state) {
-    if (state) {
-      appLoader.classList.remove('hidden');
-      appContent.style.display = 'none';
-      appContent.setAttribute('aria-hidden', 'true');
-    } else {
-      appLoader.classList.add('hidden');
-      appContent.style.display = 'block';
-      appContent.removeAttribute('aria-hidden');
-    }
-  }
-
   // resize canvas when viewport changes to keep loader nice
   window.addEventListener('resize', ()=> {
     // keep canvas fixed size for design; no need to resize heavily
   });
-
   // Expose some functions if needed
   window.loadProfile = loadProfile;
   window.loadTasks = loadTasks;
   window.loadTypes = loadTypes;
-
 })();
 </script>
 </body>
