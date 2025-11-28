@@ -5,357 +5,407 @@
 <title>ReviewCash — Личный кабинет</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Telegram WebApp -->
+<!-- Telegram WebApp API -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+<!-- Socket.IO -->
+<script src="/socket.io/socket.io.js"></script>
+
 <style>
-    body {
-        background: #000000;
-        margin: 0;
-        font-family: 'Inter', sans-serif;
-        color: #eaffff;
-    }
+/* ======= PREMIUM BLACK NEON THEME ======= */
+body {
+    background: radial-gradient(circle at top, #0a0a0a, #000000);
+    margin: 0;
+    font-family: "Inter", sans-serif;
+    color: #e8ffff;
+    overflow-x: hidden;
+}
 
-    /* НЕОН */
-    .neon {
-        color: #00eaff;
-        text-shadow: 0 0 10px #00eaff, 0 0 25px #00aaff;
-    }
+/* --- Glow animations --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+}
 
-    .card {
-        background: rgba(0,0,0,0.6);
-        border: 1px solid rgba(0,255,255,0.25);
-        border-radius: 20px;
-        padding: 20px;
-        margin: 15px;
-        box-shadow: 0 0 25px rgba(0,255,255,0.1);
-        backdrop-filter: blur(10px);
-        animation: fadeIn 0.4s ease;
-    }
+/* --- Card UI --- */
+.card {
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(0,255,255,0.20);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 15px;
+    box-shadow: 0 0 25px rgba(0,255,255,0.08);
+    backdrop-filter: blur(12px);
+    animation: fadeIn .45s ease;
+}
 
-    @keyframes fadeIn {
-        from {opacity:0; transform: translateY(15px);}
-        to {opacity:1; transform: translateY(0);}
-    }
+/* --- Titles --- */
+.neon {
+    color: #00f3ff;
+    text-shadow: 0 0 12px #00f3ff, 0 0 25px #0094ff;
+}
 
-    .btn {
-        width: 100%;
-        padding: 15px;
-        background: linear-gradient(90deg,#00eaff,#0077ff);
-        border: none;
-        border-radius: 12px;
-        color: black;
-        font-weight: 700;
-        font-size: 16px;
-        margin-top: 10px;
-        cursor:pointer;
-        box-shadow: 0 0 15px rgba(0,200,255,0.45);
-    }
+/* --- Buttons --- */
+.btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #00eaff, #0066ff);
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    margin-top: 12px;
+    cursor: pointer;
+    color: black;
+    font-size: 16px;
+    box-shadow: 0 0 15px rgba(0,180,255,0.45);
+    transition: 0.25s;
+}
+.btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 25px rgba(0,255,255,0.75);
+}
 
-    .tabbar {
-        display: flex;
-        justify-content: space-around;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0,0,0,0.8);
-        border-top: 1px solid rgba(0,255,255,0.25);
-        padding: 10px 0;
-    }
+/* --- FAB (Create Task button) --- */
+.fab {
+    position: fixed;
+    bottom: 85px;
+    right: 22px;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: linear-gradient(90deg,#00eaff,#00bfff);
+    color:black;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:34px;
+    cursor:pointer;
+    animation: pulse 2.2s infinite;
+}
+@keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.08); }
+}
 
-    .tab {
-        color: #77ddee;
-        font-size: 16px;
-        font-weight: 600;
-    }
+/* --- Bottom Nav --- */
+.tabbar {
+    position: fixed;
+    bottom: 0;
+    left:0;
+    width:100%;
+    background: rgba(0,0,0,0.8);
+    border-top: 1px solid rgba(0,255,255,0.2);
+    display:flex;
+    justify-content:space-around;
+    padding:12px 0;
+    backdrop-filter: blur(10px);
+}
+.tab {
+    color:#66ddee;
+    font-size:16px;
+    font-weight:600;
+    transition:0.25s;
+}
+.tab.active {
+    color:#00f6ff;
+    text-shadow:0 0 10px #00eaff;
+}
 
-    /* FAB кнопка создания задания */
-    .fab {
-        position: fixed;
-        bottom: 75px;
-        right: 25px;
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(90deg,#00eaff,#00c4ff);
-        border-radius: 50%;
-        display: flex;
-        align-items:center;
-        justify-content:center;
-        font-size: 35px;
-        color: black;
-        box-shadow: 0 0 20px rgba(0,255,255,0.5);
-        cursor: pointer;
-        user-select:none;
-    }
+/* --- Modal windows --- */
+.modal-bg {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(0,0,0,0.78);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter: blur(5px);
+}
+.modal {
+    width: 90%;
+    background: rgba(0,0,0,0.85);
+    border:1px solid #0099cc;
+    padding:25px;
+    border-radius:18px;
+    animation: scaleIn .35s ease;
+}
 
-    /* Модалка */
-    .modal-bg {
-        position: fixed;
-        top:0; left:0; width:100%; height:100%;
-        background: rgba(0,0,0,0.75);
-        display:none;
-        align-items:center;
-        justify-content:center;
-    }
+input {
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:12px;
+    border:1px solid #007799;
+    background:#00171c;
+    color:#a8faff;
+}
 
-    .modal {
-        background: rgba(0,0,0,0.85);
-        border: 1px solid #00aaff;
-        border-radius: 18px;
-        padding: 20px;
-        width: 90%;
-        box-shadow: 0 0 25px rgba(0,255,255,0.25);
-        animation: scaleIn 0.35s ease;
-    }
-
-    @keyframes scaleIn {
-        from {opacity:0; transform:scale(0.7);}
-        to {opacity:1; transform:scale(1);}
-    }
-
-    input {
-        width: 100%;
-        padding: 12px;
-        margin-top:10px;
-        border-radius: 12px;
-        border: 1px solid #006688;
-        background: #001c22;
-        color: #aafaff;
-    }
-
-    .type-btn {
-        padding: 12px;
-        border-radius: 12px;
-        background: rgba(0,255,255,0.1);
-        border: 1px solid #00bbff;
-        margin-top: 8px;
-        cursor:pointer;
-        font-size: 15px;
-        color: #66eeff;
-    }
-
-    .active-type {
-        background: linear-gradient(90deg,#00eaff,#0080ff);
-        color: black;
-        font-weight: 800;
-    }
-
+/* --- Type selection buttons --- */
+.type-btn {
+    padding:14px;
+    border-radius:12px;
+    border:1px solid #0088ff;
+    background: rgba(0,140,255,0.12);
+    margin-top:10px;
+    cursor:pointer;
+    color:#66ddff;
+    transition:.25s;
+}
+.type-btn:hover {
+    transform:scale(1.02);
+}
+.active-type {
+    background:linear-gradient(90deg,#00f2ff,#0080ff);
+    color:black;
+    font-weight:800;
+}
 </style>
 </head>
 <body>
 
+<!-- ========== PROFILE ========== -->
 <div id="profile" class="card">
-    <div style="display:flex; align-items:center;">
-        <img id="avatar" src="" style="width:70px;height:70px;border-radius:50%;border:2px solid #00eaff;box-shadow:0 0 15px #00eaff;">
+    <div style="display:flex;align-items:center;">
+        <img id="avatar" src="" style="width:70px;height:70px;border-radius:50%;border:2px solid #00eaff;box-shadow:0 0 15px #00f6ff;">
         <div style="margin-left:15px;">
-            <div class="neon" id="name">Загрузка…</div>
+            <div id="name" class="neon" style="font-size:20px;">Загрузка…</div>
             <div style="color:#88ddee;">ID: <span id="uid"></span></div>
         </div>
     </div>
-    <div style="margin-top:15px;">
-        <div style="font-size:15px;color:#88e0ff;">Баланс:</div>
-        <div class="neon" style="font-size:28px;" id="balance">0 ₽</div>
+
+    <div style="margin-top:20px;">
+        <div style="color:#88ddee;font-size:15px;">Баланс:</div>
+        <div id="balance" class="neon" style="font-size:32px;">0 ₽</div>
     </div>
+
     <button class="btn" onclick="openTopup()">Пополнить</button>
     <button class="btn" onclick="openWithdraw()">Вывести</button>
 </div>
 
+<!-- ========== TASKS BLOCK ========== -->
 <div id="tasksBlock" class="card">
     <div class="neon" style="font-size:22px;">Задания</div>
 
-    <div style="display:flex; margin-top:10px;">
+    <div style="display:flex;margin-top:10px;">
         <div onclick="setTab('my')" id="tabMy" class="type-btn active-type" style="flex:1;">Мои</div>
-        <div onclick="setTab('available')" id="tabAvailable" class="type-btn" style="flex:1;margin-left:8px;">Доступные</div>
+        <div onclick="setTab('avail')" id="tabAvail" class="type-btn" style="flex:1;margin-left:8px;">Доступные</div>
     </div>
 
-    <div id="tasksList" style="margin-top:15px;">
-        Загрузка…
-    </div>
+    <div id="tasksList" style="margin-top:15px;">Загрузка…</div>
 </div>
 
-<!-- Кнопка создания задания -->
+<!-- ========== FAB (Create Task) ========== -->
 <div class="fab" onclick="openCreateTask()">+</div>
 
-<!-- Модалка создания задания -->
+<!-- ========== CREATE TASK MODAL ========== -->
 <div id="createModal" class="modal-bg">
     <div class="modal">
-        <div class="neon" style="font-size:20px;">Создание задания</div>
+        <div class="neon" style="font-size:20px;margin-bottom:10px;">Создание задания</div>
 
+        <!-- динамически подгружаемые типы -->
         <div id="taskTypes"></div>
 
         <input id="taskUrl" placeholder="Ссылка…" type="text">
         <input id="taskQty" placeholder="Количество…" type="number">
 
         <button class="btn" onclick="submitTask()">Создать</button>
-        <button class="btn" style="background:#333;color:#0ff" onclick="closeCreateModal()">Отмена</button>
+        <button class="btn" style="background:#333;color:#0ff" onclick="closeCreateTask()">Отмена</button>
     </div>
 </div>
 
+<!-- ========== NAV BAR ========== -->
+<div class="tabbar">
+    <div class="tab active" onclick="scrollToBlock('profile')">Профиль</div>
+    <div class="tab" onclick="scrollToBlock('tasksBlock')">Задания</div>
+</div>
+
 <script>
-let tg = window.Telegram.WebApp;
+/* ======================================================
+   Telegram init
+====================================================== */
+const tg = window.Telegram.WebApp;
 tg.expand();
 
-let UID = tg.initDataUnsafe?.user?.id || 0;
+const UID = tg.initDataUnsafe?.user?.id || 0;
 document.getElementById("uid").innerText = UID;
 
-// Аватарка
 if (tg.initDataUnsafe.user.photo_url) {
     document.getElementById("avatar").src = tg.initDataUnsafe.user.photo_url;
 } else {
-    document.getElementById("avatar").src = "https://api.dicebear.com/8.x/thumbs/svg?seed=" + UID;
+    document.getElementById("avatar").src = "https://api.dicebear.com/8.x/thumbs/svg?seed="+UID;
 }
-
-// Имя
 document.getElementById("name").innerText =
-    tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? (" " + tg.initDataUnsafe.user.last_name) : "");
+     tg.initDataUnsafe.user.first_name +
+    (tg.initDataUnsafe.user.last_name ? " " + tg.initDataUnsafe.user.last_name : "");
 
-// ————————— ЗАГРУЗКА ПРОФИЛЯ —————————
-function loadProfile() {
-    fetch(`/api/profile_me?uid=${UID}`)
-        .then(r => r.json())
-        .then(d=>{
-            if(d.ok) {
-                document.getElementById("balance").innerText = d.user.balance + " ₽";
-            }
-        });
-}
-loadProfile();
-
-// LIVE обновление баланса
+/* ======================================================
+   SOCKET.IO Live Balance
+====================================================== */
 const socket = io();
-socket.on("user_update", msg=>{
+socket.on("user_update", msg => {
     if(msg.user_id == UID.toString()) {
         document.getElementById("balance").innerText = msg.balance + " ₽";
     }
 });
 
-// ————————— ТАБЫ —————————
+/* ======================================================
+   PROFILE
+====================================================== */
+function loadProfile() {
+    fetch(`/api/profile_me?uid=${UID}`)
+        .then(r=>r.json())
+        .then(d=>{
+            if(d.ok) document.getElementById("balance").innerText = d.user.balance + " ₽";
+        });
+}
+loadProfile();
+
+/* ======================================================
+   TASKS
+====================================================== */
 let currentTab = "my";
 
 function setTab(t) {
     currentTab = t;
-    document.getElementById("tabMy").classList.remove("active-type");
-    document.getElementById("tabAvailable").classList.remove("active-type");
 
-    if(t=="my") document.getElementById("tabMy").classList.add("active-type");
-    else document.getElementById("tabAvailable").classList.add("active-type");
+    document.getElementById("tabMy").classList.remove("active-type");
+    document.getElementById("tabAvail").classList.remove("active-type");
+
+    if(t === "my") document.getElementById("tabMy").classList.add("active-type");
+    else document.getElementById("tabAvail").classList.add("active-type");
 
     loadTasks();
 }
 
-// ————————— ЗАГРУЗКА ЗАДАНИЙ —————————
 function loadTasks() {
     fetch("/api/tasks/list")
         .then(r=>r.json())
         .then(d=>{
             let box = document.getElementById("tasksList");
-            box.innerHTML="";
+            box.innerHTML = "";
 
-            let arr = d.tasks;
+            let arr = d.tasks || [];
 
-            if(currentTab=="my") {
-                arr = arr.filter(t=>t.owner_uid==UID);
-            } else {
-                arr = arr.filter(t=>t.owner_uid!=UID);
-            }
+            if(currentTab === "my")
+                arr = arr.filter(t => t.owner_uid == UID);
+            else
+                arr = arr.filter(t => t.owner_uid != UID);
 
-            if(arr.length==0) {
-                box.innerHTML="<div style='color:#77ddee;padding:10px;'>Нет заданий</div>";
+            if(arr.length === 0) {
+                box.innerHTML = "<div style='color:#66e0ff;padding:10px;'>Нет заданий</div>";
                 return;
             }
 
             arr.forEach(t=>{
-                let div=document.createElement("div");
-                div.className="card";
+                let div = document.createElement("div");
+                div.className = "card";
+                div.style.margin = "10px 0";
+
                 div.innerHTML = `
                     <div class="neon" style="font-size:18px;">${t.title}</div>
-                    <div style="color:#88ddee;margin-top:5px;">${t.description || ""}</div>
-                    <div style="margin-top:10px;color:#55eaff;">${t.unit_price} ₽ × ${t.qty}</div>
+                    <div style="color:#88ccee;margin-top:5px;">${t.description || ""}</div>
+                    <div style="margin-top:10px;color:#4be9ff;">${t.unit_price} ₽ × ${t.qty}</div>
                 `;
+
                 box.appendChild(div);
             });
-        })
+        });
 }
 loadTasks();
 
-// ————————— Модалка создания задания —————————
-function openCreateTask(){document.getElementById("createModal").style.display="flex"; loadTypes();}
-function closeCreateModal(){document.getElementById("createModal").style.display="none";}
+/* ======================================================
+   CREATE TASK MODAL
+====================================================== */
+function openCreateTask(){
+    document.getElementById("createModal").style.display="flex";
+    loadTaskTypes();
+}
+function closeCreateTask(){
+    document.getElementById("createModal").style.display="none";
+}
 
-let selectedType=null;
+let selectedType = null;
+let allTypes = [];
 
-function loadTypes() {
-    fetch("/api/admin/tasks") // переиспользуем endpoint
+/* -------- load task types from backend -------- */
+function loadTaskTypes(){
+    fetch("/task_types.json")
         .then(r=>r.json())
-        .then(d=>{
-            fetch("/api/admin/tasks") // игнорируем, получим только типы
+        .then(types=>{
+            allTypes = types;
+            let box = document.getElementById("taskTypes");
+            box.innerHTML = "";
+
+            types.forEach(t=>{
+                let el = document.createElement("div");
+                el.className = "type-btn";
+                el.innerHTML = `${t.name} — <b>${t.unit_price} ₽</b>`;
+
+                el.onclick = ()=>{
+                    selectedType = t;
+                    document.querySelectorAll(".type-btn").forEach(b=>b.classList.remove("active-type"));
+                    el.classList.add("active-type");
+                };
+
+                box.appendChild(el);
+            });
         });
-
-    fetch("/task_types.json") // можно заменить на /api/task-types если добавишь
 }
 
-fetch("/api/admin/tasks") // костыль, при необходимости заменим позже
-.catch(()=>{});
-
-// Заглушка типов (берутся с backend)
-let types = [
-    {id:"ya_review", name:"Яндекс карты", price:120},
-    {id:"gmaps_review", name:"Google Maps", price:65},
-    {id:"tg_sub", name:"Подписка на канал", price:10}
-];
-
-function loadTypes(){
-    let box=document.getElementById("taskTypes");
-    box.innerHTML="";
-
-    types.forEach(t=>{
-        let div=document.createElement("div");
-        div.className="type-btn";
-        div.innerHTML=`${t.name} — <b>${t.price} ₽</b>`;
-        div.onclick=()=>{
-            selectedType=t.id;
-            document.querySelectorAll(".type-btn").forEach(b=>b.classList.remove("active-type"));
-            div.classList.add("active-type");
-        };
-        box.appendChild(div);
-    });
-}
-
+/* -------- submit new task -------- */
 function submitTask(){
-    let url=document.getElementById("taskUrl").value.trim();
-    let qty=document.getElementById("taskQty").value;
-
     if(!selectedType) return alert("Выберите тип");
+
+    let url = document.getElementById("taskUrl").value.trim();
+    let qty = Number(document.getElementById("taskQty").value);
+
     if(!url) return alert("Введите ссылку");
-    if(!qty || qty<=0) return alert("Количество!");
+    if(!qty || qty <= 0) return alert("Введите количество");
 
     fetch("/api/admin/task-create",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-            title: selectedType,
-            desc:"Задание",
-            reward: types.find(x=>x.id==selectedType).price,
-            url:url
+            title: selectedType.name,
+            desc: selectedType.name,
+            reward: selectedType.unit_price,
+            qty,
+            url,
+            type_id:selectedType.id
         })
     })
     .then(r=>r.json())
     .then(d=>{
         if(d.ok){
-            closeCreateModal();
+            closeCreateTask();
             loadTasks();
-        } else alert("Ошибка");
+        } else {
+            alert("Ошибка создания");
+        }
     });
 }
 
-// ————————— Пополнение / вывод —————————
-function openTopup(){alert("Пока отключено");}
-function openWithdraw(){window.location.href="/withdraw.html";}
-</script>
+/* ======================================================
+   NAV BLOCK SWITCHER
+====================================================== */
+function scrollToBlock(id){
+    document.getElementById(id).scrollIntoView({behavior:"smooth"});
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    event.target.classList.add("active");
+}
 
-<!-- Socket.io -->
-<script src="/socket.io/socket.io.js"></script>
+/* ======================================================
+   WITHDRAW & TOPUP
+====================================================== */
+function openTopup(){ alert("Метод оплаты обновляется…"); }
+function openWithdraw(){ location.href="/withdraw.html"; }
+
+</script>
 
 </body>
 </html>
