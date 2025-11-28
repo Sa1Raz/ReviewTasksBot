@@ -36,13 +36,14 @@
     .title { font-weight: 800; font-size: 20px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     .muted { color: var(--muted); font-size: 14px; }
     .balance { font-weight: 900; font-size: 36px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .btn { display: inline-block; padding: 14px 20px; border-radius: 14px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 800; cursor: pointer; margin-top: 12px; min-width: 140px; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .btn { display: inline-block; padding: 14px 20px; border-radius: 14px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 800; cursor: pointer; margin-top: 12px; min-width: 140px; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,0.7); } 70% { box-shadow: 0 0 0 10px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
     .btn:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(76,175,80,0.3); }
     .btn.ghost { background: transparent; border: 1px solid var(--accent1); color: var(--accent1); }
     .btn.ghost:hover { background: rgba(76,175,80,0.1); }
     .btn.small { min-width: auto; padding: 8px 12px; font-size: 14px; }
     .sub-tabs { display: flex; gap: 10px; margin-bottom: 14px; }
-    .sub-tab { flex: 1; padding: 12px; border-radius: 999px; text-align: center; background: rgba(0,0,0,0.05); cursor: pointer; font-weight: 800; color: var(--text); }
+    .sub-tab { flex: 1; padding: 12px; border-radius: 999px; text-align: center; background: rgba(0,0,0,0.05); cursor: pointer; font-weight: 800; color: var(--text); animation: glowPulse 2s infinite; }
     .sub-tab.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
     .task-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.8); margin-bottom: 10px; box-shadow: var(--shadow); position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; }
     body.dark .task-item { background: rgba(0,0,0,0.8); }
@@ -54,14 +55,15 @@
     .fab:hover { transform: scale(1.1) rotate(90deg); }
     .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 999px; border: var(--glass); display: flex; gap: 10px; box-shadow: var(--shadow); transition: bottom 0.3s ease; }
     body.dark .tabbar { background: rgba(0,0,0,0.9); }
-    .nav-item { padding: 10px 16px; border-radius: 999px; color: var(--muted); cursor: pointer; font-weight: 700; transition: background 0.3s ease, color 0.3s ease; }
+    .nav-item { padding: 10px 16px; border-radius: 999px; color: var(--muted); cursor: pointer; font-weight: 700; transition: background 0.3s ease, color 0.3s ease; animation: glowPulse 2s infinite; }
     .nav-item.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
     .modal-bg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
     body.dark .modal-bg { background: rgba(255,255,255,0.5); }
     .modal-bg.open { display: flex; opacity: 1; }
     .modal { width: 100%; max-width: 680px; background: var(--panel); padding: 24px; border-radius: 24px; border: var(--glass); box-shadow: var(--shadow), var(--neon-glow); transform: scale(0.95); opacity: 0; animation: scaleInNeon 0.5s ease forwards; }
     @keyframes scaleInNeon { from { transform: scale(0.95); opacity: 0; box-shadow: none; } to { transform: scale(1); opacity: 1; box-shadow: var(--shadow), var(--neon-glow); } }
-    .type-btn { padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); cursor: pointer; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .type-btn { padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); cursor: pointer; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: glowPulse 2s infinite; }
+    @keyframes glowPulse { 0% { box-shadow: var(--shadow); } 50% { box-shadow: var(--shadow), var(--neon-glow); } 100% { box-shadow: var(--shadow); } }
     body.dark .type-btn { background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.7)); border: 1px solid rgba(255,255,255,0.05); }
     .type-btn.active { border: 3px solid var(--accent1); background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(76,175,80,0.1)); }
     body.dark .type-btn.active { background: linear-gradient(135deg, rgba(0,255,0,0.2), rgba(0,255,0,0.1)); }
@@ -71,22 +73,21 @@
     input:focus, textarea:focus { border-color: var(--accent1); outline: none; box-shadow: 0 0 10px var(--accent1); }
     .qr { display: block; margin: 14px auto; max-width: 240px; border-radius: 12px; box-shadow: var(--shadow); transition: transform 0.3s ease; }
     .qr:hover { transform: rotate(5deg); }
-    .note { font-size: 14px; color: var(--muted); margin-top: 10px; transition: color 0.3s ease; }
+    .note { font-size: 14px; color: var(--muted); margin-top: 10px; transition: color 0.3s ease; font-style: italic; text-shadow: 0 1px 1px rgba(0,0,0,0.05); }
     /* loader */
     .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; }
     .loader.hidden { opacity: 0; pointer-events: none; display: none; }
-    .loader-text { font-size: 40px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.2s infinite alternate, waveBounce 2s infinite, blurGlow 2s infinite, colorFade 5s infinite; text-shadow: var(--neon-glow); filter: blur(0.5px); }
+    .loader-text { font-size: 40px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.2s infinite alternate, waveBounce 2s infinite, blurGlow 2s infinite, colorFade 5s infinite, shine 3s infinite; text-shadow: var(--neon-glow); filter: blur(0.5px); }
     @keyframes waveBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
     @keyframes colorFade { 0% { color: var(--accent1); } 50% { color: var(--accent2); } 100% { color: var(--accent1); } }
     @keyframes blurGlow { 0% { filter: blur(0px); text-shadow: var(--neon-glow); } 50% { filter: blur(3px); text-shadow: 0 0 40px var(--accent1); } 100% { filter: blur(0px); text-shadow: var(--neon-glow); } }
-    canvas#particleCanvas { width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle at 30% 0, rgba(76,175,80,0.1), transparent 40%); box-shadow: var(--shadow); animation: rotate 15s linear infinite, colorShift 5s infinite alternate; }
-    @keyframes colorShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(60deg); } }
+    @keyframes shine { 0% { letter-spacing: 0px; } 50% { letter-spacing: 2px; } 100% { letter-spacing: 0px; } }
     .error { color: #ff5252; }
     .ok { color: #4CAF50; }
     /* url checker spinner */
-    .url-check { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--accent1); border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; vertical-align: middle; display: none; }
+    .url-check { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--accent1); border-top: 3px solid transparent; border-radius: 50%; animation: spin 0.8s linear infinite, colorShift 2s infinite; margin-left: 10px; vertical-align: middle; display: none; box-shadow: 0 0 10px var(--accent1); }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .url-status { margin-left: 10px; font-size: 16px; vertical-align: middle; }
+    .url-status { margin-left: 10px; font-size: 18px; vertical-align: middle; animation: fadeIn 0.5s ease; }
     /* support btn prettier */
     #supportBtn { font-size: 32px; color: var(--accent1); text-shadow: var(--neon-glow); transition: all 0.3s ease; background: linear-gradient(90deg, var(--accent1), var(--accent2)); border-radius: 50%; padding: 8px; box-shadow: var(--shadow); }
     #supportBtn:hover { transform: scale(1.2) rotate(15deg); text-shadow: 0 0 15px var(--accent1), 0 0 30px var(--accent2); box-shadow: 0 0 20px var(--accent1); }
@@ -101,12 +102,11 @@
   <!-- Loader -->
   <div class="loader" id="appLoader">
     <div class="loader-text">ReviewCashBot</div>
-    <canvas id="particleCanvas" width="350" height="350"></canvas>
   </div>
   <!-- Main app content -->
   <div class="wrap" id="appContent" aria-hidden="true">
     <!-- PROFILE CARD (now conditional) -->
-    <div class="card" id="profileCard" style="display:none">
+    <div class="card" id="profileCard" style="display:none; background: linear-gradient(135deg, var(--panel), rgba(76,175,80,0.1)); box-shadow: 0 0 20px var(--accent1);">
       <div class="row">
         <div class="avatar"><img id="avatar" src="" alt="avatar"></div>
         <div style="flex:1">
@@ -136,9 +136,9 @@
         </div>
       </div>
       <!-- PROFILE PANEL -->
-      <div id="profilePanel" style="display:none; position:relative">
-        <button id="supportBtn" style="position:absolute;top:10px;right:10px;background:transparent;border:none;cursor:pointer">🎧</button>
-        <button class="btn ghost small" id="themeToggle" style="position:absolute;top:10px;left:10px;margin-top:0">Тема</button>
+      <div id="profilePanel" style="display:none; position:relative; background: linear-gradient(135deg, var(--panel), rgba(76,175,80,0.05)); box-shadow: 0 0 15px var(--accent2);">
+        <button id="supportBtn" style="position:fixed;top:10px;right:10px;z-index:1000;background:transparent;border:none;cursor:pointer">🎧</button>
+        <button class="btn ghost small" id="themeToggle" style="position:fixed;top:10px;left:10px;margin-top:0;z-index:1000">Тема</button>
         <div class="small">Имя</div>
         <div style="font-weight:800;font-size:20px" id="pName">—</div>
         <div class="small" style="margin-top:10px">История операций</div>
@@ -265,57 +265,6 @@
   userName.textContent = tgUser.first_name || 'Пользователь';
   userHandle.textContent = tgUser.username ? '@' + tgUser.username : '';
   pName.textContent = userName.textContent;
-  // Particles for loader (improved)
-  const canvas = $('#particleCanvas');
-  const ctx = canvas.getContext('2d');
-  function resizeCanvas() { canvas.width = 350; canvas.height = 350; }
-  resizeCanvas();
-  let particles = [];
-  class Particle {
-    constructor() {
-      this.x = canvas.width / 2;
-      this.y = canvas.height / 2;
-      this.size = Math.random() * 6 + 3;
-      this.angle = Math.random() * Math.PI * 2;
-      this.speed = Math.random() * 4 + 2;
-      this.color = `hsl(${Math.random() * 60 + 120}, 100%, 50%)`; // green neon shades
-      this.alpha = 1;
-      this.trailLength = 5;
-    }
-    update() {
-      this.angle += Math.random() * 0.1 - 0.05;
-      this.x += Math.cos(this.angle) * this.speed;
-      this.y += Math.sin(this.angle) * this.speed;
-      this.alpha -= 0.008;
-      this.speed *= 0.98;
-      if (this.alpha <= 0 || this.speed < 0.1) {
-        this.x = canvas.width / 2;
-        this.y = canvas.height / 2;
-        this.angle = Math.random() * Math.PI * 2;
-        this.speed = Math.random() * 4 + 2;
-        this.alpha = 1;
-      }
-    }
-    draw() {
-      ctx.globalAlpha = this.alpha;
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-  }
-  function animateParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (particles.length < 200) particles.push(new Particle());
-    particles.forEach((p, i) => {
-      p.update();
-      p.draw();
-      if (p.alpha <= 0) particles.splice(i, 1);
-    });
-    requestAnimationFrame(animateParticles);
-  }
-  animateParticles();
   // Socket.IO
   let socket = null;
   try {
@@ -438,9 +387,9 @@
     } catch(e) { console.warn('loadTypes', e); types = []; }
     if (!types.length) {
       types = [
-        {id:"ya_review", name:"Отзыв — Яндекс Карты", unit_price:85, max_qty:150},
-        {id:"gmaps_review", name:"Отзыв — Google Maps", unit_price:50, max_qty:200},
-        {id:"tg_sub", name:"Подписка — Telegram канал", unit_price:5, max_qty:100000}
+        {id:"ya_review", name:"Отзыв — Яндекс Карты", unit_price:120, max_qty:150},
+        {id:"gmaps_review", name:"Отзыв — Google Maps", unit_price:65, max_qty:200},
+        {id:"tg_sub", name:"Подписка — Telegram канал", unit_price:10, max_qty:100000}
       ];
     }
     renderTypes();
