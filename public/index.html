@@ -72,16 +72,19 @@
     /* loader */
     .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; }
     .loader.hidden { opacity: 0; pointer-events: none; display: none; }
-    .loader-text { font-size: 32px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.5s infinite; text-shadow: var(--neon-glow); transform: scale(1); }
-    @keyframes loaderAnim { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-    .loader { animation: fadeIn 1s ease; }
-    .loader-text { animation: loaderAnim 2s ease, neonPulse 1.5s infinite alternate; }
+    .loader-text { font-size: 36px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.5s infinite alternate, rotateScale 3s ease-in-out infinite; text-shadow: var(--neon-glow); }
+    @keyframes rotateScale { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+    canvas#particleCanvas { width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle at 30% 0, rgba(76,175,80,0.1), transparent 40%); box-shadow: var(--shadow); animation: rotate 10s linear infinite; }
+    @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .error { color: #ff5252; }
+    .ok { color: #4CAF50; }
     /* url checker spinner */
     .url-check { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--accent1); border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; vertical-align: middle; display: none; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .url-status { margin-left: 10px; font-size: 16px; vertical-align: middle; }
-    .error { color: #ff5252; }
-    .ok { color: #4CAF50; }
+    /* support btn prettier */
+    #supportBtn { font-size: 28px; color: var(--accent1); text-shadow: var(--neon-glow); transition: all 0.3s ease; }
+    #supportBtn:hover { transform: scale(1.2); text-shadow: 0 0 15px var(--accent1), 0 0 30px var(--accent2); }
     @media (max-width: 520px) {
       .card { padding: 16px; }
       .btn { min-width: 120px; font-size: 15px; }
@@ -93,11 +96,12 @@
   <!-- Loader -->
   <div class="loader" id="appLoader">
     <div class="loader-text">ReviewCashBot</div>
+    <canvas id="particleCanvas" width="300" height="300"></canvas>
   </div>
   <!-- Main app content -->
   <div class="wrap" id="appContent" aria-hidden="true">
-    <!-- PROFILE CARD (always visible, but content switches) -->
-    <div class="card" id="profileCard">
+    <!-- PROFILE CARD (now conditional) -->
+    <div class="card" id="profileCard" style="display:none">
       <div class="row">
         <div class="avatar"><img id="avatar" src="" alt="avatar"></div>
         <div style="flex:1">
@@ -122,14 +126,13 @@
           <div class="sub-tab active" data-sub="my">Мои задания</div>
           <div class="sub-tab" data-sub="perform">Выполнить задания</div>
         </div>
-        <!-- Removed search and newTaskBtn -->
         <div id="tasksList">
           <div class="small">Загрузка…</div>
         </div>
       </div>
       <!-- PROFILE PANEL -->
       <div id="profilePanel" style="display:none; position:relative">
-        <button id="supportBtn" style="position:absolute;top:10px;right:10px;background:transparent;border:none;font-size:24px;cursor:pointer;color:var(--accent1)">🎧</button>
+        <button id="supportBtn" style="position:absolute;top:10px;right:10px;background:transparent;border:none;cursor:pointer">🎧</button>
         <div class="small">Имя</div>
         <div style="font-weight:800;font-size:20px" id="pName">—</div>
         <div class="small" style="margin-top:10px">История операций</div>
@@ -218,6 +221,7 @@
   const tasksList = $('#tasksList');
   const historyBox = $('#history');
   const subTabs = $('#subTabs');
+  const profileCard = $('#profileCard');
   // modals
   const topupModal = $('#topupModal');
   const withdrawModal = $('#withdrawModal');
@@ -256,14 +260,61 @@
   userName.textContent = tgUser.first_name || 'Пользователь';
   userHandle.textContent = tgUser.username ? '@' + tgUser.username : '';
   pName.textContent = userName.textContent;
+  // Particles for loader (improved)
+  const canvas = $('#particleCanvas');
+  const ctx = canvas.getContext('2d');
+  function resizeCanvas() { canvas.width = 300; canvas.height = 300; }
+  resizeCanvas();
+  let particles = [];
+  class Particle {
+    constructor() {
+      this.x = canvas.width / 2;
+      this.y = canvas.height / 2;
+      this.size = Math.random() * 5 + 2;
+      this.angle = Math.random() * Math.PI * 2;
+      this.speed = Math.random() * 3 + 1;
+      this.color = `hsl(${Math.random() * 60 + 120}, 100%, 50%)`; // green neon shades
+      this.alpha = 1;
+    }
+    update() {
+      this.angle += 0.05;
+      this.x += Math.cos(this.angle) * this.speed;
+      this.y += Math.sin(this.angle) * this.speed;
+      this.alpha -= 0.01;
+      if (this.alpha <= 0) {
+        this.x = canvas.width / 2;
+        this.y = canvas.height / 2;
+        this.angle = Math.random() * Math.PI * 2;
+        this.alpha = 1;
+      }
+    }
+    draw() {
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (particles.length < 150) particles.push(new Particle());
+    particles.forEach((p, i) => {
+      p.update();
+      p.draw();
+      if (p.alpha <= 0) particles.splice(i, 1);
+    });
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
   // Socket.IO
   let socket = null;
   try {
     socket = io();
     socket.on('connect', ()=> console.log('WS connected', socket.id));
     socket.on('user_update', data => {
-      if (!data) return;
-      if (String(data.user_id) === String(uid)) {
+      if (data && String(data.user_id) === String(uid)) {
         if (typeof data.balance !== 'undefined') {
           renderBalance(Number(data.balance));
         } else {
@@ -279,7 +330,7 @@
     else { appLoader.classList.add('hidden'); appContent.style.display = 'block'; appContent.removeAttribute('aria-hidden'); }
   }
   function renderBalance(bal) {
-    balanceEl.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
+    if (balanceEl) balanceEl.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
     window.__USER_BALANCE = Number(bal||0);
   }
   // Load profile
@@ -291,17 +342,17 @@
       if (j && j.ok && j.user) {
         const user = j.user;
         renderBalance(user.balance || 0);
-        pName.textContent = user.name || user.first_name || userHandle.textContent || 'Пользователь';
+        if (pName) pName.textContent = user.name || user.first_name || userHandle.textContent || 'Пользователь';
         const hist = (user.history || []).slice(0, 10);
-        historyBox.innerHTML = hist.length ? hist.map(h => `<div style="padding:10px;border-radius:12px;background:rgba(0,0,0,0.05);margin-bottom:8px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="small">${h.amount ? (h.amount+' ₽') : ''} ${h.note||''}</div></div>`).join('') : '<div class="small">История пуста</div>';
+        if (historyBox) historyBox.innerHTML = hist.length ? hist.map(h => `<div style="padding:10px;border-radius:12px;background:rgba(0,0,0,0.05);margin-bottom:8px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="small">${h.amount ? (h.amount+' ₽') : ''} ${h.note||''}</div></div>`).join('') : '<div class="small">История пуста</div>';
       } else {
         renderBalance(0);
-        historyBox.innerHTML = '<div class="small error">Не удалось загрузить профиль</div>';
+        if (historyBox) historyBox.innerHTML = '<div class="small error">Не удалось загрузить профиль</div>';
       }
     } catch (e) {
       console.warn(e);
       renderBalance(0);
-      historyBox.innerHTML = '<div class="small error">Ошибка сети</div>';
+      if (historyBox) historyBox.innerHTML = '<div class="small error">Ошибка сети</div>';
     }
   }
   // Tasks loading
@@ -316,7 +367,7 @@
       renderTasks();
     } catch (e) {
       console.warn('loadTasks error', e);
-      tasksList.innerHTML = '<div class="small error">Не удалось загрузить задания</div>';
+      if (tasksList) tasksList.innerHTML = '<div class="small error">Не удалось загрузить задания</div>';
     }
   }
   let currentSub = 'my';
@@ -327,8 +378,8 @@
     } else {
       filtered = filtered.filter(t => t.owner_uid !== uid);
     }
-    if (filtered.length === 0) { tasksList.innerHTML = '<div class="small">Нет заданий</div>'; return; }
-    tasksList.innerHTML = '';
+    if (filtered.length === 0) { if (tasksList) tasksList.innerHTML = '<div class="small">Нет заданий</div>'; return; }
+    if (tasksList) tasksList.innerHTML = '';
     filtered.forEach(t => {
       const el = document.createElement('div');
       el.className = 'task-item';
@@ -338,7 +389,7 @@
       el.innerHTML = `<div style="flex:1"><div style="font-weight:800">${escapeHtml(t.title || t.name || 'Задание')}</div><div class="small">${escapeHtml(t.description || t.desc || '')}</div>
                       ${currentSub === 'my' ? `<div class="small">Выполнено: ${completed}/${qty}</div><div class="progress"><div class="progress-bar" style="width:${progressWidth}%"></div></div>` : ''}
                       </div><div style="text-align:right"><div style="font-weight:900">${Number(t.unit_price || t.reward || 0).toLocaleString('ru-RU')} ₽</div><div class="small">${qty} шт</div></div>`;
-      tasksList.appendChild(el);
+      if (tasksList) tasksList.appendChild(el);
     });
   }
   // escape helper
@@ -351,6 +402,7 @@
     $('#tasksPanel').style.display = nav === 'tasks' ? 'block' : 'none';
     $('#profilePanel').style.display = nav === 'profile' ? 'block' : 'none';
     subTabs.style.display = nav === 'tasks' ? 'flex' : 'none';
+    profileCard.style.display = nav === 'profile' ? 'block' : 'none';
     if (nav === 'tasks') renderTasks();
     window.scrollTo({top:0,behavior:'smooth'});
   }));
@@ -568,8 +620,11 @@
   });
   // Support chat
   supportBtn.addEventListener('click', () => {
-    if (tg) tg.openTelegramLink('tg://user?id=7233175676');
-    else window.open('https://t.me/+7233175676', '_blank'); // fallback for browser
+    if (tg && tg.openTelegramLink) {
+      tg.openTelegramLink('tg://user?id=7233175676');
+    } else {
+      window.open('https://t.me/user?id=7233175676', '_blank');
+    }
   });
   // Theme toggle
   themeToggle.addEventListener('click', () => {
@@ -581,9 +636,9 @@
   (async function init() {
     showLoader(true);
     await Promise.allSettled([ loadProfile(), loadTasks(), loadTypes() ]);
-    setTimeout(()=> showLoader(false), 2000); // longer for animation
+    setTimeout(()=> showLoader(false), 3000); // longer for cooler animation
   })();
-  window.addEventListener('resize', () => {});
+  window.addEventListener('resize', resizeCanvas);
   window.loadProfile = loadProfile;
   window.loadTasks = loadTasks;
   window.loadTypes = loadTypes;
