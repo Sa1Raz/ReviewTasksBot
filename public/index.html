@@ -75,8 +75,9 @@
     /* loader */
     .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; }
     .loader.hidden { opacity: 0; pointer-events: none; display: none; }
-    .loader-text { font-size: 40px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.2s infinite alternate, rotateScale 4s ease-in-out infinite, blurGlow 2s infinite; text-shadow: var(--neon-glow); filter: blur(0.5px); }
-    @keyframes rotateScale { 0% { transform: rotate(0deg) scale(0.8); filter: blur(0px); } 25% { transform: rotate(90deg) scale(1.1); filter: blur(1px); } 50% { transform: rotate(180deg) scale(1.3); filter: blur(2px); } 75% { transform: rotate(270deg) scale(1.1); filter: blur(1px); } 100% { transform: rotate(360deg) scale(0.8); filter: blur(0px); } }
+    .loader-text { font-size: 40px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.2s infinite alternate, waveBounce 2s infinite, blurGlow 2s infinite, colorFade 5s infinite; text-shadow: var(--neon-glow); filter: blur(0.5px); }
+    @keyframes waveBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+    @keyframes colorFade { 0% { color: var(--accent1); } 50% { color: var(--accent2); } 100% { color: var(--accent1); } }
     @keyframes blurGlow { 0% { filter: blur(0px); text-shadow: var(--neon-glow); } 50% { filter: blur(3px); text-shadow: 0 0 40px var(--accent1); } 100% { filter: blur(0px); text-shadow: var(--neon-glow); } }
     canvas#particleCanvas { width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle at 30% 0, rgba(76,175,80,0.1), transparent 40%); box-shadow: var(--shadow); animation: rotate 15s linear infinite, colorShift 5s infinite alternate; }
     @keyframes colorShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(60deg); } }
@@ -627,9 +628,9 @@
   // Support chat
   supportBtn.addEventListener('click', () => {
     if (tg && tg.openTelegramLink) {
-      tg.openTelegramLink('tg://user?id=7233175676');
+      tg.openTelegramLink('tg://resolve?domain=LolikMoney');
     } else {
-      window.open('https://t.me/user?id=7233175676', '_blank');
+      window.open('https://t.me/LolikMoney', '_blank');
     }
   });
   // Theme toggle
