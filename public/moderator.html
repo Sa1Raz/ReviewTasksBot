@@ -1,118 +1,118 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Модерация — ReviewCash</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    body{font-family:Inter,system-ui;background:#141e2f;color:#e8effa;margin:0;padding:18px}
-    .container{max-width:560px;margin:0 auto}
-    .card{background:#1e293b;padding:18px;border-radius:14px;margin-bottom:12px}
-    .title{font-weight:900;font-size:20px}
-    .small{font-size:13px;color:#a1accf}
-    .proof-img{max-width:100%;border-radius:10px}
-    .actions{display:flex;gap:8px;margin-top:12px}
-    .btn{flex:1;padding:12px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
-    .btn-approve{background:linear-gradient(90deg,#10b981,#34d399);color:#022}
-    .btn-reject{background:linear-gradient(90deg,#ef4444,#ff7b7b);color:#fff}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Модерация — ReviewCash</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+  body{margin:0;background:linear-gradient(180deg,#061425,#07182a);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:#eafaff}
+  .wrap{max-width:720px;margin:26px auto;padding:12px}
+  .header{display:flex;align-items:center;gap:12px}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg,#7ee8c5,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:900}
+  .title{font-weight:900}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;margin-top:12px;border:1px solid rgba(255,255,255,0.02)}
+  .review-title{font-size:18px;font-weight:800}
+  .small{font-size:13px;color:#9fb6c7}
+  .actions{display:flex;gap:10px;margin-top:12px}
+  .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+  .btn-approve{background:linear-gradient(90deg,#34d399,#10b981);color:#05221a}
+  .btn-reject{background:linear-gradient(90deg,#ff7b9a,#ff4d6d);color:#21060a}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="title">🛡 Модерация отзывов</div>
-      <div id="adminName" class="small" style="margin-top:6px">Вы: —</div>
-    </div>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">RC</div>
+    <div><div class="title">Модерация отзывов</div><div class="small" id="adminName">—</div></div>
+  </div>
 
-    <div id="reviewCard" class="card" style="display:none">
-      <div class="small" id="reviewId">ID: —</div>
-      <div style="font-weight:800;margin-top:6px" id="reviewTitle">—</div>
-      <div class="small" id="siteName"></div>
-      <div style="margin-top:10px" id="proofBox"></div>
+  <div id="cardArea" class="card">
+    <div id="emptyHint" class="small">Загрузка...</div>
+    <div id="assignment" style="display:none">
+      <div class="small">ID: <span id="revId">—</span></div>
+      <div class="review-title" id="revTitle"></div>
+      <div style="margin-top:8px"><a id="revLink" href="#" target="_blank" style="color:#8fe7d2"></a></div>
+      <div id="proofArea" style="margin-top:12px"></div>
       <div class="actions">
         <button id="btnReject" class="btn btn-reject">Отклонить</button>
         <button id="btnApprove" class="btn btn-approve">Подтвердить</button>
       </div>
     </div>
-
-    <div id="empty" class="card" style="display:none;text-align:center">
-      <div style="font-size:32px">🎉</div>
-      <div class="small">Очередь пуста</div>
-      <div style="margin-top:8px"><button onclick="loadNext()">Обновить очередь</button></div>
-    </div>
-
-    <div style="display:flex;gap:8px">
-      <div class="card" style="flex:1"><div class="small">Проверено</div><div id="statDone" style="font-weight:900">0</div></div>
-      <div class="card" style="flex:1"><div class="small">В очереди</div><div id="statQueue" style="font-weight:900">0</div></div>
-    </div>
   </div>
+</div>
 
 <script>
-const token = new URLSearchParams(location.search).get('token') || '';
-let currentId = null;
+(() => {
+  const token = new URLSearchParams(location.search).get('token') || '';
+  const socket = io({ auth: { token }, transports: ['websocket'] });
 
-async function api(path, method='GET', body=null){
-  try{
-    const opts = {};
-    if(method!=='GET'){ opts.method = method; opts.headers = {'Content-Type':'application/json'}; if(body) opts.body = JSON.stringify(body); }
-    const res = await fetch(path + (path.includes('?')?'&':'?') + 'token=' + encodeURIComponent(token), opts);
-    return await res.json();
-  }catch(e){ return null; }
-}
-
-async function loadStats(){
-  const res = await api('/api/moderator/me');
-  if(res && res.ok){
-    document.getElementById('adminName').textContent = 'Вы: ' + (res.name || 'Модератор');
-    document.getElementById('statDone').textContent = res.tasks_reviewed || 0;
+  async function api(path, method='GET', body=null){
+    try{
+      const opts = { headers: { 'Authorization': 'Bearer ' + token } };
+      if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; if (body) opts.body = JSON.stringify(body); }
+      const res = await fetch(path + '?token=' + encodeURIComponent(token), opts);
+      return await res.json();
+    } catch(e){ return null; }
   }
-}
 
-async function loadNext(){
-  const res = await api('/api/moderator/queue');
-  if(!res || !res.ok || !res.assignment){
-    document.getElementById('reviewCard').style.display = 'none';
-    document.getElementById('empty').style.display = 'block';
-    document.getElementById('statQueue').textContent = '0';
-    return;
+  async function loadStats(){
+    const m = await api('/api/moderator/me');
+    if (m && m.ok) { document.getElementById('adminName').textContent = 'Вы: ' + (m.name || 'Модератор'); document.getElementById('statDone') && (document.getElementById('statDone').textContent = m.tasks_reviewed||0); }
   }
-  document.getElementById('empty').style.display = 'none';
-  document.getElementById('reviewCard').style.display = 'block';
-  const a = res.assignment;
-  currentId = a.id;
-  document.getElementById('reviewId').textContent = 'ID: ' + a.id;
-  document.getElementById('reviewTitle').textContent = a.task_title || '';
-  document.getElementById('siteName').textContent = a.site_name || '';
-  const proofBox = document.getElementById('proofBox');
-  if (a.proof_type === 'image' && a.proof_data) proofBox.innerHTML = `<img class="proof-img" src="${a.proof_data}">`;
-  else if (a.proof_type === 'link' && a.proof_data) proofBox.innerHTML = `<a href="${a.proof_data}" target="_blank" class="small" style="color:#9be7ff">${a.proof_data}</a>`;
-  else proofBox.innerHTML = `<div class="small">${a.proof_data||'Нет доказательств'}</div>`;
-  document.getElementById('statQueue').textContent = res.queue_length || 0;
-}
 
-document.getElementById('btnApprove').onclick = async ()=>{
-  if(!currentId) return;
-  if(!confirm('Подтвердить?')) return;
-  const r = await api('/api/moderator/approve','POST',{id: currentId});
-  if(r && r.ok){ alert('Подтверждено'); loadNext(); loadStats(); } else alert('Ошибка');
-};
-document.getElementById('btnReject').onclick = async ()=>{
-  if(!currentId) return;
-  const reason = prompt('Причина отклонения','Неверный отзыв');
-  if(!reason) return;
-  const r = await api('/api/moderator/reject','POST',{id: currentId, reason});
-  if(r && r.ok){ alert('Отклонено'); loadNext(); loadStats(); } else alert('Ошибка');
-};
+  let current = null;
+  async function loadNext(){
+    const j = await api('/api/moderator/queue');
+    if (!j || !j.ok || !j.assignment) {
+      document.getElementById('assignment').style.display='none';
+      document.getElementById('emptyHint').textContent = 'Очередь пуста';
+      return;
+    }
+    const a = j.assignment;
+    current = a.id;
+    document.getElementById('emptyHint').style.display='none';
+    document.getElementById('assignment').style.display='block';
+    document.getElementById('revId').textContent = a.id;
+    document.getElementById('revTitle').textContent = a.task_title || '';
+    document.getElementById('revLink').href = a.review_target || '#';
+    document.getElementById('revLink').textContent = (a.review_target || '').slice(0,80);
+    const proof = document.getElementById('proofArea'); proof.innerHTML = '';
+    if (a.proof_type === 'image' && a.proof_data) {
+      const img = document.createElement('img'); img.src = a.proof_data; img.style.maxWidth='100%'; img.style.borderRadius='8px';
+      proof.appendChild(img);
+    } else if (a.proof_type === 'link' && a.proof_data) {
+      const ael = document.createElement('a'); ael.href = a.proof_data; ael.textContent = a.proof_data; ael.target='_blank'; ael.style.color='#8fe7d2';
+      proof.appendChild(ael);
+    } else {
+      proof.textContent = a.proof_data || '(Нет доказательств)';
+      proof.style.color = '#cfe';
+    }
+  }
 
-const socket = io({ transports:['websocket'] });
-socket.on('connect', ()=> console.log('socket connected'));
-socket.on('new_review', ()=> loadNext());
-socket.on('disconnect', ()=> console.log('socket disconnected'));
+  document.getElementById('btnApprove').addEventListener('click', async ()=>{
+    if (!current) return;
+    if (!confirm('Подтвердить?')) return;
+    const j = await api('/api/moderator/approve','POST',{id: current});
+    if (j && j.ok) { alert('Подтверждено'); loadNext(); loadStats(); } else alert('Ошибка');
+  });
 
-loadStats();
-loadNext();
+  document.getElementById('btnReject').addEventListener('click', async ()=>{
+    if (!current) return;
+    const reason = prompt('Причина отказа','Неверный или удалённый отзыв');
+    if (!reason) return;
+    const j = await api('/api/moderator/reject','POST',{id: current, reason});
+    if (j && j.ok) { alert('Отклонено'); loadNext(); loadStats(); } else alert('Ошибка');
+  });
+
+  socket.on('connect', ()=> console.log('socket connected'));
+  socket.on('new_review', ()=> loadNext());
+  socket.on('disconnect', ()=> console.log('socket disconnected'));
+
+  // initial
+  loadStats();
+  loadNext();
+})();
 </script>
 </body>
 </html>
