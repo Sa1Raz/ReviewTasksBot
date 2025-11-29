@@ -1,603 +1,439 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>ReviewCash • Кабинет</title>
-  <!-- Google Fonts for beauty -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap">
-  <!-- Telegram WebApp -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Socket.IO -->
-  <script src="/socket.io/socket.io.js"></script>
-  <style>
-    :root {
-      --bg: linear-gradient(180deg, #f0f4f8, #ffffff); --panel: rgba(255,255,255,0.9); --accent1: #4CAF50; --accent2: #8BC34A;
-      --muted: #555555; --text: #333333; --glass: 1px solid rgba(0,0,0,0.05);
-      --neon-glow: 0 0 10px #4CAF50, 0 0 20px #8BC34A, 0 0 30px #4CAF50;
-      --radius: 20px; --shadow: 0 4px 20px rgba(0,0,0,0.1); --transition: all 0.3s ease; --animation-timing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-    body.dark {
-      --bg: linear-gradient(180deg, #121212, #000000); --panel: rgba(18,18,18,0.9); --accent1: #00FF00; --accent2: #00FF99;
-      --muted: #aaaaaa; --text: #ffffff; --glass: 1px solid rgba(255,255,255,0.05);
-      --neon-glow: 0 0 10px #00FF00, 0 0 20px #00FF99, 0 0 30px #00FF00;
-      --shadow: 0 4px 20px rgba(0,0,0,0.5);
-    }
-    * { box-sizing: border-box; transition: var(--transition); }
-    body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; padding: 16px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-    .wrap { max-width: 820px; margin: 0 auto; padding: 12px; display: none; }
-    .card { background: var(--panel); border-radius: var(--radius); padding: 20px; border: var(--glass); box-shadow: var(--shadow), var(--neon-glow); margin-bottom: 16px; animation: fadeIn 0.4s var(--animation-timing); opacity: 1; transform: translateY(0); position: relative; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    @keyframes neonPulse { 0% { text-shadow: var(--neon-glow); } 50% { text-shadow: 0 0 5px #4CAF50, 0 0 10px #8BC34A; } 100% { text-shadow: var(--neon-glow); } }
-    .row { display: flex; gap: 14px; align-items: center; }
-    .avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent1); box-shadow: var(--shadow); aspect-ratio: 1/1; }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .title { font-weight: 800; font-size: 20px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-    .muted { color: var(--muted); font-size: 14px; }
-    .balance { font-weight: 900; font-size: 36px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .btn { display: inline-block; padding: 14px 20px; border-radius: 14px; border: none; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 800; cursor: pointer; margin-top: 12px; min-width: 140px; text-align: center; box-shadow: var(--shadow); position: relative; overflow: hidden; animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,0.7); } 70% { box-shadow: 0 0 0 10px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
-    .btn:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(76,175,80,0.3); }
-    .btn.ghost { background: transparent; border: 1px solid var(--accent1); color: var(--accent1); }
-    .btn.ghost:hover { background: rgba(76,175,80,0.1); }
-    .btn.small { min-width: auto; padding: 8px 12px; font-size: 14px; }
-    .sub-tabs { display: flex; gap: 10px; margin-bottom: 14px; }
-    .sub-tab { flex: 1; padding: 12px; border-radius: 999px; text-align: center; background: rgba(0,0,0,0.05); cursor: pointer; font-weight: 800; color: var(--text); animation: glowPulse 2s infinite; }
-    .sub-tab.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
-    .task-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.8); margin-bottom: 10px; box-shadow: var(--shadow); position: relative; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    body.dark .task-item { background: rgba(0,0,0,0.8); }
-    .task-item:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 25px rgba(0,0,0,0.15); }
-    .small { font-size: 14px; color: var(--muted); }
-    .progress { background: rgba(0,0,0,0.1); border-radius: 10px; height: 8px; margin-top: 6px; transition: width 0.5s ease; }
-    .progress-bar { background: var(--accent1); height: 100%; border-radius: 10px; transition: width 0.3s ease; }
-    .fab { position: fixed; right: 20px; bottom: 100px; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; font-weight: 900; font-size: 24px; cursor: pointer; box-shadow: 0 6px 25px rgba(76,175,80,0.3); transition: transform 0.3s ease; }
-    .fab:hover { transform: scale(1.1) rotate(90deg); }
-    .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 999px; border: var(--glass); display: flex; gap: 10px; box-shadow: var(--shadow); transition: bottom 0.3s ease; }
-    body.dark .tabbar { background: rgba(0,0,0,0.9); }
-    .nav-item { padding: 10px 16px; border-radius: 999px; color: var(--muted); cursor: pointer; font-weight: 700; transition: background 0.3s ease, color 0.3s ease; animation: glowPulse 2s infinite; }
-    .nav-item.active { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color: #fff; }
-    .modal-bg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
-    body.dark .modal-bg { background: rgba(255,255,255,0.5); }
-    .modal-bg.open { display: flex; opacity: 1; }
-    .modal { width: 100%; max-width: 680px; background: var(--panel); padding: 24px; border-radius: 24px; border: var(--glass); box-shadow: var(--shadow), var(--neon-glow); transform: scale(0.95); opacity: 0; animation: scaleInNeon 0.5s ease forwards; }
-    @keyframes scaleInNeon { from { transform: scale(0.95); opacity: 0; box-shadow: none; } to { transform: scale(1); opacity: 1; box-shadow: var(--shadow), var(--neon-glow); } }
-    .type-btn { padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); cursor: pointer; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: glowPulse 2s infinite; }
-    @keyframes glowPulse { 0% { box-shadow: var(--shadow); } 50% { box-shadow: var(--shadow), var(--neon-glow); } 100% { box-shadow: var(--shadow); } }
-    body.dark .type-btn { background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(0,0,0,0.7)); border: 1px solid rgba(255,255,255,0.05); }
-    .type-btn.active { border: 3px solid var(--accent1); background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(76,175,80,0.1)); }
-    body.dark .type-btn.active { background: linear-gradient(135deg, rgba(0,255,0,0.2), rgba(0,255,0,0.1)); }
-    .type-btn:hover { transform: scale(1.03); box-shadow: 0 8px 30px rgba(76,175,80,0.4); }
-    input, textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: #ffffff; color: var(--text); margin-top: 10px; font-size: 16px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border 0.3s ease, box-shadow 0.3s ease; }
-    body.dark input, body.dark textarea { background: #222222; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
-    input:focus, textarea:focus { border-color: var(--accent1); outline: none; box-shadow: 0 0 10px var(--accent1); }
-    .qr { display: block; margin: 14px auto; max-width: 240px; border-radius: 12px; box-shadow: var(--shadow); transition: transform 0.3s ease; }
-    .qr:hover { transform: rotate(5deg); }
-    .note { font-size: 14px; color: var(--muted); margin-top: 10px; transition: color 0.3s ease; font-style: italic; text-shadow: 0 1px 1px rgba(0,0,0,0.05); }
-    /* loader */
-    .loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease; flex-direction: column; }
-    .loader.hidden { opacity: 0; pointer-events: none; display: none; }
-    .loader-text { font-size: 40px; font-weight: 800; color: var(--accent1); animation: neonPulse 1.2s infinite alternate, waveBounce 2s infinite, blurGlow 2s infinite, colorFade 5s infinite, shine 3s infinite; text-shadow: var(--neon-glow); filter: blur(0.5px); }
-    @keyframes waveBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-    @keyframes colorFade { 0% { color: var(--accent1); } 50% { color: var(--accent2); } 100% { color: var(--accent1); } }
-    @keyframes blurGlow { 0% { filter: blur(0px); text-shadow: var(--neon-glow); } 50% { filter: blur(3px); text-shadow: 0 0 40px var(--accent1); } 100% { filter: blur(0px); text-shadow: var(--neon-glow); } }
-    @keyframes shine { 0% { letter-spacing: 0px; } 50% { letter-spacing: 2px; } 100% { letter-spacing: 0px; } }
-    .error { color: #ff5252; }
-    .ok { color: #4CAF50; }
-    /* url checker spinner */
-    .url-check { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--accent1); border-top: 3px solid transparent; border-radius: 50%; animation: spin 0.8s linear infinite, colorShift 2s infinite; margin-left: 10px; vertical-align: middle; display: none; box-shadow: 0 0 10px var(--accent1); }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .url-status { margin-left: 10px; font-size: 18px; vertical-align: middle; animation: fadeIn 0.5s ease; }
-    /* support btn prettier */
-    #supportBtn { font-size: 32px; color: var(--accent1); text-shadow: var(--neon-glow); transition: all 0.3s ease; background: linear-gradient(90deg, var(--accent1), var(--accent2)); border-radius: 50%; padding: 8px; box-shadow: var(--shadow); }
-    #supportBtn:hover { transform: scale(1.2) rotate(15deg); text-shadow: 0 0 15px var(--accent1), 0 0 30px var(--accent2); box-shadow: 0 0 20px var(--accent1); }
-    @media (max-width: 520px) {
-      .card { padding: 16px; }
-      .btn { min-width: 120px; font-size: 15px; }
-      .fab { width: 56px; height: 56px; }
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>ReviewCash — Личный кабинет</title>
+
+<!-- Telegram WebApp -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+  :root{
+    --bg:#05060a; --card:#071020; --muted:#8aa6b3; --neon1:#00e676; --neon2:#00b4ff;
+    --glass: rgba(255,255,255,0.03);
+    --radius:18px;
+  }
+  html,body{height:100%;margin:0;background:
+    radial-gradient(1200px 400px at 10% 10%, rgba(0,180,255,0.04), transparent),
+    linear-gradient(180deg,#02030a 0%, #05060a 100%); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto; color:#e6fbff;}
+  .container{max-width:820px;margin:18px auto;padding:12px}
+  .topbar{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:46px;height:46px;border-radius:10px;background:linear-gradient(90deg,var(--neon1),var(--neon2));display:flex;align-items:center;justify-content:center;color:#041018;font-weight:800}
+  .top-actions{margin-left:auto;display:flex;gap:10px}
+  .btn{background:linear-gradient(90deg,var(--neon1),var(--neon2));color:#021018;border:none;padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 8px 30px rgba(0,180,255,0.06)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);box-shadow:none}
+  .profile-card{margin-top:12px;padding:18px;border-radius:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid var(--glass);display:flex;gap:18px;align-items:center}
+  .avatar{width:86px;height:86px;border-radius:50%;overflow:hidden;border:3px solid rgba(0,230,160,0.12);flex:0 0 86px;background:#08121a;display:flex;align-items:center;justify-content:center}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .profile-info{flex:1}
+  .name{font-weight:800;font-size:20px}
+  .handle{color:var(--muted);margin-top:4px}
+  .balance-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .balance-amount{font-size:28px;font-weight:900;background:linear-gradient(90deg,var(--neon1),var(--neon2));-webkit-background-clip:text;color:transparent}
+  .profile-actions{display:flex;gap:10px;margin-top:12px}
+  .pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);color:var(--muted);cursor:pointer}
+
+  /* main card */
+  .card{margin-top:14px;padding:16px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
+  .tabs{display:flex;gap:8px}
+  .tab{flex:1;padding:10px;border-radius:12px;text-align:center;background:rgba(255,255,255,0.01);cursor:pointer;font-weight:800;color:var(--muted)}
+  .tab.active{background:linear-gradient(90deg,var(--neon1),var(--neon2));color:#021018}
+
+  .tasks-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+  .task-item{padding:12px;border-radius:12px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:8px}
+  .task-title{font-weight:800}
+  .task-desc{color:var(--muted);font-size:13px}
+  .task-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .task-price{font-weight:900;color:var(--neon1)}
+
+  /* FAB */
+  .fab{position:fixed;right:22px;bottom:90px;width:66px;height:66px;border-radius:50%;background:linear-gradient(90deg,var(--neon1),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:34px;color:#021018;box-shadow:0 16px 40px rgba(0,180,255,0.12);cursor:pointer}
+
+  /* modals */
+  .modal-back{position:fixed;inset:0;background:rgba(2,6,12,0.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal{width:100%;max-width:720px;background:linear-gradient(180deg,#071021,#04101a);border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.02)}
+  .modal h3{margin:0 0 8px 0}
+  .row{display:flex;gap:8px}
+  .col{flex:1}
+  input,textarea,select{width:100%;padding:10px;border-radius:10px;background:#04101a;border:1px solid rgba(255,255,255,0.02);color:#e6fbff}
+  .small{font-size:13px;color:var(--muted)}
+
+  .type-grid{display:flex;gap:8px;margin-top:10px}
+  .type-card{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;text-align:center}
+  .type-card.active{background:linear-gradient(90deg,var(--neon1),var(--neon2));color:#021018;font-weight:900}
+
+  .notify{position:fixed;right:20px;bottom:20px;padding:10px 14px;border-radius:10px;background:#021018;color:#bff;border:1px solid rgba(255,255,255,0.03);display:none;z-index:60}
+
+  @media(max-width:520px){ .profile-card{flex-direction:column;align-items:flex-start} .balance-wrap{align-self:stretch;display:flex;flex-direction:row;justify-content:space-between;width:100%}}
+</style>
 </head>
 <body>
-  <!-- Loader -->
-  <div class="loader" id="appLoader">
-    <div class="loader-text">ReviewCashBot</div>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">RC</div>
+      <div>
+        <div style="font-weight:900">ReviewCash</div>
+        <div style="font-size:13px;color:var(--muted)">Зарабатывайте на отзывах</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="supportBtn" class="btn ghost">Поддержка</button>
+      <button id="openAppBtn" class="btn">Перейти в приложение</button>
+    </div>
   </div>
-  <!-- Main app content -->
-  <div class="wrap" id="appContent" aria-hidden="true">
-    <!-- PROFILE CARD (now conditional) -->
-    <div class="card" id="profileCard" style="display:none; background: linear-gradient(135deg, var(--panel), rgba(76,175,80,0.1)); box-shadow: 0 0 20px var(--accent1);">
-      <div class="row">
-        <div class="avatar"><img id="avatar" src="" alt="avatar"></div>
-        <div style="flex:1">
-          <div class="title" id="userName">Загрузка...</div>
-          <div class="muted" id="userHandle">@user</div>
-          <div style="margin-top:14px">
-            <div class="small">Баланс</div>
-            <div class="balance" id="balance">0 ₽</div>
-          </div>
+
+  <!-- PROFILE -->
+  <div class="profile-card">
+    <div class="avatar"><img id="avatar" src="" alt="avatar"></div>
+    <div class="profile-info">
+      <div class="name" id="userName">Гость</div>
+      <div class="handle" id="userHandle">@user</div>
+
+      <div class="profile-actions">
+        <div>
+          <div class="small">Текущий баланс</div>
+          <div class="balance-amount" id="balanceAmount">0 ₽</div>
         </div>
-        <div style="text-align:right">
-          <button class="btn" id="topupBtn">Пополнить</button><br>
-          <button class="btn ghost" id="withdrawBtn">Вывести</button>
+        <div style="margin-left:auto;display:flex;flex-direction:column;gap:8px">
+          <button id="topupOpen" class="pill">Пополнить</button>
+          <button id="withdrawOpen" class="pill">Вывести</button>
         </div>
       </div>
     </div>
-    <!-- CONTENT CARD -->
-    <div class="card">
-      <!-- TASKS PANEL -->
-      <div id="tasksPanel" style="display:block">
-        <div class="sub-tabs" id="subTabs" style="display:none">
-          <div class="sub-tab active" data-sub="my">Мои задания</div>
-          <div class="sub-tab" data-sub="perform">Выполнить задания</div>
-        </div>
-        <div id="tasksList">
-          <div class="small">Загрузка…</div>
-        </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-weight:900">Задания</div>
+      <div style="margin-left:auto" class="small">Управляйте своими и доступными заданиями</div>
+    </div>
+
+    <div class="tabs" style="margin-top:12px">
+      <div class="tab active" data-tab="my">Мои задания</div>
+      <div class="tab" data-tab="available">Доступные</div>
+    </div>
+
+    <div class="tasks-list" id="tasksList"></div>
+  </div>
+</div>
+
+<div class="fab" id="createFab" title="Создать задание">+</div>
+
+<!-- CREATE TASK MODAL -->
+<div class="modal-back" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modalTitle">Создать задание</h3>
+
+    <div class="small">Выберите тип задания</div>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-card" data-id="ya_review">
+        Отзыв — Яндекс<br><small class="small">120 ₽</small>
       </div>
-      <!-- PROFILE PANEL -->
-      <div id="profilePanel" style="display:none; position:relative; background: linear-gradient(135deg, var(--panel), rgba(76,175,80,0.05)); box-shadow: 0 0 15px var(--accent2);">
-        <button id="supportBtn" style="position:fixed;top:10px;right:10px;z-index:1000;background:transparent;border:none;cursor:pointer">🎧</button>
-        <button class="btn ghost small" id="themeToggle" style="position:fixed;top:10px;left:10px;margin-top:0;z-index:1000">Тема</button>
-        <div class="small">Имя</div>
-        <div style="font-weight:800;font-size:20px" id="pName">—</div>
-        <div class="small" style="margin-top:10px">История операций</div>
-        <div id="history" style="margin-top:10px"></div>
+      <div class="type-card" data-id="gmaps_review">
+        Отзыв — Google Maps<br><small class="small">65 ₽</small>
+      </div>
+      <div class="type-card" data-id="tg_sub">
+        Подписка — Telegram<br><small class="small">10 ₽</small>
       </div>
     </div>
-  </div>
-  <div class="fab" id="fab">+</div>
-  <div class="tabbar" role="navigation">
-    <div class="nav-item active" data-nav="tasks">Задания</div>
-    <div class="nav-item" data-nav="profile">Профиль</div>
-  </div>
-  <!-- TOPUP Modal -->
-  <div id="topupModal" class="modal-bg" aria-hidden="true">
-    <div class="modal">
-      <button id="closeTopup" style="float:right;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer">×</button>
-      <h3>Пополнение через SBP / QR</h3>
-      <div class="note">Минимум <b id="minTopup">150</b> ₽</div>
-      <div style="display:flex;gap:10px;margin-top:12px">
-        <input id="topupAmount" type="number" placeholder="Сумма" min="150" style="flex:1" />
-        <button class="btn" id="createTopupBtn">Создать заявку</button>
+
+    <div style="margin-top:10px">
+      <label class="small">Ссылка (для отзывов) / канал (для подписки)</label>
+      <input id="taskLink" placeholder="https://..." />
+      <div class="small" id="linkCheck" style="margin-top:6px;color:var(--muted)">Проверка ссылки: —</div>
+    </div>
+
+    <div style="margin-top:10px" class="row">
+      <div class="col">
+        <label class="small">Количество</label>
+        <input id="taskQty" type="number" min="1" value="1" />
       </div>
-      <div id="topupStep" style="display:none;margin-top:14px">
-        <div class="note">Ссылка для оплаты / QR (скопируйте комментарий)</div>
-        <img id="qrImg" class="qr" src="" alt="QR" />
-        <input id="manualCode" readonly />
-        <div style="display:flex;gap:10px;margin-top:10px">
-          <a id="payLink" class="btn" target="_blank" rel="noopener noreferrer">Открыть банк</a>
-          <button class="btn ghost" id="confirmPaidBtn">Я оплатил</button>
-        </div>
-        <div class="note" id="topupMsg"></div>
+      <div style="width:140px">
+        <label class="small">Цена (за шт)</label>
+        <input id="taskPrice" readonly />
       </div>
     </div>
-  </div>
-  <!-- WITHDRAW Modal -->
-  <div id="withdrawModal" class="modal-bg" aria-hidden="true">
-    <div class="modal">
-      <button id="closeWithdraw" style="float:right;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer">×</button>
-      <h3>Вывести средства</h3>
-      <div class="note">Мин. 300 ₽</div>
-      <input id="wAmount" type="number" placeholder="Сумма" />
-      <input id="wName" type="text" placeholder="ФИО или ник (получатель)" />
-      <input id="wDetails" type="text" placeholder="Реквизиты (карта / СБП)" />
-      <button class="btn" id="sendWithdraw">Отправить заявку</button>
-      <div id="withdrawMsg" class="note"></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button id="createTaskBtn" class="btn">Создать</button>
+      <button id="cancelModal" class="btn ghost">Отмена</button>
     </div>
   </div>
-  <!-- CREATE TASK Modal -->
-  <div id="createModal" class="modal-bg" aria-hidden="true">
-    <div class="modal">
-      <button id="closeCreate" style="float:right;background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer">×</button>
-      <h3>Создать задание</h3>
-      <div class="note">Выберите тип — цена проставится автоматически</div>
-      <div id="typesBox" style="margin-top:10px"></div>
-      <div style="position:relative">
-        <input id="taskUrl" placeholder="Ссылка (проверьте)" />
-        <span id="urlChecker" class="url-check"></span>
-        <span id="urlStatus" class="url-status"></span>
+</div>
+
+<!-- TOPUP MODAL -->
+<div class="modal-back" id="topupBack">
+  <div class="modal">
+    <h3>Пополнение (СБП / карта)</h3>
+    <div class="small">Минимум 150 ₽</div>
+    <div style="margin-top:10px" class="row">
+      <div class="col">
+        <input id="topupAmount" type="number" min="150" placeholder="Сумма ₽" />
       </div>
-      <input id="taskQty" type="number" placeholder="Количество" min="1" value="1" />
-      <div id="totalPrice" class="note" style="animation: scaleIn 0.3s ease;"></div>
-      <div style="display:flex;gap:10px;margin-top:12px">
-        <button class="btn" id="submitTask">Создать</button>
-        <button class="btn ghost" id="cancelCreate">Отмена</button>
+      <div style="width:180px">
+        <button id="getTopup" class="btn">Создать ссылку</button>
       </div>
-      <div id="createMsg" class="note"></div>
+    </div>
+
+    <div id="topupResult" style="margin-top:12px;display:none">
+      <div class="small">Комментарий (обязательно указывать при переводе)</div>
+      <input id="manualCode" readonly />
+      <div style="margin-top:8px"><img id="qrImage" src="" alt="QR" style="max-width:220px;border-radius:10px"/></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <a id="openPayLink" class="btn" href="#" target="_blank">Открыть банк</a>
+        <button id="confirmPaid" class="btn ghost">Я оплатил</button>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:12px">
+      <button id="closeTopup" class="btn ghost">Закрыть</button>
     </div>
   </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="modal-back" id="withdrawBack">
+  <div class="modal">
+    <h3>Вывод средств</h3>
+    <div class="small">Мин. 300 ₽ — заявка отправляется на проверку</div>
+    <div style="margin-top:10px">
+      <input id="wAmount" type="number" min="300" placeholder="Сумма ₽" />
+      <input id="wName" placeholder="ФИО или ник" style="margin-top:8px"/>
+      <input id="wDetails" placeholder="Реквизиты (карта / СБП)" style="margin-top:8px"/>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button id="sendWithdraw" class="btn">Отправить</button>
+      <button id="closeWithdraw" class="btn ghost">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="notify" id="notify">Готово</div>
+
 <script>
 (() => {
-  // Basic safe helpers
-  const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
-  // Telegram init
-  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-  try { tg?.ready?.(); tg?.expand?.(); } catch(e){ /* ignore */ }
-  // IDs and DOM
-  const appLoader = $('#appLoader');
-  const appContent = $('#appContent');
-  const avatar = $('#avatar');
-  const userName = $('#userName');
-  const userHandle = $('#userHandle');
-  const balanceEl = $('#balance');
-  const pName = $('#pName');
-  const tasksList = $('#tasksList');
-  const historyBox = $('#history');
-  const subTabs = $('#subTabs');
-  const profileCard = $('#profileCard');
-  // modals
-  const topupModal = $('#topupModal');
-  const withdrawModal = $('#withdrawModal');
-  const createModal = $('#createModal');
-  // topup elements
-  const topupAmountInput = $('#topupAmount');
-  const createTopupBtn = $('#createTopupBtn');
-  const topupStep = $('#topupStep');
-  const qrImg = $('#qrImg');
-  const manualCodeInput = $('#manualCode');
-  const payLink = $('#payLink');
-  const confirmPaidBtn = $('#confirmPaidBtn');
-  const topupMsg = $('#topupMsg');
-  // create task elements
-  const typesBox = $('#typesBox');
-  const submitTaskBtn = $('#submitTask');
-  const cancelCreateBtn = $('#cancelCreate');
-  const taskUrlInput = $('#taskUrl');
-  const taskQtyInput = $('#taskQty');
-  const totalPriceEl = $('#totalPrice');
-  const urlChecker = $('#urlChecker');
-  const urlStatus = $('#urlStatus');
-  // withdraw elements
-  const wAmount = $('#wAmount');
-  const wName = $('#wName');
-  const wDetails = $('#wDetails');
-  const sendWithdrawBtn = $('#sendWithdraw');
-  const withdrawMsg = $('#withdrawMsg');
-  // support btn and theme toggle
-  const supportBtn = $('#supportBtn');
-  const themeToggle = $('#themeToggle');
-  // profile from Telegram or fallback
-  const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
-  const uid = tgUser.id ? String(tgUser.id) : (new URLSearchParams(location.search)).get('uid') || 'guest_' + String(Math.floor(Math.random()*99999));
-  avatar.src = tgUser.photo_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(uid)}`;
-  userName.textContent = tgUser.first_name || 'Пользователь';
-  userHandle.textContent = tgUser.username ? '@' + tgUser.username : '';
-  pName.textContent = userName.textContent;
-  // Socket.IO
-  let socket = null;
-  try {
-    socket = io();
-    socket.on('connect', ()=> console.log('WS connected', socket.id));
-    socket.on('user_update', data => {
-      if (data && String(data.user_id) === String(uid)) {
-        if (typeof data.balance !== 'undefined') {
-          renderBalance(Number(data.balance));
-        } else {
-          loadProfile();
-        }
-      }
-    });
-    socket.on('task_update', () => loadTasks());
-  } catch(e){ console.warn('Socket init failed', e); }
-  // Utilities
-  function showLoader(bool) {
-    if (bool) { appLoader.classList.remove('hidden'); appContent.style.display = 'none'; appContent.setAttribute('aria-hidden', 'true'); }
-    else { appLoader.classList.add('hidden'); appContent.style.display = 'block'; appContent.removeAttribute('aria-hidden'); }
-  }
-  function renderBalance(bal) {
-    if (balanceEl) balanceEl.textContent = Number(bal||0).toLocaleString('ru-RU') + ' ₽';
-    window.__USER_BALANCE = Number(bal||0);
-  }
-  // Load profile
-  async function loadProfile() {
-    try {
-      const res = await fetch(`/api/profile_me?uid=${encodeURIComponent(uid)}`);
-      if (!res.ok) throw new Error('Bad response');
-      const j = await res.json();
-      if (j && j.ok && j.user) {
-        const user = j.user;
-        renderBalance(user.balance || 0);
-        if (pName) pName.textContent = user.name || user.first_name || userHandle.textContent || 'Пользователь';
-        const hist = (user.history || []).slice(0, 10);
-        if (historyBox) historyBox.innerHTML = hist.length ? hist.map(h => `<div style="padding:10px;border-radius:12px;background:rgba(0,0,0,0.05);margin-bottom:8px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="small">${h.amount ? (h.amount+' ₽') : ''} ${h.note||''}</div></div>`).join('') : '<div class="small">История пуста</div>';
-      } else {
-        renderBalance(0);
-        if (historyBox) historyBox.innerHTML = '<div class="small error">Не удалось загрузить профиль</div>';
-      }
-    } catch (e) {
-      console.warn(e);
-      renderBalance(0);
-      if (historyBox) historyBox.innerHTML = '<div class="small error">Ошибка сети</div>';
-    }
-  }
-  // Tasks loading
-  let allTasks = [];
-  async function loadTasks() {
-    try {
-      let res = await fetch('/api/tasks/list').catch(()=>null);
-      if (!res || !res.ok) res = await fetch('/api/tasks_public').catch(()=>null);
-      if (!res) throw new Error('No tasks endpoint');
-      const j = await res.json();
-      allTasks = j.tasks || j || [];
-      renderTasks();
-    } catch (e) {
-      console.warn('loadTasks error', e);
-      if (tasksList) tasksList.innerHTML = '<div class="small error">Не удалось загрузить задания</div>';
-    }
-  }
-  let currentSub = 'my';
-  function renderTasks() {
-    let filtered = allTasks;
-    if (currentSub === 'my') {
-      filtered = filtered.filter(t => t.owner_uid === uid);
-    } else {
-      filtered = filtered.filter(t => t.owner_uid !== uid);
-    }
-    if (filtered.length === 0) { if (tasksList) tasksList.innerHTML = '<div class="small">Нет заданий</div>'; return; }
-    if (tasksList) tasksList.innerHTML = '';
-    filtered.forEach(t => {
-      const el = document.createElement('div');
-      el.className = 'task-item';
-      const completed = Number(t.completed_qty || 0);
-      const qty = Number(t.qty || 1);
-      const progressWidth = (completed / qty) * 100;
-      el.innerHTML = `<div style="flex:1"><div style="font-weight:800">${escapeHtml(t.title || t.name || 'Задание')}</div><div class="small">${escapeHtml(t.description || t.desc || '')}</div>
-                      ${currentSub === 'my' ? `<div class="small">Выполнено: ${completed}/${qty}</div><div class="progress"><div class="progress-bar" style="width:${progressWidth}%"></div></div>` : ''}
-                      </div><div style="text-align:right"><div style="font-weight:900">${Number(t.unit_price || t.reward || 0).toLocaleString('ru-RU')} ₽</div><div class="small">${qty} шт</div></div>`;
-      if (tasksList) tasksList.appendChild(el);
-    });
-  }
-  // escape helper
-  function escapeHtml(s='') { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  // Nav
-  $$('.nav-item').forEach(n => n.addEventListener('click', () => {
-    $$('.nav-item').forEach(x=>x.classList.remove('active'));
-    n.classList.add('active');
-    const nav = n.dataset.nav;
-    $('#tasksPanel').style.display = nav === 'tasks' ? 'block' : 'none';
-    $('#profilePanel').style.display = nav === 'profile' ? 'block' : 'none';
-    subTabs.style.display = nav === 'tasks' ? 'flex' : 'none';
-    profileCard.style.display = nav === 'profile' ? 'block' : 'none';
-    window.scrollTo({top:0,behavior:'smooth'});
-  }));
-  // Sub-tabs for tasks
-  $$('.sub-tab').forEach(el => el.addEventListener('click', () => {
-    $$('.sub-tab').forEach(x=>x.classList.remove('active'));
-    el.classList.add('active');
-    currentSub = el.dataset.sub;
-    renderTasks();
-  }));
-  // FAB and create
-  $('#fab').addEventListener('click', openCreate);
-  $('#cancelCreate').addEventListener('click', closeCreate);
-  $('#closeCreate').addEventListener('click', closeCreate);
-  // Types loading
-  let types = [];
-  let selectedType = null;
-  async function loadTypes(){
-    try {
-      const res = await fetch('/api/task_types').catch(()=>null);
-      if (res && res.ok) types = await res.json() || [];
-      else {
-        const res2 = await fetch('/task_types.json').catch(()=>null);
-        if (res2 && res2.ok) types = await res2.json();
-      }
-    } catch(e) { console.warn('loadTypes', e); types = []; }
-    if (!types.length) {
-      types = [
-        {id:"ya_review", name:"Отзыв — Яндекс Карты", unit_price:120, max_qty:150},
-        {id:"gmaps_review", name:"Отзыв — Google Maps", unit_price:65, max_qty:200},
-        {id:"tg_sub", name:"Подписка — Telegram канал", unit_price:10, max_qty:100000}
-      ];
-    }
-    renderTypes();
-  }
-  function renderTypes(){
-    typesBox.innerHTML = '';
-    types.forEach((t, idx) => {
-      const div = document.createElement('div');
-      div.className = 'type-btn';
-      div.innerHTML = `<div style="font-weight:700">${escapeHtml(t.name)}</div><div style="font-weight:800">${Number(t.unit_price||0)} ₽</div>`;
-      div.addEventListener('click', () => {
-        selectedType = t;
-        $$('.type-btn').forEach(x=>x.classList.remove('active'));
-        div.classList.add('active');
-        updateTotal();
-      });
-      typesBox.appendChild(div);
-      if (idx === 0 && !selectedType) { selectedType = t; div.classList.add('active'); }
-    });
-  }
-  function openCreate() {
-    createModal.classList.add('open'); createModal.style.display = 'flex';
-    loadTypes();
-    $('#createMsg').textContent = '';
-    updateTotal();
-  }
-  function closeCreate() {
-    createModal.classList.remove('open'); createModal.style.display = 'none';
-    selectedType = null;
-    taskUrlInput.value = '';
-    taskQtyInput.value = 1;
-    totalPriceEl.textContent = '';
-    urlChecker.style.display = 'none';
-    urlStatus.textContent = '';
-  }
-  function updateTotal() {
-    if (selectedType) {
-      const qty = Number(taskQtyInput.value) || 1;
-      const total = qty * selectedType.unit_price;
-      totalPriceEl.textContent = `Общая цена: ${total} ₽`;
-      totalPriceEl.style.animation = 'scaleIn 0.3s ease';
-    }
-  }
-  taskQtyInput.addEventListener('input', updateTotal);
-  let checkTimeout;
-  taskUrlInput.addEventListener('input', () => {
-    clearTimeout(checkTimeout);
-    const url = taskUrlInput.value.trim();
-    if (!url) {
-      urlChecker.style.display = 'none';
-      urlStatus.textContent = '';
-      return;
-    }
-    urlChecker.style.display = 'inline-block';
-    urlStatus.textContent = '';
-    checkTimeout = setTimeout(async () => {
-      const chk = await checkUrl(url);
-      urlChecker.style.display = 'none';
-      if (chk.ok) {
-        urlStatus.classList.add('ok');
-        urlStatus.textContent = '✅';
-      } else {
-        urlStatus.classList.add('error');
-        urlStatus.textContent = '❌ ' + chk.message;
-      }
-    }, 500);
+  // Basic helpers
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const notify = (t, ms=2800) => {
+    const n = $('#notify'); n.textContent = t; n.style.display = 'block';
+    setTimeout(()=> n.style.display='none', ms);
+  };
+
+  // Telegram WebApp initialization (if available)
+  let tg = window.Telegram ? window.Telegram.WebApp : null;
+  if (tg) { try { tg.ready(); tg.expand(); } catch(e){ } }
+  const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+  const UID = tgUser ? (tgUser.id || ('tg_'+Math.floor(Math.random()*1e6))) : ('guest_'+Math.floor(Math.random()*1e6));
+
+  // Support link (user requested)
+  $('#supportBtn').addEventListener('click', ()=> window.open('https://t.me/LolikMoney','_blank'));
+
+  // Open app / fallback
+  $('#openAppBtn').addEventListener('click', ()=> {
+    // If Telegram: open WebApp main; else open root
+    window.location.href = '/';
   });
-  async function checkUrl(url) {
-    if (!url) return { ok: false, message: 'Пустая ссылка' };
-    if (!url.startsWith('http://') && !url.startsWith('https://')) return { ok: false, message: 'Должна начинаться с http:// или https://' };
-    if (url.length > 2048) return { ok: false, message: 'Слишком длинная' };
-    try {
-      const res = await fetch(url, { method: 'HEAD' });
-      return { ok: res.ok, message: res.ok ? '' : 'Не работает (ошибка ' + res.status + ')' };
-    } catch (e) {
-      return { ok: false, message: 'Не удалось проверить (сеть или CORS)' };
-    }
+
+  // avatar & profile
+  const avatar = $('#avatar'); const nameEl = $('#userName'); const handleEl = $('#userHandle');
+  if (tgUser) {
+    avatar.src = tgUser.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${UID}`;
+    nameEl.textContent = (tgUser.first_name || 'Пользователь') + (tgUser.last_name ? (' '+tgUser.last_name) : '');
+    handleEl.textContent = tgUser.username ? ('@'+tgUser.username) : '';
+  } else {
+    avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${UID}`;
+    nameEl.textContent = 'Гость';
+    handleEl.textContent = '';
   }
-  submitTaskBtn.addEventListener('click', async () => {
-    const url = taskUrlInput.value.trim();
-    const qty = Number(taskQtyInput.value || 0);
-    if (!selectedType) return alert('Выберите тип');
-    if (!url) return alert('Введите ссылку');
-    if (!qty || qty < 1) return alert('Корректное количество');
-    if (selectedType.max_qty && qty > selectedType.max_qty) return alert(`Макс. количество для ${selectedType.name}: ${selectedType.max_qty}`);
-    const chk = await checkUrl(url);
-    if (!chk.ok) return alert(chk.message);
-    try {
-      const body = {
-        title: selectedType.name,
-        description: selectedType.name,
-        unit_price: selectedType.unit_price || 0,
-        qty,
-        url,
-        type_id: selectedType.id,
-        owner_uid: uid
-      };
-      const res = await fetch('/api/tasks/create', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-      const j = await res.json();
-      if (j && j.ok) {
-        closeCreate();
-        await loadTasks();
-        alert('Задание создано');
-      } else {
-        alert((j && j.errmsg) || 'Ошибка');
-      }
-    } catch (e) {
-      console.error(e); alert('Ошибка сети');
+
+  // socket
+  const socket = io({ transports:['websocket'] });
+  socket.on('connect', ()=> console.log('socket connected', socket.id));
+  socket.on('user_update', data => {
+    if (String(data.user_id) === String(UID) || String(data.user_id) === String(UID)) {
+      setBalance(data.balance);
     }
   });
+  socket.on('task_update', ()=> loadTasks()); // reload tasks on update
+
+  // balance
+  function setBalance(v) { $('#balanceAmount').textContent = (Number(v||0).toLocaleString('ru-RU') + ' ₽'); }
+  async function loadProfile(){
+    try {
+      const res = await fetch(`/api/profile_me?uid=${encodeURIComponent(UID)}`);
+      const j = await res.json();
+      if (j.ok && j.user) setBalance(j.user.balance);
+    } catch(e){ console.warn('profile load', e) }
+  }
+  loadProfile();
+
+  // Tabs
+  $$('.tab').forEach(t => t.addEventListener('click', (e) => {
+    $$('.tab').forEach(x => x.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    const tab = e.currentTarget.dataset.tab;
+    // filter tasks accordingly
+    renderTasks(lastTasks, tab === 'my' ? 'my' : 'available');
+  }));
+
+  // FAB create
+  $('#createFab').addEventListener('click', ()=> openCreateModal());
+
+  // Create modal logic
+  let chosenType = null;
+  $$('#typeGrid .type-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      chosenType = card.dataset.id;
+      $$('#typeGrid .type-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+      // prices auto fill
+      const priceMap = { 'ya_review':120, 'gmaps_review':65, 'tg_sub':10 };
+      $('#taskPrice').value = (priceMap[chosenType]||0);
+    });
+  });
+
+  // check link best-effort
+  async function checkLink(url){
+    const el = $('#linkCheck'); el.textContent = 'Проверка...';
+    try{
+      // basic URL validation:
+      new URL(url);
+    } catch(e){ el.textContent = 'Неверный URL'; return false; }
+    // try HEAD
+    try {
+      const resp = await fetch(url, {method:'HEAD', mode:'no-cors'}); // mode no-cors — may opaque
+      el.textContent = 'Проверка выполнена (best-effort)';
+      return true;
+    } catch(e){
+      // fallback: mark as unchecked because of CORS
+      el.textContent = 'Не удалось проверить (CORS), пользователь просмотреть вручную';
+      return true;
+    }
+  }
+
+  $('#taskLink').addEventListener('blur', (e)=> { const v=e.target.value.trim(); if(v) checkLink(v); });
+
+  $('#cancelModal').addEventListener('click', closeCreateModal);
+  $('#createTaskBtn').addEventListener('click', async ()=>{
+    const qty = Number($('#taskQty').value || 0);
+    const link = ($('#taskLink').value || '').trim();
+    if (!chosenType) return notify('Выберите тип задания');
+    if (chosenType !== 'tg_sub' && !link) return notify('Укажите ссылку для отзыва');
+    if (qty < 1) return notify('Укажите количество');
+    // determine price
+    const priceMap = { 'ya_review':120, 'gmaps_review':65, 'tg_sub':10 };
+    const price = priceMap[chosenType] || 10;
+    const payload = {
+      title: chosenType === 'ya_review' ? 'Отзыв — Яндекс' : chosenType === 'gmaps_review' ? 'Отзыв — Google' : 'Подписка — Telegram',
+      description: link || '',
+      unit_price: price,
+      qty: qty,
+      type_id: chosenType
+    };
+    try {
+      const res = await fetch('/api/tasks/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const j = await res.json();
+      if (j.ok) {
+        notify('Задание создано');
+        closeCreateModal();
+        loadTasks();
+      } else {
+        notify('Ошибка создания');
+      }
+    } catch(e){ console.error(e); notify('Ошибка сети'); }
+  });
+
+  function openCreateModal(){ $('#modalBack').style.display='flex'; $('#taskPrice').value=''; $('#taskQty').value=1; $('#taskLink').value=''; $('#linkCheck').textContent='Проверка ссылки: —'; chosenType=null; $$('#typeGrid .type-card').forEach(x=>x.classList.remove('active')) }
+  function closeCreateModal(){ $('#modalBack').style.display='none'; }
+
   // TOPUP flow
-  const minTopup = 150;
-  $('#minTopup').textContent = minTopup;
-  $('#topupBtn').addEventListener('click', openTopupModal);
-  $('#closeTopup').addEventListener('click', ()=> { topupModal.classList.remove('open'); topupModal.style.display = 'none'; });
-  function openTopupModal(){
-    topupAmountInput.value = minTopup;
-    topupStep.style.display = 'none';
-    topupModal.classList.add('open'); topupModal.style.display = 'flex';
-    topupMsg.textContent = '';
+  $('#topupOpen').addEventListener('click', ()=> $('#topupBack').style.display = 'flex');
+  $('#closeTopup').addEventListener('click', ()=> $('#topupBack').style.display = 'none');
+
+  $('#getTopup').addEventListener('click', async ()=>{
+    const amount = Number($('#topupAmount').value || 0);
+    if (!amount || amount < 150) return notify('Мин. 150 ₽');
+    try {
+      const res = await fetch('/api/user/topup-link', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: UID, amount })});
+      const j = await res.json();
+      if (!j.ok) return notify(j.errmsg || 'Ошибка создания ссылки');
+      $('#manualCode').value = j.manual_code || j.manualCode || '';
+      $('#qrImage').src = j.qr_base64 || j.qr_base64 || '';
+      $('#openPayLink').href = j.pay_link || j.pay_link || '#';
+      $('#topupResult').style.display = 'block';
+      currentTopup = j.topup || j.topup || null;
+    } catch(e){ console.error(e); notify('Ошибка сети'); }
+  });
+
+  let currentTopup = null;
+  $('#confirmPaid').addEventListener('click', async ()=>{
+    if (!currentTopup) return notify('Нет активной заявки');
+    try {
+      const res = await fetch('/api/user/topup-confirm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: UID, topup_id: currentTopup.id })});
+      const j = await res.json();
+      if (j.ok) {
+        notify('Заявка отправлена на проверку');
+        $('#topupBack').style.display='none';
+      } else notify(j.errmsg || 'Ошибка');
+    } catch(e){ console.error(e); notify('Ошибка сети'); }
+  });
+
+  // WITHDRAW
+  $('#withdrawOpen').addEventListener('click', ()=> $('#withdrawBack').style.display = 'flex');
+  $('#closeWithdraw').addEventListener('click', ()=> $('#withdrawBack').style.display = 'none');
+  $('#sendWithdraw').addEventListener('click', async ()=>{
+    const amount = Number($('#wAmount').value || 0);
+    const name = $('#wName').value || '';
+    const details = $('#wDetails').value || '';
+    if (!amount || amount < 300) return notify('Мин. 300 ₽');
+    try {
+      const res = await fetch('/api/user/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: UID, amount, name, details })});
+      const j = await res.json();
+      if (j.ok) { notify('Заявка отправлена'); $('#withdrawBack').style.display='none'; loadProfile(); }
+      else notify(j.errmsg || 'Ошибка');
+    } catch(e){ console.error(e); notify('Ошибка сети'); }
+  });
+
+  // Create/Load tasks
+  let lastTasks = [];
+  async function loadTasks(){
+    try {
+      const res = await fetch('/api/tasks/list'); const j = await res.json();
+      if (!j.ok) return console.warn('tasks list error');
+      lastTasks = j.tasks || [];
+      const activeTab = document.querySelector('.tab.active').dataset.tab;
+      renderTasks(lastTasks, activeTab==='my' ? 'my' : 'available');
+    } catch(e){ console.error(e); }
   }
-  const topupState = { current: null, manual_code: null, amount: 0 };
-  createTopupBtn.addEventListener('click', async () => {
-    const amount = Number(topupAmountInput.value || 0);
-    if (!amount || amount < minTopup) return alert('Мин. ' + minTopup + ' ₽');
-    try {
-      const res = await fetch('/api/user/topup-link', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount }) });
-      const j = await res.json();
-      if (j && j.ok) {
-        topupStep.style.display = 'block';
-        manualCodeInput.value = j.manual_code || (j.topup && j.topup.manual_code) || '';
-        qrImg.src = j.qr_base64 ? `data:image/png;base64,${j.qr_base64}` : (j.qr_url || '');
-        payLink.href = j.pay_link || (j.topup && j.topup.pay_link) || '#';
-        topupState.current = (j.topup && j.topup.id) || j.id || null;
-        topupState.manual_code = manualCodeInput.value;
-        topupState.amount = amount;
-        topupMsg.textContent = 'Скопируйте комментарий и оплатите. Нажмите "Я оплатил" для проверки.';
-      } else {
-        alert((j && j.errmsg) || 'Ошибка');
-      }
-    } catch (e) {
-      console.error(e); alert('Ошибка сети');
-    }
-  });
-  confirmPaidBtn.addEventListener('click', async () => {
-    if (!topupState.current) return alert('Пересоздайте заявку');
-    try {
-      const res = await fetch('/api/user/topup-confirm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ topup_id: topupState.current, uid }) });
-      const j = await res.json();
-      if (j && j.ok) {
-        alert('Заявка на проверку');
-        topupModal.classList.remove('open'); topupModal.style.display = 'none';
-      } else {
-        alert((j && j.errmsg) || 'Ошибка');
-      }
-    } catch (e) {
-      console.error(e); alert('Ошибка сети');
-    }
-  });
-  // WITHDRAW flow
-  $('#withdrawBtn').addEventListener('click', ()=> { withdrawModal.classList.add('open'); withdrawModal.style.display = 'flex'; withdrawMsg.textContent = ''; });
-  $('#closeWithdraw').addEventListener('click', ()=> { withdrawModal.classList.remove('open'); withdrawModal.style.display = 'none'; });
-  sendWithdrawBtn.addEventListener('click', async () => {
-    const amount = Number(wAmount.value || 0);
-    const name = wName.value.trim();
-    const details = wDetails.value.trim();
-    if (!amount || amount < 300) return alert('Мин. 300 ₽');
-    if (amount > (window.__USER_BALANCE || 0)) return alert('Недостаточно средств');
-    if (!name || !details) return alert('Заполните поля');
-    try {
-      const res = await fetch('/api/user/withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount, name, details }) });
-      const j = await res.json();
-      if (j && j.ok) {
-        withdrawMsg.textContent = 'Заявка отправлена';
-        withdrawModal.classList.remove('open'); withdrawModal.style.display = 'none';
-        fetch('/api/notify_bot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, msg:`Заявка на вывод ${amount} ₽` }) }).catch(()=>{});
-      } else {
-        withdrawMsg.textContent = (j && j.errmsg) || 'Ошибка';
-      }
-    } catch (e) {
-      console.error(e);
-      withdrawMsg.textContent = 'Ошибка сети';
-    }
-  });
-  // Support chat
-  supportBtn.addEventListener('click', () => {
-    if (tg && tg.openTelegramLink) {
-      tg.openTelegramLink('tg://resolve?domain=LolikMoney');
-    } else {
-      window.open('https://t.me/LolikMoney', '_blank');
-    }
-  });
-  // Theme toggle
-  themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark');
-    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-  });
-  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
-  // Initial load
-  (async function init() {
-    showLoader(true);
-    await Promise.allSettled([ loadProfile(), loadTasks(), loadTypes() ]);
-    setTimeout(()=> showLoader(false), 3500); // longer for cooler animation
-  })();
-  window.addEventListener('resize', resizeCanvas);
-  window.loadProfile = loadProfile;
-  window.loadTasks = loadTasks;
-  window.loadTypes = loadTypes;
+
+  function renderTasks(tasks, mode='available'){
+    const container = $('#tasksList'); container.innerHTML = '';
+    const me = String(UID);
+    let arr = tasks.slice();
+    if (mode === 'my') arr = arr.filter(t=> String(t.owner_uid || '') === me);
+    else arr = arr.filter(t => String(t.owner_uid || '') !== me);
+    if (!arr.length) { container.innerHTML = '<div style="color:var(--muted);padding:12px">Список пуст</div>'; return; }
+    arr.forEach(t => {
+      const el = document.createElement('div'); el.className = 'task-item';
+      el.innerHTML = `<div class="task-title">${t.title || t.type_id || 'Задание'}</div>
+                      <div class="task-desc">${t.desc || t.description || t.description || ''}</div>
+                      <div class="task-meta"><div class="small">#${t.id}</div><div class="task-price">${(t.unit_price||t.reward||0)} ₽</div></div>`;
+      container.appendChild(el);
+    });
+  }
+
+  // initial load
+  loadTasks();
+  setInterval(loadProfile, 60_000);
+
 })();
 </script>
 </body>
