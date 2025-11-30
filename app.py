@@ -378,3 +378,12 @@ if __name__ == "__main__":
     # For dev use the built-in server
     print("Starting ReviewCash demo server on http://127.0.0.1:8080")
     socketio.run(app, host="0.0.0.0", port=8080)
+from flask import send_from_directory
+
+@app.route("/")
+def index_page():
+    return send_from_directory("static", "index.html")
+
+@app.route("/<path:path>")
+def static_files(path):
+    return send_from_directory("static", path)
