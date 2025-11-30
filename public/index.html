@@ -1,471 +1,459 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>ReviewCash • Кабинет</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap">
-  <!-- use CDN socket.io client to avoid engine mismatch -->
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <style>
-    :root{
-      --bg-light: linear-gradient(180deg,#f0f4f8,#ffffff);
-      --panel-light: rgba(255,255,255,0.94);
-      --accent1-light: #4CAF50;
-      --accent2-light: #8BC34A;
-      --text-dark: #121212;
-      --muted-dark: #666;
-      --radius: 16px;
-    }
-    body{margin:0;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;background:var(--bg-light);color:var(--text-dark);padding:14px;min-height:100vh;}
-    /* dark theme variables via body.dark */
-    body.dark{ --bg-light: linear-gradient(180deg,#060608,#000); --panel-light: rgba(12,12,12,0.92); --accent1-light:#00ff66; --accent2-light:#00ffcc; --text-dark:#f4f9f4; --muted-dark:#bdbdbd; }
-    .wrap{max-width:900px;margin:0 auto;display:block;}
-    .loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:transparent;z-index:9999;pointer-events:none}
-    .loader .logo{background:linear-gradient(90deg,var(--accent1-light),var(--accent2-light));color:#001;padding:24px;border-radius:20px;font-weight:900;box-shadow:0 8px 40px rgba(0,0,0,0.15);animation:loaderPulse 2.4s infinite}
-    @keyframes loaderPulse{0%{transform:translateY(0) scale(1);}50%{transform:translateY(-10px) scale(1.02);}100%{transform:translateY(0) scale(1)}}
-    .card{background:var(--panel-light);padding:18px;border-radius:var(--radius);box-shadow:0 6px 30px rgba(0,0,0,0.06);margin-bottom:16px;backdrop-filter:blur(4px);border:1px solid rgba(0,0,0,0.04);}
-    body.dark .card{box-shadow:0 8px 40px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.04)}
-    .header{display:flex;align-items:center;gap:12px}
-    .avatar{width:84px;height:84px;border-radius:50%;overflow:hidden;border:3px solid var(--accent1-light);flex:0 0 84px;background:#222}
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .title-block{flex:1}
-    .user-name{font-weight:800;font-size:20px}
-    .user-handle{color:var(--muted-dark);font-size:13px}
-    .balance{font-weight:900;font-size:32px;background:linear-gradient(90deg,var(--accent1-light),var(--accent2-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .actions{display:flex;gap:10px;align-items:center}
-    .btn{padding:10px 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--accent1-light),var(--accent2-light));color:#001;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.12)}
-    .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.07);color:var(--text-dark)}
-    body.dark .btn.ghost{border:1px solid rgba(255,255,255,0.06);color:var(--text-dark)}
-    .btn.small{padding:8px 10px;font-size:13px}
-    /* Top support and theme fixed */
-    #supportBtn{position:fixed;top:12px;right:12px;z-index:1200;border-radius:999px;padding:10px;font-size:20px;background:transparent;border:none;cursor:pointer;color:var(--accent1-light);box-shadow:0 6px 30px rgba(0,0,0,0.08)}
-    #themeToggle{position:fixed;top:12px;left:12px;z-index:1200;border-radius:999px;padding:8px 12px;background:transparent;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
-    body.dark #themeToggle{border:1px solid rgba(255,255,255,0.08)}
-    /* nav bottom */
-    .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--panel-light);padding:8px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);display:flex;gap:8px;z-index:1100}
-    body.dark .tabbar{border:1px solid rgba(255,255,255,0.04)}
-    .nav-item{padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:800;color:var(--muted-dark)}
-    .nav-item.active{background:linear-gradient(90deg,var(--accent1-light),var(--accent2-light));color:#001}
-    /* tasks list */
-    .task-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:rgba(0,0,0,0.02);margin-bottom:10px}
-    body.dark .task-item{background:rgba(255,255,255,0.02)}
-    .sub-tabs{display:flex;gap:8px;margin:12px 0}
-    .sub-tab{padding:10px;border-radius:999px;cursor:pointer;background:transparent;border:1px solid rgba(0,0,0,0.04);font-weight:800}
-    .sub-tab.active{background:linear-gradient(90deg,var(--accent1-light),var(--accent2-light));color:#001}
-    /* modal */
-    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
-    .modal{width:100%;max-width:720px;background:var(--panel-light);padding:18px;border-radius:18px;border:1px solid rgba(0,0,0,0.06)}
-    /* link checker */
-    .url-check{display:inline-block;width:18px;height:18px;border:3px solid var(--accent1-light);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle}
-    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-    .url-status.ok{color:var(--accent1-light)}
-    .url-status.err{color:#ff5b6e}
-    /* dark theme button outline for visibility */
-    body.dark .btn{box-shadow:none;border:1px solid rgba(255,255,255,0.06)}
-    body.dark .btn { outline: 2px solid rgba(0,255,102,0.08); }
-    /* small tweaks */
-    .note{font-size:13px;color:var(--muted-dark)}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ReviewCash — App</title>
+
+<!-- Socket.IO client (modern) -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#071027; --bg-dark-2:#061425; --card-dark:#081426;
+    --bg-light:#f6fbff; --card-light:#ffffff;
+    --accent:#00e7c0; --danger:#ff5b6e; --muted:#9fb6c7;
+    --radius:12px; --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg-dark),#030617);color:#eafaff;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:18px auto;padding:14px;min-height:calc(100vh - 32px)}
+  .header{display:flex;align-items:center;gap:12px}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent),#00b4ff);display:flex;align-items:center;justify-content:center;font-weight:900;color:#001}
+  .h-title{font-weight:900}
+  .small{font-size:13px;color:var(--muted)}
+  .card{margin-top:14px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:12px}
+  .task{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));margin-bottom:10px;border:1px solid rgba(255,255,255,0.02)}
+  .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800;background:linear-gradient(90deg,var(--accent),#00b4ff);color:#001}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#eafaff;padding:8px 10px}
+  .btn-danger{background:linear-gradient(90deg,#ff9aa5,#ff5b6e);color:#100}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .bottom-nav{position:fixed;left:0;right:0;bottom:12px;display:flex;justify-content:center;pointer-events:auto}
+  .nav-wrap{width:100%;max-width:980px;margin:0 auto;display:flex;justify-content:space-around;gap:8px;padding:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:999px;border:1px solid rgba(255,255,255,0.03)}
+  .nav-btn{flex:1;padding:10px;border-radius:999px;background:transparent;border:none;color:#eafaff;font-weight:700;cursor:pointer}
+  .nav-btn.active{box-shadow:0 6px 20px rgba(0,0,0,0.5);background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));color:var(--accent)}
+  /* theme switch */
+  .theme-toggle{margin-left:auto}
+  /* loading */
+  .loading-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.2));z-index:9999;transition:opacity .3s}
+  .spinner{width:64px;height:64px;border-radius:50%;border:6px solid rgba(255,255,255,0.06);border-top-color:var(--accent);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* modals */
+  .modal-back{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:200}
+  .modal{width:100%;max-width:720px;background:var(--card-dark);border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.03)}
+  .input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  .row{display:flex;gap:8px}
+  .muted{color:var(--muted);font-size:13px}
+  .ok{color:#06e58a;font-weight:800}
+  .bad{color:#ff7b9a;font-weight:800}
+  /* dark theme button outlines */
+  .dark-theme .btn-ghost{border:1px solid rgba(255,255,255,0.14)}
+  .dark-theme .btn{outline:2px solid rgba(0,0,0,0.12)}
+  /* responsive */
+  @media(max-width:880px){
+    .grid{grid-template-columns:1fr}
+    .logo{display:none}
+  }
+</style>
 </head>
 <body>
-  <div class="loader" id="loader" aria-hidden="true">
-    <div class="logo">ReviewCash</div>
+<div class="loading-screen" id="loadingScreen"><div style="text-align:center"><div class="spinner"></div><div class="muted" style="margin-top:8px">Загрузка приложения…</div></div></div>
+
+<div class="wrap" id="app" style="opacity:0;transition:opacity .3s">
+  <div class="header">
+    <div class="logo">RC</div>
+    <div>
+      <div class="h-title">ReviewCash</div>
+      <div class="small" id="userName">—</div>
+    </div>
+
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <button id="btnSupport" class="btn-ghost">Поддержка</button>
+      <button id="btnTheme" class="btn-ghost theme-toggle">Тема</button>
+      <button id="btnTopup" class="btn">Пополнить</button>
+    </div>
   </div>
 
-  <button id="supportBtn" title="Поддержка">🎧</button>
-  <button id="themeToggle" title="Сменить тему">Тема</button>
+  <div class="card grid" style="min-height:360px">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-weight:900">Задания</div>
+        <div class="small">Баланс: <b id="balance">—</b> ₽</div>
+      </div>
 
-  <div class="wrap" id="app">
-    <!-- profile card -->
-    <div class="card" id="profileCard">
-      <div class="header">
-        <div class="avatar"><img id="avatar" src="" alt="avatar"></div>
-        <div class="title-block">
-          <div class="user-name" id="userName">Загрузка...</div>
-          <div class="user-handle" id="userHandle">@user</div>
-          <div style="margin-top:10px">
-            <div class="note">Баланс</div>
-            <div class="balance" id="balance">0 ₽</div>
+      <div id="tasksList" style="margin-top:12px">
+        <!-- tasks injected here -->
+      </div>
+
+      <div style="margin-top:8px">
+        <button id="btnCreateTask" class="btn-ghost">+ Создать задание</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="small">Профиль</div>
+      <div class="card" style="margin-top:8px">
+        <div id="profileBlock">
+          <div><b id="profileName">—</b></div>
+          <div class="muted" id="profileUid">UID: —</div>
+          <div style="margin-top:8px">
+            <button id="btnWithdraw" class="btn btn-danger">Вывести</button>
+            <button id="btnHistory" class="btn-ghost">История</button>
           </div>
         </div>
-        <div class="actions">
-          <button class="btn" id="topupBtn">Пополнить</button>
-          <button class="btn ghost" id="withdrawBtn">Вывести</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div style="font-weight:900">Проверка ссылок</div>
+        <div style="margin-top:8px" class="row">
+          <input id="checkUrl" class="input" placeholder="Вставьте ссылку (https://...)">
+          <button id="btnCheckUrl" class="btn-ghost">Проверить</button>
         </div>
-      </div>
-    </div>
-
-    <!-- content card (tasks) -->
-    <div class="card" id="tasksCard">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:900">Задания</div>
-        <div>
-          <button class="btn small" id="createTaskBtn">Создать</button>
-        </div>
-      </div>
-
-      <div class="sub-tabs" id="subTabs">
-        <div class="sub-tab active" data-sub="my">Мои задания</div>
-        <div class="sub-tab" data-sub="public">Выполнить задания</div>
-      </div>
-
-      <div id="tasksList"><div class="note">Загрузка…</div></div>
-    </div>
-
-    <!-- profile panel separate -->
-    <div class="card" id="profilePanel" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-weight:900">Профиль</div>
-          <div class="note">Информация аккаунта</div>
-        </div>
-        <div>
-          <div class="note">Имя</div>
-          <div id="pName" style="font-weight:800">—</div>
-        </div>
-      </div>
-      <div style="margin-top:12px">
-        <div class="note">История операций</div>
-        <div id="history" style="margin-top:8px"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- bottom nav -->
-  <div class="tabbar" role="navigation" id="tabbar">
-    <div class="nav-item active" data-nav="tasks">Задания</div>
-    <div class="nav-item" data-nav="profile">Профиль</div>
-  </div>
-
-  <!-- Topup modal -->
-  <div class="modal-bg" id="topupModal">
-    <div class="modal">
-      <button id="closeTopup" style="float:right;background:transparent;border:none;font-size:24px;cursor:pointer">×</button>
-      <h3>Пополнение</h3>
-      <div class="note">Мин. 150 ₽</div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <input id="topupAmount" type="number" value="150" min="150" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)">
-        <button class="btn" id="createTopupBtn">Создать заявку</button>
-      </div>
-
-      <div id="topupStep" style="display:none;margin-top:12px">
-        <div class="note">Ссылка для оплаты / комментарий</div>
-        <img id="qrImg" style="display:block;margin:10px auto;max-width:280px;border-radius:10px"/>
-        <input id="manualCode" readonly style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)">
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <a id="payLink" class="btn" target="_blank" rel="noopener noreferrer">Открыть банк</a>
-          <button class="btn ghost" id="confirmPaidBtn">Я оплатил</button>
-        </div>
-        <div id="topupMsg" class="note" style="margin-top:8px"></div>
+        <div style="margin-top:8px" id="checkResult" class="muted"></div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Withdraw modal -->
-  <div class="modal-bg" id="withdrawModal">
-    <div class="modal">
-      <button id="closeWithdraw" style="float:right;background:transparent;border:none;font-size:24px;cursor:pointer">×</button>
-      <h3>Вывести</h3>
-      <div class="note">Мин. 300 ₽</div>
-      <input id="wAmount" type="number" placeholder="Сумма" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);margin-top:10px">
-      <input id="wName" type="text" placeholder="ФИО или ник" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);margin-top:10px">
-      <input id="wDetails" type="text" placeholder="Реквизиты" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);margin-top:10px">
-      <button class="btn" id="sendWithdraw" style="margin-top:10px">Отправить</button>
-      <div id="withdrawMsg" class="note" style="margin-top:8px"></div>
+<!-- Bottom nav -->
+<div class="bottom-nav">
+  <div class="nav-wrap" role="navigation">
+    <button class="nav-btn active" data-page="tasks">Задания</button>
+    <button class="nav-btn" data-page="profile">Профиль</button>
+    <button class="nav-btn" data-page="more">Ещё</button>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-back" id="modalCreate">
+  <div class="modal">
+    <h3>Создать задание</h3>
+    <div class="row" style="margin-top:8px">
+      <input id="taskTitle" class="input" placeholder="Название">
+      <input id="taskPrice" class="input" placeholder="Цена (₽)" style="width:140px" type="number">
+    </div>
+    <textarea id="taskDesc" class="input" style="margin-top:8px;height:86px" placeholder="Описание"></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+      <div class="muted">Создавая задание вы подтверждаете условия</div>
+      <div style="display:flex;gap:8px">
+        <button id="createTaskBtn" class="btn">Создать</button>
+        <button id="closeCreate" class="btn-ghost">Закрыть</button>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- Create Task modal -->
-  <div class="modal-bg" id="createModal">
-    <div class="modal">
-      <button id="closeCreate" style="float:right;background:transparent;border:none;font-size:24px;cursor:pointer">×</button>
-      <h3>Создать задание</h3>
-      <div class="note">Выберите тип и заполните данные</div>
-      <div id="typesBox" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"></div>
-      <div style="margin-top:10px">
-        <input id="taskUrl" placeholder="Ссылка (http:// или https://)" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)">
-        <span id="urlChecker" style="display:none"></span>
-        <span id="urlStatus" style="margin-left:8px"></span>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="taskQty" type="number" value="1" min="1" style="padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);width:120px">
-        <div id="totalPrice" class="note" style="align-self:center"></div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
-        <button class="btn" id="submitTask">Создать</button>
-        <button class="btn ghost" id="cancelCreate">Отмена</button>
-      </div>
-      <div id="createMsg" class="note" style="margin-top:8px"></div>
+<div class="modal-back" id="modalTopup">
+  <div class="modal">
+    <h3>Пополнить баланс</h3>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="topupAmount" class="input" placeholder="Сумма, ₽" type="number">
+      <select id="topupMethod" class="input" style="width:200px">
+        <option value="card">Карта</option>
+        <option value="qiwi">Qiwi</option>
+        <option value="tinkoff">Tinkoff / Ссылка</option>
+      </select>
     </div>
+    <div style="margin-top:8px" class="muted">Ссылку пополнения можно сгенерировать и открыть в отдельной вкладке.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button id="generateTopup" class="btn">Создать ссылку</button>
+      <button id="closeTopup" class="btn-ghost">Отмена</button>
+    </div>
+    <div id="topupResult" style="margin-top:12px"></div>
   </div>
+</div>
+
+<div class="modal-back" id="modalWithdraw">
+  <div class="modal">
+    <h3>Запрос на вывод</h3>
+    <input id="wdName" class="input" placeholder="Кому (ФИО / платёж)"><br>
+    <input id="wdDetails" class="input" placeholder="Реквизиты (карта / кошелек)"><br>
+    <input id="wdAmount" class="input" placeholder="Сумма" type="number"><br>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button id="submitWithdraw" class="btn btn-danger">Отправить</button>
+      <button id="closeWithdraw" class="btn-ghost">Отмена</button>
+    </div>
+    <div id="withdrawResult" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="modalSupport">
+  <div class="modal">
+    <h3>Поддержка</h3>
+    <div class="muted">Опишите проблему, мы ответим в чат / email (демо).</div>
+    <textarea id="supportText" class="input" style="height:100px;margin-top:8px"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button id="sendSupport" class="btn">Отправить</button>
+      <button id="closeSupport" class="btn-ghost">Закрыть</button>
+    </div>
+    <div id="supportResult" style="margin-top:8px"></div>
+  </div>
+</div>
 
 <script>
 (() => {
-  // CDN socket.io
-  const socket = (typeof io !== 'undefined') ? io() : null;
-
-  // DOM
-  const loader = document.getElementById('loader');
-  const avatar = document.getElementById('avatar');
-  const userName = document.getElementById('userName');
-  const userHandle = document.getElementById('userHandle');
-  const balanceEl = document.getElementById('balance');
-  const pName = document.getElementById('pName');
-  const historyBox = document.getElementById('history');
-  const tasksList = document.getElementById('tasksList');
-  const typesBox = document.getElementById('typesBox');
-
-  const topupModal = document.getElementById('topupModal');
-  const topupAmount = document.getElementById('topupAmount');
-  const createTopupBtn = document.getElementById('createTopupBtn');
-  const topupStep = document.getElementById('topupStep');
-  const qrImg = document.getElementById('qrImg');
-  const manualCode = document.getElementById('manualCode');
-  const payLink = document.getElementById('payLink');
-  const confirmPaidBtn = document.getElementById('confirmPaidBtn');
-  const topupMsg = document.getElementById('topupMsg');
-
-  const withdrawModal = document.getElementById('withdrawModal');
-  const wAmount = document.getElementById('wAmount'), wName = document.getElementById('wName'), wDetails = document.getElementById('wDetails'), sendWithdraw = document.getElementById('sendWithdraw'), withdrawMsg = document.getElementById('withdrawMsg');
-
-  const createModal = document.getElementById('createModal');
-  const taskUrl = document.getElementById('taskUrl'), taskQty = document.getElementById('taskQty'), totalPrice = document.getElementById('totalPrice'), submitTask = document.getElementById('submitTask');
-
-  const supportBtn = document.getElementById('supportBtn');
-  const themeToggle = document.getElementById('themeToggle');
-  const tabbar = document.getElementById('tabbar');
-
-  // state
-  let uid = (new URLSearchParams(location.search)).get('uid') || 'guest_' + Math.floor(Math.random()*99999);
-  let allTasks = [];
-  let types = [];
-  let selectedType = null;
-  let topupState = { current: null };
-
-  // UI helpers
-  function showLoader(show){
-    loader.style.pointerEvents = show ? 'auto' : 'none';
-    loader.style.opacity = show ? 1 : 0;
-    setTimeout(()=> loader.style.display = show ? 'flex' : 'none', show ? 0 : 400);
-  }
-
-  function renderProfile(u){
-    avatar.src = `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(u.id)}`;
-    userName.textContent = u.name || 'Пользователь';
-    userHandle.textContent = u.username ? '@'+u.username : '';
-    balanceEl.textContent = Number(u.balance||0).toLocaleString('ru-RU') + ' ₽';
-    pName.textContent = u.name || '';
-    historyBox.innerHTML = (u.history||[]).length ? (u.history||[]).slice(0,10).map(h=>`<div style="padding:8px;border-radius:10px;background:rgba(0,0,0,0.03);margin-bottom:6px"><div style="font-weight:700">${h.type||h.note||''}</div><div class="note">${h.amount? (h.amount+' ₽') : ''} ${h.note||''}</div></div>`).join('') : '<div class="note">История пуста</div>';
-  }
-
-  async function api(path, opts){
-    try{
-      const res = await fetch(path, opts);
-      const j = await res.json();
-      return j;
-    }catch(e){
-      console.error('api error', e);
-      return null;
+  const API = (path, opts={}) => {
+    const url = path.startsWith("/") ? path : "/" + path;
+    const fetchOpts = Object.assign({headers: {}}, opts);
+    // If sending JSON body, stringify
+    if (fetchOpts.json) {
+      fetchOpts.method = fetchOpts.method || "POST";
+      fetchOpts.headers["Content-Type"] = "application/json";
+      fetchOpts.body = JSON.stringify(fetchOpts.json);
+      delete fetchOpts.json;
     }
-  }
-
-  async function loadProfile(){
-    const j = await api(`/api/profile_me?uid=${encodeURIComponent(uid)}`);
-    if (j && j.ok) renderProfile(j.user);
-  }
-
-  async function loadTasks(){
-    const j = await api('/api/tasks/list');
-    if (!j || !j.ok) {
-      tasksList.innerHTML = '<div class="note error">Не удалось загрузить задания</div>';
-      return;
-    }
-    allTasks = j.tasks || [];
-    renderTasks();
-  }
-
-  function renderTasks(){
-    const active = document.querySelector('.sub-tab.active').dataset.sub;
-    let filtered = allTasks;
-    if (active === 'my') filtered = filtered.filter(t => t.owner_uid === uid);
-    else filtered = filtered.filter(t => t.owner_uid !== uid);
-    if (!filtered.length) { tasksList.innerHTML = '<div class="note">Нет заданий</div>'; return; }
-    tasksList.innerHTML = '';
-    filtered.forEach(t=>{
-      const el = document.createElement('div'); el.className='task-item';
-      el.innerHTML = `<div style="flex:1">
-        <div style="font-weight:800">${escapeHtml(t.title)}</div>
-        <div class="note">${escapeHtml(t.description||'')}</div>
-        <div class="note">Выполнено: ${Number(t.completed_qty||0)}/${Number(t.qty||1)}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-weight:900">${Number(t.unit_price||0).toLocaleString('ru-RU')} ₽</div>
-        <div class="note">${Number(t.qty||0)} шт</div>
-      </div>`;
-      tasksList.appendChild(el);
+    // append cache buster for GET sometimes:
+    const finalUrl = url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
+    return fetch(finalUrl, fetchOpts).then(async r => {
+      // when server not reachable, fetch will reject
+      try {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { return {ok:true, text}; }
+      } catch(e) { return {ok:false, errmsg:"invalid response"} }
     });
+  };
+
+  // socket
+  let socket;
+  function initSocket(){
+    try {
+      socket = io({transports:['websocket']});
+      socket.on("connect", ()=> console.log("ws connected", socket.id));
+      socket.on("task_update", data => { console.log("task_update", data); loadTasks(); });
+      socket.on("new_topup", d => { console.log("new_topup", d); /* show notice */ });
+      socket.on("user_update", d => { if (d.user_id === currentUser.id) { currentUser.balance = d.balance; renderProfile(); }});
+    } catch(e){ console.error("socket init failed", e); }
   }
 
-  function escapeHtml(s=''){ return (s+'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  // app state
+  let currentUser = { id: "guest_1", name: "Гость", balance: 0 };
+  const qsToken = new URLSearchParams(location.search).get("token") || "";
 
-  // types
-  async function loadTypes(){
-    const j = await api('/api/task_types');
-    if (j && j.ok && Array.isArray(j.types)) types = j.types;
-    else {
-      // fallback try json file
-      const r = await fetch('/task_types.json').catch(()=>null);
-      if (r && r.ok) types = await r.json();
-    }
-    renderTypes();
-  }
-  function renderTypes(){
-    typesBox.innerHTML = '';
-    types.forEach((t,idx)=>{
-      const btn = document.createElement('div'); btn.className='type-btn';
-      btn.style.padding='8px 12px'; btn.style.borderRadius='12px'; btn.style.border='1px solid rgba(0,0,0,0.06)'; btn.style.cursor='pointer';
-      btn.innerHTML = `<div style="font-weight:700">${escapeHtml(t.name)}</div><div style="font-weight:800">${Number(t.unit_price||0)} ₽</div>`;
-      btn.addEventListener('click', ()=> {
-        selectedType = t;
-        document.querySelectorAll('.type-btn').forEach(x=>x.style.boxShadow='none');
-        btn.style.boxShadow = '0 6px 24px rgba(0,0,0,0.08)';
-        updateTotal();
-      });
-      typesBox.appendChild(btn);
-      if (idx===0 && !selectedType){ selectedType = t; btn.style.boxShadow = '0 6px 24px rgba(0,0,0,0.08)'; updateTotal(); }
-    });
-  }
-
-  function updateTotal(){
-    if (!selectedType) return totalPrice.textContent = '';
-    const qty = Number(taskQty.value||1);
-    totalPrice.textContent = `Общая цена: ${qty * (selectedType.unit_price||0)} ₽`;
-  }
-
-  // link checker with spinner
-  const urlCheckerEl = document.getElementById('urlChecker');
-  const urlStatusEl = document.getElementById('urlStatus');
-  let urlCheckTimer = null;
-  taskUrl.addEventListener('input', ()=>{
-    clearTimeout(urlCheckTimer);
-    urlStatusEl.textContent = '';
-    const v = taskUrl.value.trim();
-    if (!v) { urlCheckerEl.style.display='none'; return; }
-    urlCheckerEl.style.display='inline-block'; urlCheckerEl.className='url-check';
-    urlCheckTimer = setTimeout(async ()=>{
-      try{
-        const res = await fetch(v, {method:'HEAD', mode:'no-cors'}).catch(()=>null);
-        // we can't reliably HEAD due to CORS; do a best-effort fetch
-        urlCheckerEl.style.display='none';
-        urlStatusEl.className='url-status ok';
-        urlStatusEl.textContent = '✅';
-      }catch(e){
-        urlCheckerEl.style.display='none';
-        urlStatusEl.className='url-status err';
-        urlStatusEl.textContent = '❌';
-      }
-    }, 500);
-  });
-
-  // create task
-  document.getElementById('createTaskBtn').addEventListener('click', ()=> {
-    createModal.style.display='flex'; createModal.classList.add('open');
-  });
-  document.getElementById('cancelCreate').addEventListener('click', closeCreate);
-  document.getElementById('closeCreate').addEventListener('click', closeCreate);
-  function closeCreate(){ createModal.style.display='none'; createModal.classList.remove('open'); selectedType=null; taskUrl.value=''; taskQty.value=1; totalPrice.textContent=''; }
-
-  submitTask.addEventListener('click', async ()=>{
-    if (!selectedType) return alert('Выберите тип');
-    const url = taskUrl.value.trim(); const qty = Number(taskQty.value||0);
-    if (!url) return alert('Введите ссылку');
-    if (!qty || qty<1) return alert('Кол-во корректное');
-    const body = { title: selectedType.name, description:selectedType.name, unit_price:selectedType.unit_price, qty, url, type_id:selectedType.id, owner_uid: uid };
-    const j = await api('/api/tasks/create', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-    if (j && j.ok){ alert('Задание создано'); closeCreate(); loadTasks(); } else alert((j && j.errmsg) || 'Ошибка');
-  });
-
-  taskQty.addEventListener('input', updateTotal);
-
-  // topup
-  document.getElementById('topupBtn').addEventListener('click', ()=> { topupModal.style.display='flex'; topupModal.classList.add('open'); topupStep.style.display='none'; topupMsg.textContent=''; topupAmount.value=150; });
-  document.getElementById('closeTopup').addEventListener('click', ()=> { topupModal.style.display='none'; topupModal.classList.remove('open'); });
-  createTopupBtn.addEventListener('click', async ()=>{
-    const amount = Number(topupAmount.value||0);
-    if (!amount || amount<150) return alert('Мин. 150 ₽');
-    const j = await api('/api/user/topup-link', {method:'POST',headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount })});
-    if (!j || !j.ok) return alert((j && j.errmsg) || 'Ошибка создания заявки');
-    topupState.current = j.topup.id;
-    manualCode.value = j.manual_code || '';
-    qrImg.src = j.qr_url || '';
-    payLink.href = j.pay_link || '#';
-    topupStep.style.display='block';
-    topupMsg.textContent = 'Скопируйте комментарий и оплатите. Нажмите "Я оплатил" для проверки.';
-  });
-
-  confirmPaidBtn.addEventListener('click', async ()=>{
-    if (!topupState.current) return alert('Пересоздайте заявку');
-    const j = await api('/api/user/topup-confirm', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ topup_id: topupState.current, uid })});
-    if (j && j.ok){ alert('Заявка на проверку'); topupModal.style.display='none'; topupModal.classList.remove('open'); setTimeout(loadProfile, 1500); } else alert((j && j.errmsg) || 'Ошибка');
-  });
-
-  // withdraw
-  document.getElementById('withdrawBtn').addEventListener('click', ()=> { withdrawModal.style.display='flex'; withdrawModal.classList.add('open'); withdrawMsg.textContent=''; });
-  document.getElementById('closeWithdraw').addEventListener('click', ()=> { withdrawModal.style.display='none'; withdrawModal.classList.remove('open'); });
-  sendWithdraw.addEventListener('click', async ()=>{
-    const amount = Number(wAmount.value||0);
-    const name = wName.value.trim(); const details = wDetails.value.trim();
-    if (!amount || amount<300) return alert('Мин. 300 ₽');
-    if (!name || !details) return alert('Заполните поля');
-    const j = await api('/api/user/withdraw', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid, amount, name, details })});
-    if (j && j.ok){ withdrawMsg.textContent='Заявка отправлена'; withdrawModal.style.display='none'; withdrawModal.classList.remove('open'); loadProfile(); } else withdrawMsg.textContent = (j && j.errmsg) || 'Ошибка';
-  });
-
-  // nav
-  document.querySelectorAll('.nav-item').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
-      el.classList.add('active');
-      const nav = el.dataset.nav;
-      document.getElementById('tasksCard').style.display = nav==='tasks' ? 'block' : 'none';
-      document.getElementById('profilePanel').style.display = nav==='profile' ? 'block' : 'none';
-      document.getElementById('profileCard').style.display = nav==='profile' ? 'none' : 'block';
-    });
-  });
-
-  document.querySelectorAll('.sub-tab').forEach(el=> el.addEventListener('click', ()=>{
-    document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));
-    el.classList.add('active'); renderTasks();
-  }));
-
-  // support and theme
-  supportBtn.addEventListener('click', ()=> window.open('https://t.me/LolikMoney','_blank'));
-  themeToggle.addEventListener('click', ()=> {
-    document.body.classList.toggle('dark');
-    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-  });
-  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
-
-  // socket handlers
-  if (socket){
-    socket.on('connect', ()=> console.log('socket connected'));
-    socket.on('task_update', ()=> loadTasks());
-    socket.on('new_topup', (data)=> console.log('new topup', data));
-    socket.on('topup_updated', ()=> { loadProfile(); });
-    socket.on('withdraw_new', ()=> console.log('withdraw_new'));
-  }
+  // UI refs
+  const loadingScreen = document.getElementById("loadingScreen");
+  const appEl = document.getElementById("app");
+  const tasksList = document.getElementById("tasksList");
+  const balanceEl = document.getElementById("balance");
+  const profileName = document.getElementById("profileName");
+  const profileUid = document.getElementById("profileUid");
+  const userName = document.getElementById("userName");
+  const checkResult = document.getElementById("checkResult");
 
   // initial
-  (async ()=>{
-    showLoader(true);
-    await Promise.all([loadProfile(), loadTasks(), loadTypes()]);
-    setTimeout(()=> showLoader(false), 700);
-  })();
+  async function boot(){
+    showLoading(true);
+    initSocket();
+    await loadProfile();
+    await loadTasks();
+    showLoading(false);
+    appEl.style.opacity = 1;
+    restoreTheme();
+  }
 
-  // small helpers
-  function $(sel){ return document.querySelector(sel); }
+  function showLoading(on){
+    loadingScreen.style.display = on ? "flex" : "none";
+  }
+
+  // load profile
+  async function loadProfile(){
+    try {
+      const r = await API(`/api/profile_me?uid=${encodeURIComponent(currentUser.id)}`);
+      if (r && r.ok && r.user){
+        currentUser = r.user;
+        renderProfile();
+      } else {
+        console.warn("profile load failed", r);
+      }
+    } catch(e){
+      console.error("profile load error", e);
+      showToast("Нет соединения с сервером");
+    }
+  }
+  function renderProfile(){
+    profileName.textContent = currentUser.name || currentUser.username || "Пользователь";
+    profileUid.textContent = "UID: " + (currentUser.id || "—");
+    balanceEl.textContent = (currentUser.balance||0).toFixed(2);
+    userName.textContent = "Вы: " + (currentUser.name || "Пользователь");
+  }
+
+  // tasks
+  async function loadTasks(){
+    tasksList.innerHTML = '<div class="muted">Загрузка...</div>';
+    try {
+      const r = await API('/api/tasks/list');
+      if (!r || !r.ok) { tasksList.innerHTML = '<div class="muted">Ошибка загрузки</div>'; return; }
+      const items = r.tasks || [];
+      if (!items.length) { tasksList.innerHTML = '<div class="muted">Нет заданий</div>'; return; }
+      tasksList.innerHTML = '';
+      items.forEach(t => {
+        const el = document.createElement('div'); el.className='task';
+        el.innerHTML = `<div style="display:flex;justify-content:space-between">
+            <div><b>${escapeHtml(t.title)}</b><div class="muted" style="font-size:13px">${escapeHtml(t.description||'')}</div></div>
+            <div style="text-align:right">
+              <div class="muted">Цена</div><div style="font-weight:900">${t.unit_price} ₽</div>
+            </div>
+          </div>
+          <div style="margin-top:8px" class="actions">
+            <button class="btn" data-id="${t.id}" data-action="accept">Выполнить</button>
+            <button class="btn-ghost" data-id="${t.id}" data-action="view">Открыть</button>
+          </div>`;
+        tasksList.appendChild(el);
+      });
+      // attach listeners
+      tasksList.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', onTaskBtn);
+      });
+    } catch(e){
+      tasksList.innerHTML = '<div class="muted">Нет соединения</div>';
+      console.error(e);
+    }
+  }
+
+  function onTaskBtn(ev){
+    const btn = ev.currentTarget;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    if (action === 'view'){
+      showToast('Открыть задачу ' + id);
+    } else if (action === 'accept'){
+      showToast('Действие выполнить (демо).');
+    }
+  }
+
+  // create task modal
+  const modalCreate = document.getElementById("modalCreate");
+  document.getElementById("btnCreateTask").addEventListener('click', ()=> modalCreate.style.display='flex');
+  document.getElementById("closeCreate").addEventListener('click', ()=> modalCreate.style.display='none');
+  document.getElementById("createTaskBtn").addEventListener('click', async ()=>{
+    const t = document.getElementById("taskTitle").value.trim();
+    const price = parseFloat(document.getElementById("taskPrice").value || 0);
+    const desc = document.getElementById("taskDesc").value.trim();
+    if (!t || !price) return alert("Заполните название и цену");
+    try {
+      const r = await API('/api/tasks/create', {json:{title:t, reward:price, desc:desc, owner_uid: currentUser.id}});
+      if (r && r.ok){ showToast("Задание создано"); modalCreate.style.display='none'; loadTasks(); }
+      else showToast("Ошибка создания");
+    } catch(e){ showToast("Нет связи с сервером"); }
+  });
+
+  // topup modal
+  const modalTopup = document.getElementById("modalTopup");
+  document.getElementById("btnTopup").addEventListener('click', ()=> modalTopup.style.display='flex');
+  document.getElementById("closeTopup").addEventListener('click', ()=> modalTopup.style.display='none');
+  document.getElementById("generateTopup").addEventListener('click', async ()=>{
+    const amount = parseFloat(document.getElementById("topupAmount").value || 0);
+    if (!amount || amount <= 0) return alert("Введите сумму");
+    const method = document.getElementById("topupMethod").value;
+    // call API
+    try {
+      const r = await API('/api/user/topup-link', {json:{uid: currentUser.id, amount}});
+      if (!r){ showToast("Ошибка сети/сервер"); return; }
+      if (r.ok){
+        const out = document.getElementById("topupResult");
+        out.innerHTML = `<div>Ссылка: <a href="${r.topup.pay_link}" target="_blank" rel="noreferrer">${r.topup.pay_link}</a></div>
+          <div class="muted">Код: <code>${r.manual_code}</code></div>
+          <div style="margin-top:8px"><button id="openPay" class="btn">Открыть ссылку</button></div>`;
+        document.getElementById("openPay").addEventListener('click', ()=> window.open(r.topup.pay_link,'_blank'));
+        showToast("Ссылка создана");
+      } else {
+        showToast(r.errmsg || "Ошибка");
+      }
+    } catch(e){
+      console.error(e);
+      showToast("Нет соединения / сервер недоступен");
+    }
+  });
+
+  // withdraw modal
+  const modalWithdraw = document.getElementById("modalWithdraw");
+  document.getElementById("btnWithdraw").addEventListener('click', ()=> modalWithdraw.style.display='flex');
+  document.getElementById("closeWithdraw").addEventListener('click', ()=> modalWithdraw.style.display='none');
+  document.getElementById("submitWithdraw").addEventListener('click', async ()=>{
+    const name = document.getElementById("wdName").value.trim();
+    const details = document.getElementById("wdDetails").value.trim();
+    const amount = parseFloat(document.getElementById("wdAmount").value || 0);
+    if (!name || !details || !amount) return alert("Заполните все поля");
+    try {
+      const r = await API('/api/user/withdraw', {json:{uid: currentUser.id, amount, name, details}});
+      if (!r) return showToast("Ошибка сети");
+      if (r.ok){
+        document.getElementById("withdrawResult").innerHTML = "<div class='ok'>Заявка отправлена</div>";
+        loadProfile();
+        modalWithdraw.style.display='none';
+      } else showToast(r.errmsg || "Ошибка");
+    } catch(e){ showToast("Нет соединения"); }
+  });
+
+  // support modal
+  const modalSupport = document.getElementById("modalSupport");
+  document.getElementById("btnSupport").addEventListener('click', ()=> modalSupport.style.display='flex');
+  document.getElementById("closeSupport").addEventListener('click', ()=> modalSupport.style.display='none');
+  document.getElementById("sendSupport").addEventListener('click', async ()=>{
+    const txt = document.getElementById("supportText").value.trim();
+    if (!txt) return alert("Опишите проблему");
+    // demo: just show success
+    document.getElementById("supportResult").innerHTML = "<div class='ok'>Отправлено — ответ в демо-режиме</div>";
+    setTimeout(()=> modalSupport.style.display='none', 1000);
+  });
+
+  // Check URL with animation -> fetch HEAD
+  document.getElementById("btnCheckUrl").addEventListener('click', async ()=>{
+    const url = document.getElementById("checkUrl").value.trim();
+    if (!url) return;
+    checkResult.innerHTML = '<span class="muted">Проверка…</span> <span class="spinner" style="width:18px;height:18px;border-width:3px"></span>';
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(()=> controller.abort(), 8000);
+      // Try HEAD first
+      let ok = false;
+      try {
+        const res = await fetch(url, {method:'HEAD', mode:'cors', signal:controller.signal});
+        ok = res && (res.status >= 200 && res.status < 400);
+      } catch(e){
+        // fallback: try GET with no-cors (opaque) — resolves if network reachable but we can't read status
+        try {
+          await fetch(url, {method:'GET', mode:'no-cors', signal:controller.signal});
+          ok = true;
+        } catch(err2){
+          ok = false;
+        }
+      } finally { clearTimeout(id); }
+      if (ok) checkResult.innerHTML = '<span class="ok">✅ Ссылка доступна</span>';
+      else checkResult.innerHTML = '<span class="bad">❌ Ссылка недоступна или блокируется CORS</span>';
+    } catch(e){
+      checkResult.innerHTML = '<span class="bad">Ошибка проверки (нет сети или таймаут)</span>';
+    }
+  });
+
+  // nav pages (simple: show/hide blocks)
+  const navBtns = document.querySelectorAll('.nav-btn');
+  navBtns.forEach(b=> b.addEventListener('click', ()=>{
+    navBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    const page = b.dataset.page;
+    // simple behavior: switch focus
+    if (page === 'tasks') { window.scrollTo({top:0,behavior:'smooth'}); }
+    if (page === 'profile') { window.scrollTo({top:0,behavior:'smooth'}); }
+    if (page === 'more') { showToast('Ещё: настройки, реферальная система (демо)'); }
+  }));
+
+  // theme: toggle dark / light
+  const btnTheme = document.getElementById("btnTheme");
+  btnTheme.addEventListener('click', ()=>{
+    const isDark = document.documentElement.classList.toggle('dark-theme');
+    localStorage.setItem('rc_theme',''+(isDark? 'dark':'light'));
+  });
+  function restoreTheme(){
+    const t = localStorage.getItem('rc_theme') || 'dark';
+    document.documentElement.classList.toggle('dark-theme', t==='dark');
+  }
+
+  // utils
+  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function showToast(msg){ console.log(msg); /* small temporary UI: use alert for demo */ alert(msg); }
+
+  // start
+  boot();
 })();
 </script>
 </body>
