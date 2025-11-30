@@ -1,5 +1,0 @@
-[
-  {"id":"ya_review","name":"Отзыв — Яндекс Карты","unit_price":120,"max_qty":150},
-  {"id":"gmaps_review","name":"Отзыв — Google Maps","unit_price":65,"max_qty":200},
-  {"id":"tg_sub","name":"Подписка — Telegram канал","unit_price":10,"max_qty":100000}
-]
