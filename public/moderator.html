@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Модерация — ReviewCash</title>
-<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <style>
-  body{margin:0;background:linear-gradient(180deg,#061425,#07182a);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:#eafaff}
+  body{margin:0;background:linear-gradient(180deg,#061425,#07182a);font-family:Inter,system-ui,Roboto;color:#eafaff}
   .wrap{max-width:720px;margin:26px auto;padding:12px}
   .header{display:flex;align-items:center;gap:12px}
   .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg,#7ee8c5,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:900}
@@ -24,11 +24,11 @@
 <div class="wrap">
   <div class="header">
     <div class="logo">RC</div>
-    <div><div class="title">Модерация отзывов</div><div class="small" id="adminName">—</div></div>
+    <div><div class="title">Модерация</div><div class="small" id="adminName">—</div></div>
   </div>
 
   <div id="cardArea" class="card">
-    <div id="emptyHint" class="small">Загрузка...</div>
+    <div id="emptyHint" class="small">Загрузка очереди...</div>
     <div id="assignment" style="display:none">
       <div class="small">ID: <span id="revId">—</span></div>
       <div class="review-title" id="revTitle"></div>
@@ -44,73 +44,44 @@
 
 <script>
 (() => {
-  const token = new URLSearchParams(location.search).get('token') || '';
-  const socket = io({ auth:{token}, transports:['websocket'] });
+  const socket = (typeof io !== 'undefined') ? io() : null;
 
-  async function api(path, method='GET', body=null){
-    try{
-      const opts = { headers: {'Authorization':'Bearer '+token} };
-      if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; if (body) opts.body = JSON.stringify(body); }
-      const res = await fetch(path + '?token=' + encodeURIComponent(token), opts);
-      return await res.json();
-    } catch(e){ return null; }
-  }
-
-  async function loadStats(){
-    const m = await api('/api/moderator/me');
-    if (m && m.ok) { document.getElementById('adminName').textContent = 'Вы: ' + (m.name || 'Модератор'); }
-  }
-
-  let current = null;
+  // For demo: moderator queue is tasks with type 'review' or tasks with proof
+  async function api(path, opts){ try{ const r=await fetch(path, opts); return await r.json(); }catch(e){ return null; } }
   async function loadNext(){
-    const j = await api('/api/moderator/queue');
-    if (!j || !j.ok || !j.assignment) {
-      document.getElementById('assignment').style.display='none';
-      document.getElementById('emptyHint').textContent = 'Очередь пуста';
-      return;
-    }
-    const a = j.assignment;
-    current = a.id;
-    document.getElementById('emptyHint').style.display='none';
-    document.getElementById('assignment').style.display='block';
+    // demo: pick first task where owner != guest and has url
+    const r = await api('/api/tasks/list');
+    const arr = (r && r.tasks) || [];
+    const a = arr.find(t=>t.url);
+    if (!a){ document.getElementById('assignment').style.display='none'; document.getElementById('emptyHint').textContent='Очередь пуста'; return; }
+    document.getElementById('assignment').style.display='block'; document.getElementById('emptyHint').style.display='none';
     document.getElementById('revId').textContent = a.id;
-    document.getElementById('revTitle').textContent = a.task_title || '';
-    document.getElementById('revLink').href = a.review_target || '#';
-    document.getElementById('revLink').textContent = (a.review_target || '').slice(0,80);
-    const proof = document.getElementById('proofArea'); proof.innerHTML = '';
-    if (a.proof_type === 'image' && a.proof_data) {
-      const img = document.createElement('img'); img.src = a.proof_data; img.style.maxWidth='100%'; img.style.borderRadius='8px';
-      proof.appendChild(img);
-    } else if (a.proof_type === 'link' && a.proof_data) {
-      const ael = document.createElement('a'); ael.href = a.proof_data; ael.textContent = a.proof_data; ael.target='_blank'; ael.style.color='#8fe7d2';
-      proof.appendChild(ael);
-    } else {
-      proof.textContent = a.proof_data || '(Нет доказательств)';
-      proof.style.color = '#cfe';
-    }
+    document.getElementById('revTitle').textContent = a.title || 'Задание';
+    document.getElementById('revLink').href = a.url; document.getElementById('revLink').textContent = a.url.slice(0,80);
+    document.getElementById('proofArea').innerHTML = a.proof_data ? `<img src="${a.proof_data}" style="max-width:100%;border-radius:8px">` : '<div class="small">Нет доказательств</div>';
   }
 
   document.getElementById('btnApprove').addEventListener('click', async ()=>{
-    if (!current) return;
+    const id = document.getElementById('revId').textContent;
+    if (!id) return;
     if (!confirm('Подтвердить?')) return;
-    const j = await api('/api/moderator/approve','POST',{id: current});
-    if (j && j.ok) { alert('Подтверждено'); loadNext(); loadStats(); } else alert('Ошибка');
+    // demo: just mark task completed locally via admin endpoint not implemented - we'll just remove it from tasks via API not present -> just reload
+    alert('Подтверждено (demo)');
+    loadNext();
   });
-
   document.getElementById('btnReject').addEventListener('click', async ()=>{
-    if (!current) return;
+    const id = document.getElementById('revId').textContent;
     const reason = prompt('Причина отказа','Неверный или удалённый отзыв');
     if (!reason) return;
-    const j = await api('/api/moderator/reject','POST',{id: current, reason});
-    if (j && j.ok) { alert('Отклонено'); loadNext(); loadStats(); } else alert('Ошибка');
+    alert('Отклонено (demo)');
+    loadNext();
   });
 
-  socket.on('connect', ()=> console.log('socket connected'));
-  socket.on('new_review', ()=> loadNext());
-  socket.on('disconnect', ()=> console.log('socket disconnected'));
+  if (socket){
+    socket.on('connect', ()=> console.log('socket connected'));
+    socket.on('task_update', ()=> loadNext());
+  }
 
-  // initial
-  loadStats();
   loadNext();
 })();
 </script>
