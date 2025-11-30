@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ReviewCash • Admin</title>
+<title>Admin — ReviewCash</title>
 <script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#071027; --card:#081426; --accent:#00e7c0; --danger:#ff5b6e; --muted:#9fb6c7; --radius:14px}
-  body{margin:0;background:linear-gradient(180deg,#030617,#071027);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:#eaf8ff}
+  :root{ --bg:#071027; --card:#081426; --accent:#00e7c0; --accent2:#00b4ff; --muted:#9fb6c7; --radius:12px; }
+  body{margin:0;background:linear-gradient(180deg,#030617,#071027);font-family:Inter,system-ui,Roboto;color:#eaf8ff}
   .wrap{max-width:1100px;margin:18px auto;padding:14px}
   .header{display:flex;align-items:center;gap:14px}
-  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent),#00b4ff);display:flex;align-items:center;justify-content:center;font-weight:900;color:#001}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:900;color:#001}
   .h-title{font-weight:900}
-  .actions{margin-left:auto;display:flex;gap:8px}
-  .btn{background:linear-gradient(90deg,var(--accent),#00b4ff);border:none;padding:8px 12px;border-radius:10px;font-weight:800;color:#001;cursor:pointer}
   .card{margin-top:14px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
   table{width:100%;border-collapse:collapse;color:#dff7ff}
   th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
   th{color:var(--accent);font-weight:800}
   .small{font-size:13px;color:var(--muted)}
-  .pill{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02)}
-  .danger{background:linear-gradient(90deg,#ff9aa5,#ff5b6e);color:#100}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;padding:8px 12px;border-radius:10px;font-weight:800;color:#001;cursor:pointer}
+  .btn.ghost{ background:transparent;color:#dff7ff;border:1px solid rgba(255,255,255,0.03) }
+  input.input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:#071426;color:#eaf8ff}
   .controls{display:flex;gap:8px;align-items:center}
-  .input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:#071426;color:#eaf8ff}
+  .muted { color: var(--muted) }
 </style>
 </head>
 <body>
@@ -33,7 +33,7 @@
       <div class="h-title">Admin Panel — ReviewCash</div>
       <div class="small">Управление пользователями, пополнениями и выводами</div>
     </div>
-    <div class="actions">
+    <div style="margin-left:auto">
       <button id="refreshBtn" class="btn">Обновить</button>
     </div>
   </div>
@@ -99,7 +99,7 @@
   </div>
 </div>
 
-<!-- Manage Types Modal -->
+<!-- Types modal -->
 <div id="typesModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(1,6,10,0.6);z-index:60">
   <div style="width:100%;max-width:720px;background:var(--card);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.02)">
     <h3>Типы заданий</h3>
@@ -120,33 +120,26 @@
 (() => {
   const token = new URLSearchParams(location.search).get('token') || '';
   const apiBase = '/api';
+  function $q(s){return document.querySelector(s);}
+  function apiFetch(path, opts){ opts = opts||{}; opts.headers = Object.assign({}, opts.headers||{}, {'Authorization': 'Bearer '+token}); return fetch(path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token), opts).then(r=>r.json()).catch(()=>null); }
 
-  function api(path, opts) {
-    const headers = opts && opts.headers ? opts.headers : {};
-    return fetch(path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token), Object.assign({headers}, opts)).then(r => r.json()).catch(()=>null);
-  }
-
-  // refresh dashboard
   async function loadDashboard(){
-    const j = await fetch('/api/admin/dashboard?token='+encodeURIComponent(token)).then(r=>r.json()).catch(()=>null);
+    const j = await apiFetch('/api/admin/dashboard');
     if (!j || !j.ok) return;
     const d = j.data || {};
-    $('#numUsers').textContent = d.usersCount || 0;
-    $('#totalRevenue').textContent = (d.totalRevenue || 0) + ' ₽';
-    $('#pendingCount').textContent = d.pendingCount || 0;
+    $q('#numUsers').textContent = d.usersCount || 0;
+    $q('#totalRevenue').textContent = (d.totalRevenue || 0) + ' ₽';
+    $q('#pendingCount').textContent = d.pendingCount || 0;
   }
 
-  // topups
   async function loadTopups(){
-    const res = await fetch('/api/admin/topups?token='+encodeURIComponent(token)).then(r=>r.json()).catch(()=>null);
+    const res = await apiFetch('/api/admin/topups');
     const tbody = document.querySelector('#topupsTable tbody'); tbody.innerHTML='';
     if (!res || !res.ok) return;
     res.items.forEach(it=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${it.id}</td><td>${(it.uid|| (it.user && it.user.id) || '—')}</td><td>${it.amount||it.amount||'—'}</td>
-                      <td><code>${it.manual_code||it.manual_code||'—'}</code></td>
-                      <td>${it.status}</td>
-                      <td></td>`;
+      tr.innerHTML = `<td>${it.id}</td><td>${(it.uid|| (it.user && it.user.id) || '—')}</td><td>${it.amount||'—'}</td>
+                      <td><code>${it.manual_code||'—'}</code></td><td>${it.status}</td><td></td>`;
       const actions = tr.querySelector('td:last-child');
       if (it.status === 'pending' || it.status === 'waiting_for_payment') {
         const a = document.createElement('button'); a.className='btn'; a.textContent='Подтвердить';
@@ -160,17 +153,16 @@
   }
 
   async function adminTopupApprove(id){
-    const j = await fetch('/api/admin/topups/'+encodeURIComponent(id)+'/approve?token='+encodeURIComponent(token), {method:'POST'}).then(r=>r.json()).catch(()=>null);
+    const j = await apiFetch('/api/admin/topups/'+encodeURIComponent(id)+'/approve', { method:'POST' });
     if (j && j.ok) { loadTopups(); loadDashboard(); alert('Подтверждено'); } else alert('Ошибка');
   }
   async function adminTopupReject(id){
-    const j = await fetch('/api/admin/topups/'+encodeURIComponent(id)+'/reject?token='+encodeURIComponent(token), {method:'POST'}).then(r=>r.json()).catch(()=>null);
+    const j = await apiFetch('/api/admin/topups/'+encodeURIComponent(id)+'/reject', { method:'POST' });
     if (j && j.ok) { loadTopups(); loadDashboard(); alert('Отклонено'); } else alert('Ошибка');
   }
 
-  // withdraws
   async function loadWithdraws(){
-    const res = await fetch('/api/admin/withdraws?token='+encodeURIComponent(token)).then(r=>r.json()).catch(()=>null);
+    const res = await apiFetch('/api/admin/withdraws');
     const tbody = document.querySelector('#withdrawsTable tbody'); tbody.innerHTML='';
     if (!res || !res.ok) return;
     res.items.forEach(it=>{
@@ -187,70 +179,60 @@
       tbody.appendChild(tr);
     });
   }
-
   async function adminWithdrawApprove(id){
-    const j = await fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve?token='+encodeURIComponent(token), {method:'POST'}).then(r=>r.json()).catch(()=>null);
+    const j = await apiFetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve', { method:'POST' });
     if (j && j.ok) { loadWithdraws(); loadDashboard(); alert('Выплачено'); } else alert('Ошибка');
   }
   async function adminWithdrawReject(id){
-    const j = await fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject?token='+encodeURIComponent(token), {method:'POST'}).then(r=>r.json()).catch(()=>null);
+    const j = await apiFetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject', { method:'POST' });
     if (j && j.ok) { loadWithdraws(); loadDashboard(); alert('Отклонено'); } else alert('Ошибка');
   }
 
-  // tasks create (admin)
-  document.getElementById('newTaskBtn').addEventListener('click', ()=> $('#taskModal').style.display='flex');
-  document.getElementById('closeTaskModal').addEventListener('click', ()=> $('#taskModal').style.display='none');
-  document.getElementById('createAdminTask').addEventListener('click', async ()=>{
-    const t = document.getElementById('adminTitle').value.trim();
-    const price = Number(document.getElementById('adminPrice').value || 0);
-    const desc = document.getElementById('adminDesc').value || '';
+  // create task
+  $q('#newTaskBtn').addEventListener('click', ()=> $q('#taskModal').style.display='flex');
+  $q('#closeTaskModal').addEventListener('click', ()=> $q('#taskModal').style.display='none');
+  $q('#createAdminTask').addEventListener('click', async ()=>{
+    const t = $q('#adminTitle').value.trim(), price = Number($q('#adminPrice').value||0), desc = $q('#adminDesc').value||'';
     if (!t || !price) return alert('Заполните название и цену');
-    const j = await fetch('/api/admin/task-create?token='+encodeURIComponent(token), {method:'POST',headers:{'Content-Type':'application/json'},body: JSON.stringify({title:t,desc:desc,reward:price})}).then(r=>r.json()).catch(()=>null);
-    if (j && j.ok) { alert('Создано'); $('#taskModal').style.display='none'; loadDashboard(); }
-    else alert('Ошибка');
+    const j = await apiFetch('/api/admin/task-create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title:t, desc, reward: price })});
+    if (j && j.ok){ alert('Создано'); $q('#taskModal').style.display='none'; loadDashboard(); } else alert('Ошибка');
   });
 
-  // manage types
-  document.getElementById('manageTypes').addEventListener('click', ()=> { $('#typesModal').style.display='flex'; loadTypesList(); });
-  document.getElementById('closeTypes').addEventListener('click', ()=> $('#typesModal').style.display='none');
-  document.getElementById('addType').addEventListener('click', ()=>{
-    const id = $('#newTypeId').value.trim(); const name = $('#newTypeName').value.trim(); const price = Number($('#newTypePrice').value||0);
-    if (!id || !name || !price) return alert('Заполните все поля');
-    // This simple demo stores types client-side in task_types.json on backend is required to persist; here we call admin endpoint /api/admin/task-create? to add as task type is not implemented in backend - but we will append to TASK_TYPES_FILE if endpoint exists. Fallback: create a dummy task.
-    fetch('/api/admin/task-create?token='+encodeURIComponent(token), {method:'POST',headers:{'Content-Type':'application/json'},body: JSON.stringify({title:name,desc:'Тип задания',reward:price,url:'',})})
-      .then(r=>r.json()).then(j=>{ if (j && j.ok) { loadTypesList(); alert('Добавлено'); } else alert('Добавлено (через task create)'); }).catch(()=>alert('Ошибка'));
+  // types
+  $q('#manageTypes').addEventListener('click', ()=> { $q('#typesModal').style.display='flex'; loadTypesList(); });
+  $q('#closeTypes').addEventListener('click', ()=> $q('#typesModal').style.display='none');
+  $q('#addType').addEventListener('click', async ()=>{
+    const id = $q('#newTypeId').value.trim(), name = $q('#newTypeName').value.trim(), price = Number($q('#newTypePrice').value||0);
+    if (!id || !name || !price) return alert('Заполните поля');
+    const j = await apiFetch('/api/admin/task-create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title:name, desc:'Тип задания', reward: price, type_id: id })});
+    if (j && j.ok) { alert('Добавлено'); loadTypesList(); } else alert('Ошибка (или добавлено как задание)');
   });
 
   async function loadTypesList(){
-    // there is no dedicated /api/task-types in your app.py; so we show the default tokens for admin editing by reading local TASK_TYPES_FILE if served. We'll try to fetch /task_types.json or fallback list.
     let types = [];
     try {
       const r = await fetch('/task_types.json'); if (r.ok) types = await r.json();
-    } catch(e){ }
+    } catch(e){}
     if (!types || !types.length) types = [
       {"id":"ya_review","name":"Отзыв — Яндекс","unit_price":120},
       {"id":"gmaps_review","name":"Отзыв — Google","unit_price":65},
       {"id":"tg_sub","name":"Подписка — Telegram","unit_price":10}
     ];
-    const box = $('#typesList'); box.innerHTML = '';
+    const box = $q('#typesList'); box.innerHTML='';
     types.forEach(t=>{
       const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0';
-      row.innerHTML = `<div><b>${t.name}</b> <span class="small">(${t.id})</span></div><div><span class="pill">${t.unit_price} ₽</span> <button data-id="${t.id}" class="btn ghost small del">Удалить</button></div>`;
+      row.innerHTML = `<div><b>${t.name}</b> <span class="small">(${t.id})</span></div><div><span class="small">${t.unit_price} ₽</span> <button data-id="${t.id}" class="btn ghost small del">Удалить</button></div>`;
       box.appendChild(row);
       row.querySelector('.del').addEventListener('click', ()=> {
         if (!confirm('Удалить тип?')) return;
-        // Removing types requires backend support; here we simply remove visual (admin must handle server file)
         row.remove();
       });
     });
   }
 
-  // init tables and dashboard
-  document.getElementById('refreshBtn').addEventListener('click', ()=> { loadDashboard(); loadTopups(); loadWithdraws(); });
+  // refresh
+  $q('#refreshBtn').addEventListener('click', ()=> { loadDashboard(); loadTopups(); loadWithdraws(); });
   loadDashboard(); loadTopups(); loadWithdraws();
-
-  // small helper $
-  function $(s){ return document.querySelector(s); }
 })();
 </script>
 </body>
