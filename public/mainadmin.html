@@ -4,22 +4,20 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ReviewCash • Admin</title>
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800;900&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#071027;--card:#081426;--accent:#00e7c0;--muted:#9fb6c7}
   body{margin:0;background:linear-gradient(180deg,#030617,#071027);font-family:Inter,system-ui,Roboto;color:#eaf8ff}
   .wrap{max-width:1100px;margin:18px auto;padding:14px}
   .header{display:flex;align-items:center;gap:14px}
-  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,var(--accent),#00b4ff);display:flex;align-items:center;justify-content:center;font-weight:900;color:#001}
-  .h-title{font-weight:900}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,#00e7c0,#00b4ff);display:flex;align-items:center;justify-content:center;font-weight:900;color:#001}
+  .btn{background:linear-gradient(90deg,#00e7c0,#00b4ff);border:none;padding:8px 12px;border-radius:10px;font-weight:800;color:#001;cursor:pointer}
   .card{margin-top:14px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
   table{width:100%;border-collapse:collapse;color:#dff7ff}
   th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
-  th{color:var(--accent);font-weight:800}
-  .btn{background:linear-gradient(90deg,var(--accent),#00b4ff);border:none;padding:8px 12px;border-radius:10px;font-weight:800;color:#001;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#eaf8ff}
-  .small{font-size:13px;color:var(--muted)}
+  th{color:#00e7c0;font-weight:800}
   .input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:#071426;color:#eaf8ff}
+  .muted{color:#9fb6c7}
 </style>
 </head>
 <body>
@@ -27,111 +25,123 @@
   <div class="header">
     <div class="logo">RC</div>
     <div>
-      <div class="h-title">Admin Panel — ReviewCash</div>
-      <div class="small">Управление пользователями, пополнениями и выводами</div>
+      <div style="font-weight:900">Admin Panel — ReviewCash</div>
+      <div class="muted">Токен в строке запроса. Пример: ?token=admintoken_demo_123</div>
     </div>
-    <div style="margin-left:auto;display:flex;gap:8px">
+    <div style="margin-left:auto">
       <button id="refreshBtn" class="btn">Обновить</button>
     </div>
   </div>
 
   <div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <div style="flex:1"><div class="small">Пользователей</div><div id="numUsers" style="font-weight:900">—</div></div>
-    <div style="flex:1"><div class="small">Оборот (₽)</div><div id="totalRevenue" style="font-weight:900">—</div></div>
-    <div style="flex:1"><div class="small">Ожидает</div><div id="pendingCount" style="font-weight:900">—</div></div>
+    <div style="flex:1">
+      <div class="muted">Пользователей</div><div id="numUsers" style="font-weight:900">—</div>
+    </div>
+    <div style="flex:1">
+      <div class="muted">Оборот (₽)</div><div id="totalRevenue" style="font-weight:900">—</div>
+    </div>
+    <div style="flex:1">
+      <div class="muted">Ожидает</div><div id="pendingCount" style="font-weight:900">—</div>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-top:12px">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div style="font-weight:900">Заявки на пополнение</div>
-      <div style="display:flex;gap:8px">
-        <select id="filterTopup" class="input"><option value="">Все</option><option value="pending">Ожидание</option><option value="approved">Подтверждено</option></select>
-        <button id="applyTopup" class="btn">Фильтр</button>
-      </div>
+      <div><select id="filterTopup" class="input"><option value="">Все</option><option value="pending">Ожидание</option><option value="confirmed">Подтверждено</option></select><button id="applyTopup" class="btn">Фильтр</button></div>
     </div>
     <table id="topupsTable" style="margin-top:10px"><thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>Код</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
   </div>
 
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-weight:900">Заявки на вывод</div></div>
-    <table id="withdrawsTable" style="margin-top:10px"><thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>Получатель</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-weight:900">Заявки на вывод</div>
+    </div>
+    <table id="withdrawsTable" style="margin-top:10px"><thead><tr><th>ID</th><th>UID</th><th>Сумма</th><th>Кому</th><th>Статус</th><th>Действия</th></tr></thead><tbody></tbody></table>
   </div>
 </div>
 
 <script>
 (() => {
-  const apiBase = '';
-  async function api(path, opts){
-    try{ const r = await fetch(path, opts); return await r.json(); } catch(e){ return null; }
-  }
+  const token = new URLSearchParams(location.search).get('token') || '';
+  if (!token) { alert('Требуется token в URL, например ?token=admintoken_demo_123'); }
+
+  const API = (path, opts={}) => {
+    const u = path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
+    const fopts = Object.assign({headers:{}}, opts);
+    if (fopts.json){ fopts.method = fopts.method || 'POST'; fopts.headers['Content-Type']='application/json'; fopts.body = JSON.stringify(fopts.json); delete fopts.json;}
+    return fetch(u, fopts).then(r=>r.json()).catch(()=>null);
+  };
+
   async function loadDashboard(){
-    const j = await api('/api/admin/topups');
-    if (j && j.ok){ document.getElementById('numUsers').textContent = Object.keys((await (await fetch('/api/profile_me?uid=guest')).then(r=>r.json())).user || {}).length || '—'; }
-    // simple stats
-    const top = await api('/api/admin/topups');
-    const pending = (top && top.items || []).filter(i=>i.status === 'pending').length;
-    document.getElementById('pendingCount').textContent = pending;
-  }
-  async function loadTopups(){
-    const j = await api('/api/admin/topups');
-    const tbody = document.querySelector('#topupsTable tbody');
-    tbody.innerHTML = '';
+    const j = await API('/api/admin/dashboard');
     if (!j || !j.ok) return;
-    j.items.forEach(it=>{
+    const d = j.data;
+    document.getElementById('numUsers').textContent = d.usersCount;
+    document.getElementById('totalRevenue').textContent = d.totalRevenue + ' ₽';
+    document.getElementById('pendingCount').textContent = d.pendingCount;
+  }
+
+  async function loadTopups(){
+    const res = await API('/api/admin/topups');
+    const tbody = document.querySelector('#topupsTable tbody'); tbody.innerHTML = '';
+    if (!res || !res.ok) return;
+    res.items.forEach(it=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${it.id}</td><td>${it.uid}</td><td>${it.amount}</td><td><code>${it.manual_code||''}</code></td><td>${it.status}</td><td></td>`;
+      tr.innerHTML = `<td>${it.id}</td><td>${it.uid||'—'}</td><td>${it.amount||'—'}</td><td><code>${it.manual_code||'—'}</code></td><td>${it.status}</td><td></td>`;
       const actions = tr.querySelector('td:last-child');
-      if (it.status === 'pending' || it.status === 'processing'){
+      if (it.status === 'pending' || it.status === 'waiting_for_payment'){
         const a = document.createElement('button'); a.className='btn'; a.textContent='Подтвердить'; a.addEventListener('click', ()=> adminTopupApprove(it.id));
-        const r = document.createElement('button'); r.className='btn ghost'; r.textContent='Отклонить'; r.addEventListener('click', ()=> adminTopupReject(it.id));
+        const r = document.createElement('button'); r.className='btn btn-ghost'; r.textContent='Отклонить'; r.addEventListener('click', ()=> adminTopupReject(it.id));
         actions.appendChild(a); actions.appendChild(r);
       }
       tbody.appendChild(tr);
     });
   }
+
+  async function adminTopupApprove(id){
+    const j = await API('/api/admin/topups/'+encodeURIComponent(id)+'/approve',{method:'POST'});
+    if (j && j.ok){ alert('Подтверждено'); loadTopups(); loadDashboard(); } else alert('Ошибка');
+  }
+  async function adminTopupReject(id){
+    const j = await API('/api/admin/topups/'+encodeURIComponent(id)+'/reject',{method:'POST'});
+    if (j && j.ok){ alert('Отклонено'); loadTopups(); loadDashboard(); } else alert('Ошибка');
+  }
+
   async function loadWithdraws(){
-    const j = await api('/api/admin/withdraws');
-    const tbody = document.querySelector('#withdrawsTable tbody'); tbody.innerHTML='';
-    if (!j || !j.ok) return;
-    j.items.forEach(it=>{
+    const res = await API('/api/admin/withdraws');
+    const tbody = document.querySelector('#withdrawsTable tbody'); tbody.innerHTML = '';
+    if (!res || !res.ok) return;
+    res.items.forEach(it=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${it.id}</td><td>${it.uid}</td><td>${it.amount}</td><td>${it.name||''}</td><td>${it.status}</td><td></td>`;
+      tr.innerHTML = `<td>${it.id}</td><td>${it.uid||'—'}</td><td>${it.amount||'—'}</td><td>${it.name||'—'}</td><td>${it.status}</td><td></td>`;
       const actions = tr.querySelector('td:last-child');
       if (it.status === 'pending'){
         const a = document.createElement('button'); a.className='btn'; a.textContent='Выплатить'; a.addEventListener('click', ()=> adminWithdrawApprove(it.id));
-        const r = document.createElement('button'); r.className='btn ghost'; r.textContent='Отклонить'; r.addEventListener('click', ()=> adminWithdrawReject(it.id));
+        const r = document.createElement('button'); r.className='btn btn-ghost'; r.textContent='Отклонить'; r.addEventListener('click', ()=> adminWithdrawReject(it.id));
         actions.appendChild(a); actions.appendChild(r);
       }
       tbody.appendChild(tr);
     });
   }
-  async function adminTopupApprove(id){
-    const j = await api('/api/admin/topups/'+encodeURIComponent(id)+'/approve', {method:'POST'});
-    if (j && j.ok){ alert('Подтверждено'); loadTopups(); loadWithdraws(); }
-  }
-  async function adminTopupReject(id){
-    const j = await api('/api/admin/topups/'+encodeURIComponent(id)+'/reject', {method:'POST'});
-    if (j && j.ok){ alert('Отклонено'); loadTopups(); }
-  }
   async function adminWithdrawApprove(id){
-    const j = await api('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve', {method:'POST'});
-    if (j && j.ok){ alert('Выплачено'); loadWithdraws(); }
+    const j = await API('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve',{method:'POST'});
+    if (j && j.ok){ alert('Выплачено'); loadWithdraws(); loadDashboard(); } else alert('Ошибка');
   }
   async function adminWithdrawReject(id){
-    const j = await api('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject', {method:'POST'});
-    if (j && j.ok){ alert('Отклонено'); loadWithdraws(); }
+    const j = await API('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject',{method:'POST'});
+    if (j && j.ok){ alert('Отклонено'); loadWithdraws(); loadDashboard(); } else alert('Ошибка');
   }
+
   document.getElementById('refreshBtn').addEventListener('click', ()=> { loadDashboard(); loadTopups(); loadWithdraws(); });
   loadDashboard(); loadTopups(); loadWithdraws();
 
-  // socket - live updates
-  const socket = (typeof io !== 'undefined') ? io() : null;
-  if (socket){
-    socket.on('connect', ()=> console.log('admin socket connected'));
-    socket.on('new_topup', (t)=> { loadTopups(); });
-    socket.on('topup_updated', ()=> { loadTopups(); });
-    socket.on('withdraw_updated', ()=> { loadWithdraws(); });
-  }
+  // optional socket notifications (if desired)
+  try {
+    const s = io({transports:['websocket']});
+    s.on('connect', ()=> console.log('admin ws connected'));
+    s.on('new_topup', d=> { console.log('new_topup',d); loadTopups(); });
+  } catch(e){ console.log('socket fail', e); }
 })();
 </script>
 </body>
