@@ -45,11 +45,11 @@
 <script>
 (() => {
   const token = new URLSearchParams(location.search).get('token') || '';
-  const socket = io({ auth: { token }, transports: ['websocket'] });
+  const socket = io({ auth:{token}, transports:['websocket'] });
 
   async function api(path, method='GET', body=null){
     try{
-      const opts = { headers: { 'Authorization': 'Bearer ' + token } };
+      const opts = { headers: {'Authorization':'Bearer '+token} };
       if (method !== 'GET') { opts.method = method; opts.headers['Content-Type'] = 'application/json'; if (body) opts.body = JSON.stringify(body); }
       const res = await fetch(path + '?token=' + encodeURIComponent(token), opts);
       return await res.json();
@@ -58,7 +58,7 @@
 
   async function loadStats(){
     const m = await api('/api/moderator/me');
-    if (m && m.ok) { document.getElementById('adminName').textContent = 'Вы: ' + (m.name || 'Модератор'); document.getElementById('statDone') && (document.getElementById('statDone').textContent = m.tasks_reviewed||0); }
+    if (m && m.ok) { document.getElementById('adminName').textContent = 'Вы: ' + (m.name || 'Модератор'); }
   }
 
   let current = null;
