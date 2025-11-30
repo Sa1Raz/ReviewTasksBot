@@ -4,7 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Модерация — ReviewCash</title>
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800;900&display=swap" rel="stylesheet">
 <style>
   body{margin:0;background:linear-gradient(180deg,#061425,#07182a);font-family:Inter,system-ui,Roboto;color:#eafaff}
   .wrap{max-width:720px;margin:26px auto;padding:12px}
@@ -24,11 +25,11 @@
 <div class="wrap">
   <div class="header">
     <div class="logo">RC</div>
-    <div><div class="title">Модерация</div><div class="small" id="adminName">—</div></div>
+    <div><div class="title">Модерация отзывов</div><div class="small" id="adminName">—</div></div>
   </div>
 
   <div id="cardArea" class="card">
-    <div id="emptyHint" class="small">Загрузка очереди...</div>
+    <div id="emptyHint" class="small">Загрузка...</div>
     <div id="assignment" style="display:none">
       <div class="small">ID: <span id="revId">—</span></div>
       <div class="review-title" id="revTitle"></div>
@@ -44,44 +45,66 @@
 
 <script>
 (() => {
-  const socket = (typeof io !== 'undefined') ? io() : null;
+  const token = new URLSearchParams(location.search).get('token') || '';
+  const socket = io({transports:['websocket']});
+  function API(path, opts={}) {
+    const u = path + (path.includes('?') ? '&':'?') + 'token=' + encodeURIComponent(token);
+    const o = Object.assign({headers:{}}, opts);
+    if (o.json){ o.method = o.method || 'POST'; o.headers['Content-Type']='application/json'; o.body = JSON.stringify(o.json); delete o.json; }
+    return fetch(u,o).then(r=>r.json()).catch(()=>null);
+  }
 
-  // For demo: moderator queue is tasks with type 'review' or tasks with proof
-  async function api(path, opts){ try{ const r=await fetch(path, opts); return await r.json(); }catch(e){ return null; } }
+  async function loadStats(){
+    const m = await API('/api/admin/dashboard');
+    if (m && m.ok) document.getElementById('adminName').textContent = 'Вы: Admin';
+  }
+
+  let queue = [];
+  let current = null;
   async function loadNext(){
-    // demo: pick first task where owner != guest and has url
-    const r = await api('/api/tasks/list');
-    const arr = (r && r.tasks) || [];
-    const a = arr.find(t=>t.url);
-    if (!a){ document.getElementById('assignment').style.display='none'; document.getElementById('emptyHint').textContent='Очередь пуста'; return; }
-    document.getElementById('assignment').style.display='block'; document.getElementById('emptyHint').style.display='none';
+    // for demo we'll pull tasks and treat first as moderation assignment
+    const j = await API('/api/tasks/list');
+    if (!j || !j.ok || !j.tasks || !j.tasks.length){
+      document.getElementById('assignment').style.display='none';
+      document.getElementById('emptyHint').textContent='Очередь пуста';
+      return;
+    }
+    const a = j.tasks[0];
+    current = a.id;
+    document.getElementById('emptyHint').style.display='none';
+    document.getElementById('assignment').style.display='block';
     document.getElementById('revId').textContent = a.id;
-    document.getElementById('revTitle').textContent = a.title || 'Задание';
-    document.getElementById('revLink').href = a.url; document.getElementById('revLink').textContent = a.url.slice(0,80);
-    document.getElementById('proofArea').innerHTML = a.proof_data ? `<img src="${a.proof_data}" style="max-width:100%;border-radius:8px">` : '<div class="small">Нет доказательств</div>';
+    document.getElementById('revTitle').textContent = a.title || '';
+    document.getElementById('revLink').href = a.url || '#';
+    document.getElementById('revLink').textContent = (a.url||'').slice(0,80);
+    const proof = document.getElementById('proofArea'); proof.innerHTML='';
+    proof.textContent = a.description || '(Нет доказательств)';
   }
 
   document.getElementById('btnApprove').addEventListener('click', async ()=>{
-    const id = document.getElementById('revId').textContent;
-    if (!id) return;
+    if (!current) return;
     if (!confirm('Подтвердить?')) return;
-    // demo: just mark task completed locally via admin endpoint not implemented - we'll just remove it from tasks via API not present -> just reload
-    alert('Подтверждено (demo)');
+    // demo: remove first task
+    const tasks = (await API('/api/tasks/list')).tasks || [];
+    tasks.shift();
+    // Save back is not implemented client-side — notify admin to remove via admin panel
+    alert('Подтверждено (демо). Обновите список у админа.');
     loadNext();
   });
+
   document.getElementById('btnReject').addEventListener('click', async ()=>{
-    const id = document.getElementById('revId').textContent;
-    const reason = prompt('Причина отказа','Неверный или удалённый отзыв');
+    if (!current) return;
+    const reason = prompt('Причина отказа','Неверный отзыв');
     if (!reason) return;
-    alert('Отклонено (demo)');
+    alert('Отклонено (демо).');
     loadNext();
   });
 
-  if (socket){
-    socket.on('connect', ()=> console.log('socket connected'));
-    socket.on('task_update', ()=> loadNext());
-  }
+  socket.on('connect', ()=> console.log('socket connected'));
+  socket.on('task_update', ()=> loadNext());
+  socket.on('disconnect', ()=> console.log('socket disconnected'));
 
+  loadStats();
   loadNext();
 })();
 </script>
