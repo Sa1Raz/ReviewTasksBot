@@ -7,7 +7,6 @@ import os
 import json
 import uuid
 import time
-from datetime import datetime
 from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory, abort
 from flask_cors import CORS
@@ -38,9 +37,9 @@ def save_json(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # ---- Create app ----
-app = Flask(__name__, static_folder="static", static_url_path="/static")
+app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*", logger=False, engineio_logger=False)
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 # ---- Initialize default data if empty ----
 if not TYPES_FILE.exists():
@@ -83,15 +82,12 @@ def upsert_user(user):
     users[str(user["id"])] = user
     save_json(USERS_FILE, users)
 
-# ---- Static / root routes (if you host front-end with server) ----
+# ---- Static / root routes ----
 @app.route("/")
 def index():
-    # If you have a static index in /static, serve that; else simple JSON
-    if (BASE_DIR / "static" / "index.html").exists():
-        return send_from_directory(str(BASE_DIR / "static"), "index.html")
-    return jsonify({"ok": True, "msg": "ReviewCash API running"})
+    return send_from_directory(app.static_folder, "index.html")
 
-# serve task_types.json for legacy frontends that try to fetch it
+# serve task_types.json for legacy frontends
 @app.route("/task_types.json")
 def task_types_file():
     types = load_json(TYPES_FILE, [])
@@ -107,7 +103,6 @@ def api_task_types():
 @app.route("/api/tasks/list")
 def api_tasks_list():
     tasks = load_json(TASKS_FILE, [])
-    # Allow optional filters
     owner = request.args.get("owner")
     if owner:
         tasks = [t for t in tasks if str(t.get("owner_uid")) == str(owner)]
@@ -139,11 +134,7 @@ def api_tasks_create():
         tasks.insert(0, t)
         save_json(TASKS_FILE, tasks)
 
-        # notify clients
-        try:
-            socketio.emit("task_update", {"task": t})
-        except Exception:
-            app.logger.exception("socket emit failed")
+        socketio.emit("task_update", {"task": t})
 
         return jsonify({"ok": True, "task": t})
     except Exception as e:
@@ -155,12 +146,11 @@ def api_profile_me():
     uid = request.args.get("uid") or "guest_1"
     user = get_user(uid)
     if not user:
-        # create minimal user
         user = {"id": str(uid), "name": "Пользователь", "username": "", "balance": 0, "history": []}
         upsert_user(user)
     return jsonify({"ok": True, "user": user})
 
-# ---- Topup flow (demo) ----
+# ---- Topup flow ----
 @app.route("/api/user/topup-link", methods=["POST"])
 def api_topup_link():
     try:
@@ -171,7 +161,6 @@ def api_topup_link():
             return jsonify({"ok": False, "errmsg": "Неверная сумма"}), 400
 
         topups = load_json(TOPUPS_FILE, [])
-        # create topup record
         topup_id = gen_id("tp")
         manual_code = f"RC{int(time.time())%100000}"
         pay_link = f"https://pay.example.local/pay/{topup_id}"  # demo link
@@ -183,53 +172,46 @@ def api_topup_link():
             "status": "pending",
             "created_at": now_ts(),
             "pay_link": pay_link,
-            # qr_base64 left empty (frontend may open pay_link)
             "qr_base64": "",
         }
         topups.insert(0, topup)
         save_json(TOPUPS_FILE, topups)
 
-        # notify admins/clients about new topup (emit without broadcast arg)
-        try:
-            socketio.emit("new_topup", {"topup": topup})
-        except Exception:
-            app.logger.exception("socket emit new_topup failed")
+        socketio.emit("new_topup", {"topup": topup})
 
         return jsonify({"ok": True, "topup": topup, "manual_code": manual_code, "pay_link": pay_link})
     except Exception as e:
         app.logger.exception("topup-link error")
         return jsonify({"ok": False, "errmsg": "Ошибка создания ссылки"}), 500
 
+# Placeholder for topup-confirm (based on truncated code)
 @app.route("/api/user/topup-confirm", methods=["POST"])
 def api_topup_confirm():
     try:
         body = request.get_json() or {}
-        topup_id = body.get("topup_id")
-        uid = body.get("uid")
-        if not topup_id:
-            return jsonify({"ok": False, "errmsg": "topup_id required"}), 400
+        tid = body.get("tid")
+        code = body.get("code")
+        if not tid or not code:
+            return jsonify({"ok": False, "errmsg": "Недостаточно данных"}), 400
+
         topups = load_json(TOPUPS_FILE, [])
         for t in topups:
-            if t["id"] == topup_id:
-                # Demo: mark as confirmed and credit user
-                t["status"] = "processing"
+            if t["id"] == tid and t.get("manual_code") == code and t["status"] == "pending":
+                t["status"] = "confirmed"
                 t["confirmed_at"] = now_ts()
                 save_json(TOPUPS_FILE, topups)
 
-                # credit (demo immediate)
-                user = get_user(uid) or {"id": str(uid), "name": "Пользователь", "balance": 0, "history": []}
-                user["balance"] = float(user.get("balance", 0)) + float(t["amount"])
-                hist_entry = {"type": "topup", "amount": t["amount"], "note": f"Пополнение {t['id']}", "ts": now_ts()}
-                user.setdefault("history", []).insert(0, hist_entry)
+                user = get_user(t["uid"]) or {"id": t["uid"], "balance": 0, "history": []}
+                user["balance"] = float(user.get("balance", 0)) + float(t.get("amount", 0))
+                user.setdefault("history", []).insert(0, {"type": "topup", "amount": t.get("amount"), "note": f"Пополнение {t['id']}", "ts": now_ts()})
                 upsert_user(user)
 
-                # notify
                 socketio.emit("user_update", {"user_id": user["id"], "balance": user["balance"]})
                 socketio.emit("topup_update", {"topup": t})
 
                 return jsonify({"ok": True, "msg": "Подтверждение принято"})
         return jsonify({"ok": False, "errmsg": "Заявка не найдена"}), 404
-    except Exception:
+    except Exception as e:
         app.logger.exception("topup-confirm error")
         return jsonify({"ok": False, "errmsg": "Ошибка проверки"}), 500
 
@@ -256,7 +238,6 @@ def api_user_withdraw():
         withdraws.insert(0, rec)
         save_json(WITHDRAWS_FILE, withdraws)
 
-        # optionally reserve amount
         user["balance"] = float(user.get("balance", 0)) - amount
         user.setdefault("history", []).insert(0, {"type": "withdraw_request", "amount": -amount, "note": f"Запрос вывода {wid}", "ts": now_ts()})
         upsert_user(user)
@@ -264,11 +245,11 @@ def api_user_withdraw():
         socketio.emit("withdraw_new", {"withdraw": rec})
 
         return jsonify({"ok": True, "withdraw": rec})
-    except Exception:
+    except Exception as e:
         app.logger.exception("withdraw error")
         return jsonify({"ok": False, "errmsg": "Ошибка отправки заявки"}), 500
 
-# ---- Admin endpoints (simple token-check) ----
+# ---- Admin endpoints ----
 def require_admin_token():
     token = request.args.get("token") or request.headers.get("Authorization", "").replace("Bearer ", "")
     if token != ADMIN_TOKEN:
@@ -290,7 +271,7 @@ def api_admin_dashboard():
             "pendingCount": pending_count,
             "tasksCount": len(tasks)
         }})
-    except Exception:
+    except Exception as e:
         app.logger.exception("dashboard error")
         return jsonify({"ok": False}), 500
 
@@ -309,7 +290,6 @@ def api_admin_topup_approve(tid):
             t["status"] = "confirmed"
             t["approved_at"] = now_ts()
             save_json(TOPUPS_FILE, topups)
-            # credit user
             user = get_user(t["uid"]) or {"id": t["uid"], "balance": 0, "history": []}
             user["balance"] = float(user.get("balance", 0)) + float(t.get("amount", 0))
             user.setdefault("history", []).insert(0, {"type": "topup", "amount": t.get("amount"), "note": f"Пополнение {t['id']}", "ts": now_ts()})
@@ -364,7 +344,7 @@ def api_admin_withdraws_reject(wid):
             return jsonify({"ok": True})
     return jsonify({"ok": False, "errmsg": "not found"}), 404
 
-# ---- SocketIO handlers (simple) ----
+# ---- SocketIO handlers ----
 @socketio.on("connect")
 def on_connect():
     app.logger.debug("socket connected")
@@ -373,17 +353,6 @@ def on_connect():
 def on_disconnect():
     app.logger.debug("socket disconnected")
 
-# ---- Run ----
 if __name__ == "__main__":
-    # For dev use the built-in server
     print("Starting ReviewCash demo server on http://127.0.0.1:8080")
-    socketio.run(app, host="0.0.0.0", port=8080)
-from flask import send_from_directory
-
-@app.route("/")
-def index_page():
-    return send_from_directory("static", "index.html")
-
-@app.route("/<path:path>")
-def static_files(path):
-    return send_from_directory("static", path)
+    socketio.run(app, host="0.0.0.0", port=8080, debug=True)
