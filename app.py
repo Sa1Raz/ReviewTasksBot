@@ -187,6 +187,50 @@ def help_cmd(m):
 def info(m):
     bot.send_message(m.chat.id, "ReviewCash — сервис для заданий и отзывов.")
 
+# ========= MAIN ADMIN ==========
+@bot.message_handler(commands=["mainadmin"])
+def main_admin(m):
+    if m.chat.id != ADMIN_ID:
+        bot.send_message(m.chat.id, "⛔ У вас нет доступа к админ-панели.")
+        return
+    
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton(
+            "Открыть ADMIN панель",
+            web_app=types.WebAppInfo(url="https://web-production-398fb.up.railway.app/admin")
+        )
+    )
+
+    bot.send_message(
+        m.chat.id,
+        "💼 Админ панель:",
+        reply_markup=kb
+    )
+
+
+# ========= MODERATOR PANEL ==========
+MODERATORS = {6482440657}  # можно добавлять
+
+@bot.message_handler(commands=["mod"])
+def moderator_panel(m):
+    if m.chat.id not in MODERATORS and m.chat.id != ADMIN_ID:
+        bot.send_message(m.chat.id, "⛔ У вас нет доступа к панели модератора.")
+        return
+
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton(
+            "Открыть панель модератора",
+            web_app=types.WebAppInfo(url="https://web-production-398fb.up.railway.app/moderator")
+        )
+    )
+
+    bot.send_message(
+        m.chat.id,
+        "🛠 Панель модератора:",
+        reply_markup=kb
+    )
 
 # ——————————————————————————
 # Websocket
