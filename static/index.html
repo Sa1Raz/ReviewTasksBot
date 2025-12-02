@@ -1,334 +1,414 @@
-from flask import Flask, request, send_from_directory, jsonify
-from flask_socketio import SocketIO, emit
-import telebot
-import os
-import json
-from time import time
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>ReviewCash — Личный кабинет</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-# =========================================
-# CONFIG
-# =========================================
-TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"
-ADMIN_ID = 6482440657
-WEBAPP_URL = "https://web-production-398fb.up.railway.app/"
-NEWS_CHANNEL = "@ReviewCashNews"
+<!-- Telegram WebApp -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-# =========================================
-# FLASK
-# =========================================
-app = Flask(__name__, static_folder="static", static_url_path="")
-app.config["SECRET_KEY"] = "reviewcash_secret"
+<!-- Socket.io — Railway совместимый -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-# =========================================
-# SOCKET.IO (EIO=4, SIO=4 – правильная версия)
-# =========================================
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+<style>
 
-# =========================================
-# TELEGRAM BOT
-# =========================================
-bot = telebot.TeleBot(TOKEN, threaded=False)
+/* ------------------------------
+    ГЛОБАЛЬНЫЕ НАСТРОЙКИ / ТЕМЫ
+--------------------------------*/
+:root {
+    --bg: #000;
+    --card-bg: rgba(0,0,0,0.55);
+    --text: #dffcff;
+    --text2: #9ee8ff;
+    --accent: #00eaff;
+    --accent2: #008cff;
+    --border: rgba(0,255,255,0.25);
+}
 
-# =========================================
-# SIMPLE DATABASE (DEMO)
-# =========================================
-USERS = {}          # uid → user
-TASKS = []          # задания
-TOPUPS = []         # пополнения
-WITHDRAWS = []      # выводы
+/* светлая тема */
+body.white {
+    --bg: #f8fdff;
+    --card-bg: rgba(255,255,255,0.8);
+    --text: #003344;
+    --text2: #005577;
+    --accent: #009dff;
+    --accent2: #0055ff;
+    --border: rgba(0,110,255,0.3);
+}
 
-# =========================================
-# STATIC ROUTES
-# =========================================
-@app.route("/")
-def index():
-    return send_from_directory("static", "index.html")
+body {
+    background: var(--bg);
+    margin: 0;
+    font-family: "Inter", sans-serif;
+    color: var(--text);
+    transition: background .35s ease, color .35s ease;
+}
 
-@app.route("/admin")
-def admin():
-    return send_from_directory("static", "admin.html")
+/* --------------------------------
+             АНИМАЦИИ
+---------------------------------*/
+.fade-in {
+    animation: fadeIn .45s ease;
+}
 
-@app.route("/moderator")
-def moderator():
-    return send_from_directory("static", "moderator.html")
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
+.scale-in {
+    animation: scaleIn .3s ease;
+}
 
-# ============================================================
-# =====================   USER PROFILE   ======================
-# ============================================================
-@app.get("/api/profile_me")
-def profile_me():
-    uid = request.args.get("uid")
-    name = request.args.get("name", "")
-    avatar = request.args.get("avatar", "")
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(.8); }
+    to   { opacity: 1; transform: scale(1); }
+}
 
-    if not uid:
-        return jsonify({"ok": False, "err": "NO_UID"})
+/* --------------------------------
+             КНОПКИ
+---------------------------------*/
 
-    # Auto-create user
-    user = USERS.setdefault(uid, {
-        "uid": uid,
-        "balance": 0,
-        "history": [],
-        "name": name,
-        "avatar": avatar,
-        "tasks": []
-    })
+.btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #000;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin-top: 12px;
+    box-shadow: 0 0 18px var(--accent2);
+    transition: .2s;
+}
 
-    # Update cached name/avatar
-    if name:
-        user["name"] = name
-    if avatar:
-        user["avatar"] = avatar
+.btn:active {
+    transform: scale(.98);
+}
 
-    return jsonify({"ok": True, "user": user})
+.btn-outline {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: 2px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+    margin-top: 12px;
+    cursor: pointer;
+}
 
+/* --------------------------------
+             КАРТОЧКИ
+---------------------------------*/
 
-# ============================================================
-# =======================   TASKS API   =======================
-# ============================================================
-@app.get("/api/tasks/list")
-def tasks_list():
-    return jsonify({"ok": True, "tasks": TASKS})
+.card {
+    padding: 18px;
+    margin: 15px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 0 22px rgba(0,255,255,0.15);
+    transition: .35s ease;
+}
 
+.neon {
+    color: var(--accent);
+    text-shadow: 0 0 12px var(--accent);
+}
 
-@app.post("/api/tasks/create")
-def task_create():
-    data = request.json
+/* --------------------------------
+     ПРОФИЛЬ / АВАТАР / ИМЯ
+---------------------------------*/
+#avatar {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    object-fit: cover;
+    box-shadow: 0 0 18px var(--accent);
+}
 
-    task = {
-        "id": int(time() * 1000),
-        "owner_uid": data["owner_uid"],
-        "title": data["title"],
-        "description": data["description"],
-        "qty": data["qty"],
-        "completed_qty": 0,
-        "unit_price": data["unit_price"],
-        "url": data["url"],
-        "type_id": data.get("type_id")
+/* --------------------------------
+             НАВИГАЦИЯ
+---------------------------------*/
+
+.tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0; width: 100%;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    padding: 12px 0;
+    display: flex;
+    justify-content: space-around;
+}
+
+.tab-item {
+    color: var(--text2);
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.tab-item.active {
+    background: linear-gradient(90deg,var(--accent),var(--accent2));
+    color: #000;
+}
+
+/* --------------------------------
+             МОДАЛКИ
+---------------------------------*/
+
+.modal-bg {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(8px);
+    background: rgba(0,0,0,.65);
+    z-index: 9999;
+}
+
+.modal {
+    background: var(--card-bg);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    width: 90%;
+    box-shadow: 0 0 25px var(--accent2);
+}
+
+/* --------------------------------
+            ЗАДАНИЯ
+---------------------------------*/
+
+.task {
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.04);
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+}
+
+</style>
+</head>
+<body class="fade-in">
+
+<!-- =========================
+         КНОПКИ ВЕРХА
+========================= -->
+<button id="themeBtn" style="
+    position:fixed; left:14px; top:14px;
+    background:var(--card-bg); border:1px solid var(--border);
+    padding:8px 14px; border-radius:12px; color:var(--accent);
+    font-weight:700; backdrop-filter:blur(8px); z-index:999;">
+    Тема
+</button>
+
+<button id="supportBtn" style="
+    position:fixed; right:14px; top:14px;
+    background:var(--card-bg); border:1px solid var(--border);
+    padding:8px 14px; border-radius:12px; color:var(--accent);
+    font-weight:700; backdrop-filter:blur(8px); z-index:999;">
+    Поддержка
+</button>
+
+<!-- =========================
+         БЛОК ПРОФИЛЯ
+========================= -->
+<div id="profilePage" class="fade-in card">
+    <div style="display:flex;align-items:center;">
+        <img id="avatar">
+        <div style="margin-left:15px;">
+            <div id="name" class="neon" style="font-size:20px;">Загрузка...</div>
+            <div style="color:var(--text2); font-size:14px;">ID: <span id="uid"></span></div>
+        </div>
+    </div>
+
+    <div style="margin-top:18px;">
+        <div style="font-size:14px;color:var(--text2);">Баланс</div>
+        <div id="balance" class="neon" style="font-size:30px;">0 ₽</div>
+    </div>
+
+    <button class="btn" id="topupBtn">Пополнить</button>
+    <button class="btn-outline" id="withdrawBtn">Вывести</button>
+</div>
+
+<!-- =========================
+         ЗАДАНИЯ
+========================= -->
+<div id="tasksPage" class="card fade-in" style="display:none;">
+    <div style="font-size:20px;font-weight:800;">Задания</div>
+    <div id="tasksList" style="margin-top:12px;">Загрузка...</div>
+</div>
+
+<!-- =========================
+         НАВИГАЦИЯ
+========================= -->
+<div class="tabbar">
+    <div class="tab-item active" data-tab="profilePage">Профиль</div>
+    <div class="tab-item" data-tab="tasksPage">Задания</div>
+</div>
+
+<!-- =========================
+         МОДАЛ: ПОПОЛНЕНИЕ
+========================= -->
+<div class="modal-bg" id="topupModal">
+    <div class="modal scale-in">
+        <h3>Пополнение</h3>
+        <input id="topupAmount" type="number" min="150" placeholder="Сумма" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);margin-top:10px;">
+        <button class="btn" id="createTopup">Создать</button>
+        <button class="btn-outline" id="closeTopup">Закрыть</button>
+    </div>
+</div>
+
+<!-- =========================
+         МОДАЛ: ВЫВОД
+========================= -->
+<div class="modal-bg" id="withdrawModal">
+    <div class="modal scale-in">
+        <h3>Вывод</h3>
+        <input id="wAmount" type="number" placeholder="Сумма" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);margin-top:10px;">
+        <input id="wName" type="text" placeholder="Имя" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);margin-top:10px;">
+        <input id="wDetails" type="text" placeholder="Реквизиты" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);margin-top:10px;">
+
+        <button class="btn" id="sendWithdraw">Отправить</button>
+        <button class="btn-outline" id="closeWithdraw">Закрыть</button>
+    </div>
+</div>
+
+<script>
+/* Telegram WebApp */
+let tg = window.Telegram.WebApp;
+try { tg.ready(); tg.expand(); } catch(e){}
+
+/* UI Shortcuts */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+/* USER */
+const uid = tg.initDataUnsafe?.user?.id || "0";
+$("#uid").textContent = uid;
+$("#name").textContent = tg.initDataUnsafe?.user?.first_name || "Пользователь";
+$("#avatar").src = tg.initDataUnsafe?.user?.photo_url || "https://api.dicebear.com/7.x/thumbs/png?seed=" + uid;
+
+/* SOCKET — Railway */
+const socket = io();
+
+/* NAVIGATION */
+$$(".tab-item").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+        $$(".tab-item").forEach(x=>x.classList.remove("active"));
+        btn.classList.add("active");
+
+        let tab = btn.dataset.tab;
+        $("#profilePage").style.display = "none";
+        $("#tasksPage").style.display = "none";
+
+        $("#"+tab).style.display = "block";
+    });
+});
+
+/* THEME SWITCHER */
+$("#themeBtn").onclick = ()=>{
+    document.body.classList.toggle("white");
+    localStorage.setItem("theme", document.body.classList.contains("white") ? "white" : "dark");
+};
+
+if(localStorage.getItem("theme")==="white") document.body.classList.add("white");
+
+/* SUPPORT */
+$("#supportBtn").onclick = ()=>{
+    tg.openTelegramLink("https://t.me/LolikMoney");
+};
+
+/* LOAD PROFILE */
+async function loadProfile() {
+    let r = await fetch(`/api/profile_me?uid=${uid}`);
+    let j = await r.json();
+    if(j.ok){
+        $("#balance").textContent = j.user.balance + " ₽";
     }
+}
+loadProfile();
 
-    TASKS.append(task)
+/* LOAD TASKS */
+async function loadTasks(){
+    let r = await fetch("/api/tasks/list");
+    let j = await r.json();
+    if(j.ok){
+        $("#tasksList").innerHTML = "";
+        j.tasks.forEach(t=>{
+            let div = document.createElement("div");
+            div.className = "task";
+            div.innerHTML = `
+                <div style="font-weight:700">${t.title}</div>
+                <div style="color:var(--text2);font-size:13px;margin-top:4px">${t.description}</div>
+                <div style="margin-top:8px;font-weight:800">${t.unit_price} ₽ × ${t.qty}</div>
+            `;
+            $("#tasksList").appendChild(div);
+        });
+    }
+}
+loadTasks();
 
-    socketio.emit("task_update", {}, broadcast=True)
+/* SOCKET EVENTS */
+socket.on("task_update", loadTasks);
+socket.on("user_update", (d)=>{
+    if(d.user_id==uid) loadProfile();
+});
 
-    return jsonify({"ok": True})
+/* TOPUP */
+$("#topupBtn").onclick = ()=>$("#topupModal").style.display="flex";
+$("#closeTopup").onclick = ()=>$("#topupModal").style.display="none";
 
+$("#createTopup").onclick = async()=>{
+    let amount = Number($("#topupAmount").value);
+    if(amount<150) return alert("Минимум 150 ₽");
 
-# ============================================================
-# =======================   TOPUP API   =======================
-# ============================================================
-@app.post("/api/user/topup-link")
-def topup_link():
-    data = request.json
-    uid = data["uid"]
-    amount = int(data["amount"])
+    let r = await fetch("/api/user/topup-link",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({uid,amount})
+    });
+    let j = await r.json();
+    if(j.ok){
+        tg.openLink(j.pay_link);
+        alert("Заявка создана, после оплаты нажмите в меню «Я оплатил»");
+        $("#topupModal").style.display="none";
+    }
+};
 
-    topup_id = int(time() * 1000)
-    manual_code = f"RC-{topup_id}"
+/* WITHDRAW */
+$("#withdrawBtn").onclick = ()=>$("#withdrawModal").style.display="flex";
+$("#closeWithdraw").onclick = ()=>$("#withdrawModal").style.display="none";
 
-    TOPUPS.append({
-        "id": topup_id,
-        "uid": uid,
-        "amount": amount,
-        "manual_code": manual_code,
-        "confirmed": False
-    })
+$("#sendWithdraw").onclick = async()=>{
+    let amount = Number($("#wAmount").value);
+    let name = $("#wName").value.trim();
+    let details = $("#wDetails").value.trim();
+    if(amount<300) return alert("Минимум 300 ₽");
 
-    return jsonify({
-        "ok": True,
-        "id": topup_id,
-        "manual_code": manual_code,
-        "pay_link": "https://www.tbank.ru/cf/AjpqOu4cEzU",
-        "qr_url": "/static/img/qr.png"
-    })
+    let r = await fetch("/api/user/withdraw",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({uid,amount,name,details})
+    });
+    let j = await r.json();
+    if(j.ok){
+        alert("Заявка отправлена");
+        $("#withdrawModal").style.display="none";
+    }
+};
 
-
-@app.post("/api/user/topup-confirm")
-def topup_confirm():
-    data = request.json
-    topup_id = data["topup_id"]
-    uid = data["uid"]
-
-    for t in TOPUPS:
-        if t["id"] == topup_id:
-            bot.send_message(
-                ADMIN_ID,
-                f"💳 Новое пополнение:\n"
-                f"Пользователь: {uid}\n"
-                f"ID пополнения: {topup_id}\n"
-                f"Сумма: {t['amount']} ₽\n"
-                f"Комментарий: {t['manual_code']}"
-            )
-            return jsonify({"ok": True})
-
-    return jsonify({"ok": False, "errmsg": "Not found"})
-
-
-# ============================================================
-# =======================  WITHDRAW API  ======================
-# ============================================================
-@app.post("/api/user/withdraw")
-def withdraw():
-    data = request.json
-
-    WITHDRAWS.append(data)
-
-    bot.send_message(
-        ADMIN_ID,
-        f"🟢 Новая заявка на вывод\n"
-        f"UID: {data['uid']}\n"
-        f"Сумма: {data['amount']} ₽\n"
-        f"Имя: {data['name']}\n"
-        f"Реквизиты: {data['details']}"
-    )
-
-    return jsonify({"ok": True})
-
-
-# ============================================================
-# =======================    ADMIN API   ======================
-# ============================================================
-@app.get("/api/admin/topups")
-def admin_topups():
-    return jsonify({"ok": True, "list": TOPUPS})
-
-
-@app.get("/api/admin/withdraws")
-def admin_withdraws():
-    return jsonify({"ok": True, "list": WITHDRAWS})
-
-
-@app.get("/api/admin/tasks")
-def admin_tasks():
-    return jsonify({"ok": True, "list": TASKS})
-
-
-@app.post("/api/admin/confirm_topup")
-def admin_confirm_topup():
-    data = request.json
-    topup_id = data["id"]
-
-    for t in TOPUPS:
-        if t["id"] == topup_id:
-            t["confirmed"] = True
-
-            USERS[t["uid"]]["balance"] += t["amount"]
-            USERS[t["uid"]]["history"].append({
-                "type": "Пополнение",
-                "amount": t["amount"],
-                "time": time()
-            })
-
-            socketio.emit(
-                "balance_update",
-                {"uid": t["uid"], "balance": USERS[t["uid"]]["balance"]},
-                broadcast=True
-            )
-
-            return jsonify({"ok": True})
-
-    return jsonify({"ok": False})
-
-
-@app.post("/api/admin/confirm_withdraw")
-def admin_confirm_withdraw():
-    data = request.json
-    w_id = data["id"]
-
-    for w in WITHDRAWS:
-        if w["id"] == w_id:
-            w["confirmed"] = True
-            return jsonify({"ok": True})
-
-    return jsonify({"ok": False})
-
-
-# ============================================================
-# ===================  TELEGRAM WEBHOOK  ======================
-# ============================================================
-@app.post("/bot")
-def bot_webhook():
-    data = request.data.decode("utf-8")
-    update = telebot.types.Update.de_json(data)
-    bot.process_new_updates([update])
-    return "ok"
-
-
-# ============================================================
-# =====================  BOT COMMANDS  ========================
-# ============================================================
-@bot.message_handler(commands=["start"])
-def start(msg):
-    uid = msg.from_user.id
-
-    # check subscription
-    try:
-        chat = bot.get_chat_member(NEWS_CHANNEL, uid)
-        subscribed = chat.status not in ("left", "kicked")
-    except:
-        subscribed = False
-
-    if not subscribed:
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(
-            telebot.types.InlineKeyboardButton("Подписаться", url=f"https://t.me/{NEWS_CHANNEL[1:]}")
-        )
-        markup.add(
-            telebot.types.InlineKeyboardButton("Проверить 👌", callback_data="check_sub")
-        )
-        bot.send_message(uid, "❗ Для доступа к сервису, подпишись на канал", reply_markup=markup)
-        return
-
-    # show button
-    markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(
-        telebot.types.InlineKeyboardButton(
-            "Открыть приложение 🚀",
-            web_app=telebot.types.WebAppInfo(url=WEBAPP_URL)
-        )
-    )
-    bot.send_message(uid, "Добро пожаловать!", reply_markup=markup)
-
-
-@bot.callback_query_handler(func=lambda c: c.data == "check_sub")
-def check_sub(c):
-    uid = c.from_user.id
-
-    try:
-        chat = bot.get_chat_member(NEWS_CHANNEL, uid)
-        subscribed = chat.status not in ("left", "kicked")
-    except:
-        subscribed = False
-
-    if subscribed:
-        bot.answer_callback_query(c.id, "Вы подписались!")
-        start(c.message)
-    else:
-        bot.answer_callback_query(c.id, "Вы ещё не подписались!")
-
-
-# ============================================================
-# =============== SOCKET.IO — BALANCE STREAM ==================
-# ============================================================
-@socketio.on("request_balance")
-def req_balance(uid):
-    if uid in USERS:
-        emit("balance_update", {"uid": uid, "balance": USERS[uid]["balance"]})
-
-
-@socketio.on("connect")
-def socket_connect():
-    print("socket connected")
-
-
-@socketio.on("disconnect")
-def socket_disconnect():
-    print("socket disconnected")
-
-
-# ============================================================
-# RUN SERVER
-# ============================================================
-if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=8080)
+</script>
+</body>
+</html>
