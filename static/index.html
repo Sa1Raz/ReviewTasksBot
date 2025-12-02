@@ -1,454 +1,334 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ReviewCash — Админ панель</title>
-  <!-- Socket.IO served by backend -->
-  <script src="/socket.io/socket.io.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --radius:14px;
-      --trans:260ms cubic-bezier(.2,.9,.3,1);
-      --glass: rgba(255,255,255,0.06);
-    }
-    /* Light Neon */
-    body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-      background:
-        radial-gradient(800px 400px at 10% 10%, rgba(0,230,255,0.06), transparent),
-        radial-gradient(900px 300px at 95% 90%, rgba(6,182,212,0.04), transparent),
-        linear-gradient(180deg,#fbfeff,#f5fbff);
-      color:#062029;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-    }
-    body.dark{
-      background:
-        radial-gradient(700px 300px at 10% 10%, rgba(0,230,255,0.06), transparent),
-        linear-gradient(180deg,#04060a,#000814);
-      color:#dff7ff;
-    }
+from flask import Flask, request, send_from_directory, jsonify
+from flask_socketio import SocketIO, emit
+import telebot
+import os
+import json
+from time import time
 
-    /* Loader */
-    #loader{
-      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;
-      backdrop-filter: blur(6px);
-      z-index:9999;
-      background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.6));
-      color:white;
-    }
-    #loader.hidden{ display:none; }
+# =========================================
+# CONFIG
+# =========================================
+TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"
+ADMIN_ID = 6482440657
+WEBAPP_URL = "https://web-production-398fb.up.railway.app/"
+NEWS_CHANNEL = "@ReviewCashNews"
 
-    .wrap{ max-width:1100px;margin:20px auto;padding:18px; }
-    header{ display:flex;align-items:center;gap:12px;margin-bottom:16px; }
-    .logo{ width:56px;height:56px;border-radius:12px;background:linear-gradient(90deg,#00e7c0,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:900;color:#001; box-shadow:0 12px 40px rgba(6,182,212,0.08); }
-    .title{ font-weight:900;font-size:18px }
-    .subtitle{ color: #6b8a93;font-size:13px }
+# =========================================
+# FLASK
+# =========================================
+app = Flask(__name__, static_folder="static", static_url_path="")
+app.config["SECRET_KEY"] = "reviewcash_secret"
 
-    .top-actions{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+# =========================================
+# SOCKET.IO (EIO=4, SIO=4 – правильная версия)
+# =========================================
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-    .btn{
-      padding:10px 12px;border-radius:12px;border:0;font-weight:800;cursor:pointer;
-      transition: transform var(--trans), box-shadow var(--trans);
-      background:linear-gradient(90deg,#00e7c0,#06b6d4); color:#001;
-      box-shadow:0 8px 30px rgba(0,0,0,0.08);
-    }
-    .btn:hover{ transform: translateY(-3px); }
+# =========================================
+# TELEGRAM BOT
+# =========================================
+bot = telebot.TeleBot(TOKEN, threaded=False)
 
-    .btn.ghost{ background:transparent; color:inherit; border:1px solid rgba(0,0,0,0.06); box-shadow:none; }
-    body.dark .btn.ghost{ border:1px solid rgba(255,255,255,0.06); }
+# =========================================
+# SIMPLE DATABASE (DEMO)
+# =========================================
+USERS = {}          # uid → user
+TASKS = []          # задания
+TOPUPS = []         # пополнения
+WITHDRAWS = []      # выводы
 
-    .grid{ display:grid; grid-template-columns: 1fr 380px; gap:16px; align-items:start; }
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.88));
-      border-radius:var(--radius);
-      padding:14px;
-      box-shadow: 0 12px 40px rgba(8,20,30,0.06);
-      border:1px solid rgba(0,0,0,0.04);
-      transition: box-shadow var(--trans), transform var(--trans);
-    }
-    body.dark .card{
-      background: linear-gradient(180deg, rgba(6,12,18,0.78), rgba(3,9,15,0.72));
-      border:1px solid rgba(255,255,255,0.04);
-      box-shadow: 0 14px 60px rgba(0,0,0,0.6);
-    }
+# =========================================
+# STATIC ROUTES
+# =========================================
+@app.route("/")
+def index():
+    return send_from_directory("static", "index.html")
 
-    .card h3{ margin:0 0 8px 0; font-size:16px; font-weight:800; }
-    .list{ display:flex; flex-direction:column; gap:10px; max-height:520px; overflow:auto; padding-right:6px; }
-    .item{
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      padding:10px; border-radius:12px; background:rgba(0,0,0,0.02); transition: background var(--trans);
-    }
-    body.dark .item{ background: rgba(255,255,255,0.02); }
-    .item .left{ flex:1; min-width:0; }
-    .small{ font-size:13px; color:var(--muted, #6f8b95); }
-    .muted{ color: #7a8f98; font-size:13px; }
+@app.route("/admin")
+def admin():
+    return send_from_directory("static", "admin.html")
 
-    .meta{ display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px; }
-    .pill{ padding:6px 8px;border-radius:999px;background:rgba(0,0,0,0.04); font-weight:700; font-size:13px; }
+@app.route("/moderator")
+def moderator():
+    return send_from_directory("static", "moderator.html")
 
-    .controls{ display:flex; gap:8px; align-items:center; }
 
-    /* tables on right column */
-    .right .card{ margin-bottom:12px; }
+# ============================================================
+# =====================   USER PROFILE   ======================
+# ============================================================
+@app.get("/api/profile_me")
+def profile_me():
+    uid = request.args.get("uid")
+    name = request.args.get("name", "")
+    avatar = request.args.get("avatar", "")
 
-    /* confirm button */
-    .confirm { background: linear-gradient(90deg,#9ee787,#6bd36a); color:#001; font-weight:800; }
-    .danger { background: linear-gradient(90deg,#ff8a8a,#ff4d4d); color:#001; font-weight:800; }
+    if not uid:
+        return jsonify({"ok": False, "err": "NO_UID"})
 
-    /* modal */
-    .modal-bg{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:9999; background:rgba(0,0,0,0.6); }
-    .modal-bg.open{ display:flex; }
-    .modal{ width:94%; max-width:720px; padding:18px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.95)); }
-    body.dark .modal{ background: linear-gradient(180deg, rgba(6,12,18,0.95), rgba(3,9,15,0.9)); color:inherit; }
+    # Auto-create user
+    user = USERS.setdefault(uid, {
+        "uid": uid,
+        "balance": 0,
+        "history": [],
+        "name": name,
+        "avatar": avatar,
+        "tasks": []
+    })
 
-    /* toggles */
-    .theme-toggle{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; border:1px solid rgba(0,0,0,0.05); background:transparent; cursor:pointer; }
-    body.dark .theme-toggle{ border:1px solid rgba(255,255,255,0.06); }
+    # Update cached name/avatar
+    if name:
+        user["name"] = name
+    if avatar:
+        user["avatar"] = avatar
 
-    /* responsive */
-    @media (max-width:980px){
-      .grid{ grid-template-columns: 1fr; }
-      .right{ order:2; }
+    return jsonify({"ok": True, "user": user})
+
+
+# ============================================================
+# =======================   TASKS API   =======================
+# ============================================================
+@app.get("/api/tasks/list")
+def tasks_list():
+    return jsonify({"ok": True, "tasks": TASKS})
+
+
+@app.post("/api/tasks/create")
+def task_create():
+    data = request.json
+
+    task = {
+        "id": int(time() * 1000),
+        "owner_uid": data["owner_uid"],
+        "title": data["title"],
+        "description": data["description"],
+        "qty": data["qty"],
+        "completed_qty": 0,
+        "unit_price": data["unit_price"],
+        "url": data["url"],
+        "type_id": data.get("type_id")
     }
 
-    /* scrollbar thin */
-    .list::-webkit-scrollbar{ width:8px; height:8px; }
-    .list::-webkit-scrollbar-thumb{ background:rgba(0,0,0,0.08); border-radius:6px; }
-    body.dark .list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.06); }
+    TASKS.append(task)
 
-    /* animations */
-    .fade-in { animation: fadeIn 360ms var(--trans) both; }
-    @keyframes fadeIn { from { opacity:0; transform: translateY(6px) } to { opacity:1; transform: translateY(0) } }
-  </style>
-</head>
-<body>
-  <div id="loader">
-    <div style="font-weight:900;font-size:22px">ReviewCash — Админ</div>
-    <div style="margin-top:10px; opacity:0.95">Загрузка панели…</div>
-  </div>
+    socketio.emit("task_update", {}, broadcast=True)
 
-  <div class="wrap" id="app" style="display:none">
-    <header>
-      <div class="logo">RC</div>
-      <div>
-        <div class="title">Админ панель — ReviewCash</div>
-        <div class="subtitle">Контроль пополнений, заявок на вывод и задач</div>
-      </div>
+    return jsonify({"ok": True})
 
-      <div class="top-actions">
-        <button id="themeBtn" class="theme-toggle">Тема: <span id="themeName" style="font-weight:800;margin-left:6px">Dark Neon</span></button>
-        <button id="refreshBtn" class="btn ghost">Обновить</button>
-        <button id="logoutBtn" class="btn">Выйти</button>
-      </div>
-    </header>
 
-    <div class="grid">
-      <main>
-        <div class="card fade-in">
-          <h3>Пополнения (требуют проверки)</h3>
-          <div id="topupsList" class="list"></div>
-        </div>
+# ============================================================
+# =======================   TOPUP API   =======================
+# ============================================================
+@app.post("/api/user/topup-link")
+def topup_link():
+    data = request.json
+    uid = data["uid"]
+    amount = int(data["amount"])
 
-        <div class="card fade-in" style="margin-top:12px">
-          <h3>Заявки на вывод</h3>
-          <div id="withdrawsList" class="list"></div>
-        </div>
+    topup_id = int(time() * 1000)
+    manual_code = f"RC-{topup_id}"
 
-        <div class="card fade-in" style="margin-top:12px">
-          <h3>Журнал действий</h3>
-          <div id="logBox" class="list"></div>
-        </div>
-      </main>
+    TOPUPS.append({
+        "id": topup_id,
+        "uid": uid,
+        "amount": amount,
+        "manual_code": manual_code,
+        "confirmed": False
+    })
 
-      <aside class="right">
-        <div class="card fade-in">
-          <h3>Текущие задания</h3>
-          <div id="tasksList" class="list"></div>
-        </div>
+    return jsonify({
+        "ok": True,
+        "id": topup_id,
+        "manual_code": manual_code,
+        "pay_link": "https://www.tbank.ru/cf/AjpqOu4cEzU",
+        "qr_url": "/static/img/qr.png"
+    })
 
-        <div class="card fade-in" style="margin-top:12px">
-          <h3>Инструменты</h3>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div class="muted">Socket status: <span id="socketStatus">—</span></div>
-            <div class="muted">Пользователи: <span id="usersCount">0</span></div>
-            <div style="display:flex;gap:8px">
-              <button id="confirmAllTopups" class="btn confirm">Подтвердить все</button>
-              <button id="clearLogs" class="btn ghost">Очистить логи</button>
-            </div>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </div>
 
-  <!-- Confirm modal (for single topup/withdraw) -->
-  <div id="confirmModal" class="modal-bg" aria-hidden="true">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:900">Подтвердить операцию</div>
-        <button id="closeConfirm" class="btn ghost">✕</button>
-      </div>
-      <div id="confirmBody" style="margin-top:12px"></div>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button id="confirmYes" class="btn confirm">Подтвердить</button>
-        <button id="confirmNo" class="btn ghost">Отмена</button>
-      </div>
-    </div>
-  </div>
+@app.post("/api/user/topup-confirm")
+def topup_confirm():
+    data = request.json
+    topup_id = data["topup_id"]
+    uid = data["uid"]
 
-<script>
-(() => {
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  const loader = $('#loader'), app = $('#app');
-  const topupsList = $('#topupsList'), withdrawsList = $('#withdrawsList'), tasksList = $('#tasksList');
-  const logBox = $('#logBox'), usersCount = $('#usersCount'), socketStatus = $('#socketStatus');
-  const themeBtn = $('#themeBtn'), themeName = $('#themeName'), refreshBtn = $('#refreshBtn'), logoutBtn = $('#logoutBtn');
-  const confirmModal = $('#confirmModal'), confirmBody = $('#confirmBody'), confirmYes = $('#confirmYes'), confirmNo = $('#confirmNo'), closeConfirm = $('#closeConfirm');
-  const confirmAllTopups = $('#confirmAllTopups'), clearLogs = $('#clearLogs');
+    for t in TOPUPS:
+        if t["id"] == topup_id:
+            bot.send_message(
+                ADMIN_ID,
+                f"💳 Новое пополнение:\n"
+                f"Пользователь: {uid}\n"
+                f"ID пополнения: {topup_id}\n"
+                f"Сумма: {t['amount']} ₽\n"
+                f"Комментарий: {t['manual_code']}"
+            )
+            return jsonify({"ok": True})
 
-  let socket;
-  let TOPUPS = [], WITHDRAWS = [], TASKS = [], LOGS = [];
-  let pendingConfirm = null; // {type:'topup'|'withdraw', id:...}
+    return jsonify({"ok": False, "errmsg": "Not found"})
 
-  // theme
-  function applyTheme(name){
-    if(name === 'light') {
-      document.body.classList.remove('dark');
-      themeName.textContent = 'Light Neon';
-      localStorage.setItem('admin_theme','light');
-    } else {
-      document.body.classList.add('dark');
-      themeName.textContent = 'Dark Neon';
-      localStorage.setItem('admin_theme','dark');
-    }
-  }
-  const saved = localStorage.getItem('admin_theme') || 'dark';
-  applyTheme(saved);
-  themeBtn.addEventListener('click', ()=> applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark'));
 
-  // show loader -> hide when initial loaded
-  function hideLoader(){ loader.classList.add('hidden'); app.style.display='block'; }
-  function showLoader(){ loader.classList.remove('hidden'); app.style.display='none'; }
+# ============================================================
+# =======================  WITHDRAW API  ======================
+# ============================================================
+@app.post("/api/user/withdraw")
+def withdraw():
+    data = request.json
 
-  // logging helper
-  function pushLog(text){
-    LOGS.unshift({t: Date.now(), text});
-    if(LOGS.length > 200) LOGS.length = 200;
-    renderLogs();
-  }
-  function renderLogs(){
-    logBox.innerHTML = LOGS.map(l => `<div style="padding:8px;border-radius:10px;background:rgba(0,0,0,0.02)">${new Date(l.t).toLocaleString()} — ${escapeHtml(l.text)}</div>`).join('') || '<div class="small muted">Событий нет</div>';
-  }
+    WITHDRAWS.append(data)
 
-  function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    bot.send_message(
+        ADMIN_ID,
+        f"🟢 Новая заявка на вывод\n"
+        f"UID: {data['uid']}\n"
+        f"Сумма: {data['amount']} ₽\n"
+        f"Имя: {data['name']}\n"
+        f"Реквизиты: {data['details']}"
+    )
 
-  // fetchers
-  async function loadTopups(){
-    try{
-      const r = await fetch('/api/admin/topups');
-      const j = await r.json();
-      if(j && j.ok){
-        TOPUPS = j.list || [];
-        renderTopups();
-        pushLog('Topups loaded: ' + TOPUPS.length);
-      }
-    }catch(e){ pushLog('Ошибка загрузки пополнений: ' + e.message); }
-  }
+    return jsonify({"ok": True})
 
-  async function loadWithdraws(){
-    try{
-      const r = await fetch('/api/admin/withdraws');
-      const j = await r.json();
-      if(j && j.ok){
-        WITHDRAWS = j.list || [];
-        renderWithdraws();
-        pushLog('Withdraws loaded: ' + WITHDRAWS.length);
-      }
-    }catch(e){ pushLog('Ошибка загрузки выводов: ' + e.message); }
-  }
 
-  async function loadTasks(){
-    try{
-      const r = await fetch('/api/admin/tasks');
-      const j = await r.json();
-      if(j && j.ok){
-        TASKS = j.list || [];
-        renderTasks();
-        pushLog('Tasks loaded: ' + TASKS.length);
-      }
-    }catch(e){ pushLog('Ошибка загрузки задач: ' + e.message); }
-  }
+# ============================================================
+# =======================    ADMIN API   ======================
+# ============================================================
+@app.get("/api/admin/topups")
+def admin_topups():
+    return jsonify({"ok": True, "list": TOPUPS})
 
-  // renders
-  function renderTopups(){
-    if(!TOPUPS.length) { topupsList.innerHTML = '<div class="small muted">Нет ожидающих пополнений</div>'; return; }
-    topupsList.innerHTML = TOPUPS.map(t => {
-      const confirmed = t.confirmed ? '✅' : '<span style="color:#ffb84d">Ожид.</span>';
-      return `<div class="item">
-        <div class="left">
-          <div style="font-weight:800">${escapeHtml(String(t.manual_code || t.manual || '—'))} ${confirmed}</div>
-          <div class="meta"><div class="pill">${escapeHtml(String(t.uid))}</div><div>${new Date(t.id || t.id || Date.now()).toLocaleString()}</div></div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-weight:900">${Number(t.amount||t.amount||0).toLocaleString('ru-RU')} ₽</div>
-          <div style="margin-top:8px" class="controls">
-            ${ t.confirmed ? '' : `<button class="btn confirm btn-confirm-topup" data-id="${t.id}">Подтвердить</button>`}
-            <button class="btn ghost btn-view-topup" data-id="${t.id}">Просмотр</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    // attach events
-    $$('.btn-confirm-topup').forEach(b => b.addEventListener('click', (e)=> openConfirm('topup', e.currentTarget.dataset.id)));
-    $$('.btn-view-topup').forEach(b => b.addEventListener('click', (e)=> viewTopup(e.currentTarget.dataset.id)));
-  }
 
-  function renderWithdraws(){
-    if(!WITHDRAWS.length) { withdrawsList.innerHTML = '<div class="small muted">Нет заявок</div>'; return; }
-    withdrawsList.innerHTML = WITHDRAWS.map(w => {
-      return `<div class="item">
-        <div class="left">
-          <div style="font-weight:800">${escapeHtml(String(w.name||'—'))}</div>
-          <div class="meta"><div class="pill">${escapeHtml(String(w.uid))}</div><div>${escapeHtml(String(w.details||''))}</div></div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-weight:900">${Number(w.amount||0).toLocaleString('ru-RU')} ₽</div>
-          <div style="margin-top:8px" class="controls">
-            <button class="btn confirm btn-confirm-withdraw" data-id="${w.id || ''}">Подтвердить</button>
-            <button class="btn ghost btn-view-withdraw" data-id="${w.id || ''}">Просмотр</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    $$('.btn-confirm-withdraw').forEach(b => b.addEventListener('click', (e)=> openConfirm('withdraw', e.currentTarget.dataset.id)));
-    $$('.btn-view-withdraw').forEach(b => b.addEventListener('click', (e)=> viewWithdraw(e.currentTarget.dataset.id)));
-  }
+@app.get("/api/admin/withdraws")
+def admin_withdraws():
+    return jsonify({"ok": True, "list": WITHDRAWS})
 
-  function renderTasks(){
-    if(!TASKS.length) { tasksList.innerHTML = '<div class="small muted">Нет задач</div>'; return; }
-    tasksList.innerHTML = TASKS.map(t => {
-      const unit = Number(t.unit_price||t.reward||0).toLocaleString('ru-RU');
-      return `<div class="item">
-        <div class="left">
-          <div style="font-weight:800">${escapeHtml(t.title||t.name||'Задание')}</div>
-          <div class="small" style="margin-top:6px">${escapeHtml(t.description||t.desc||'')}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-weight:900">${unit} ₽</div>
-          <div class="muted">${Number(t.qty||1)} шт</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
 
-  // view helpers
-  function viewTopup(id){
-    const t = TOPUPS.find(x=>String(x.id)===String(id));
-    if(!t) return alert('Не найдено');
-    alert(`Пополнение\nID: ${t.id}\nUID: ${t.uid}\nСумма: ${t.amount} ₽\nКод: ${t.manual_code || t.manual || '—'}`);
-  }
-  function viewWithdraw(id){
-    const w = WITHDRAWS.find(x=>String(x.id)===String(id));
-    if(!w) return alert('Не найдено');
-    alert(`Вывод\nID: ${w.id}\nUID: ${w.uid}\nСумма: ${w.amount} ₽\nИмя: ${w.name}\nРеквизиты: ${w.details}`);
-  }
+@app.get("/api/admin/tasks")
+def admin_tasks():
+    return jsonify({"ok": True, "list": TASKS})
 
-  // confirm modal
-  function openConfirm(type, id){
-    pendingConfirm = { type, id };
-    const payload = (type === 'topup') ? TOPUPS.find(x=>String(x.id)===String(id)) : WITHDRAWS.find(x=>String(x.id)===String(id));
-    confirmBody.innerHTML = `<div style="font-weight:800">${escapeHtml(type === 'topup' ? 'Подтвердить пополнение' : 'Подтвердить вывод')}</div>
-      <div style="margin-top:8px">${escapeHtml(JSON.stringify(payload, null, 2))}</div>`;
-    confirmModal.classList.add('open');
-    confirmModal.style.display = 'flex';
-  }
-  function closeConfirmModal(){ pendingConfirm = null; confirmModal.classList.remove('open'); confirmModal.style.display='none'; }
-  confirmNo.addEventListener('click', closeConfirmModal);
-  closeConfirm.addEventListener('click', closeConfirmModal);
 
-  confirmYes.addEventListener('click', async ()=>{
-    if(!pendingConfirm) return closeConfirmModal();
-    try{
-      if(pendingConfirm.type === 'topup'){
-        const res = await fetch('/api/admin/confirm_topup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: pendingConfirm.id }) });
-        const j = await res.json();
-        if(j && j.ok){
-          pushLog('Подтверждено пополнение: ' + pendingConfirm.id);
-          await loadTopups(); await loadTasks(); // reload data
-        } else {
-          alert('Не удалось подтвердить');
-        }
-      } else if(pendingConfirm.type === 'withdraw'){
-        const res = await fetch('/api/admin/confirm_withdraw', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: pendingConfirm.id }) });
-        const j = await res.json();
-        if(j && j.ok){
-          pushLog('Подтвержен вывод: ' + pendingConfirm.id);
-          await loadWithdraws();
-        } else {
-          alert('Не удалось подтвердить');
-        }
-      }
-    }catch(e){ alert('Ошибка: ' + e.message); }
-    closeConfirmModal();
-  });
+@app.post("/api/admin/confirm_topup")
+def admin_confirm_topup():
+    data = request.json
+    topup_id = data["id"]
 
-  // bulk confirm
-  confirmAllTopups.addEventListener('click', async ()=>{
-    if(!TOPUPS.length) return alert('Нет пополнений');
-    if(!confirm('Подтвердить все пополнения?')) return;
-    for(const t of TOPUPS.filter(x=>!x.confirmed)) {
-      try{
-        await fetch('/api/admin/confirm_topup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: t.id }) });
-      }catch(e){}
-    }
-    await loadTopups(); await loadTasks();
-    pushLog('Все пополнения подтверждены админом');
-  });
+    for t in TOPUPS:
+        if t["id"] == topup_id:
+            t["confirmed"] = True
 
-  clearLogs.addEventListener('click', ()=> { LOGS = []; renderLogs(); });
+            USERS[t["uid"]]["balance"] += t["amount"]
+            USERS[t["uid"]]["history"].append({
+                "type": "Пополнение",
+                "amount": t["amount"],
+                "time": time()
+            })
 
-  // socket init
-  function initSocket(){
-    try {
-      socket = io();
-      socket.on('connect', ()=> { socketStatus.textContent = 'connected'; pushLog('Socket connected'); });
-      socket.on('disconnect', ()=> { socketStatus.textContent = 'disconnected'; pushLog('Socket disconnected'); });
-      socket.on('task_update', ()=> { pushLog('Received task_update'); loadTasks(); });
-      socket.on('balance_update', (d)=> { pushLog('Balance update for ' + d.uid + ' → ' + d.balance); });
-      socket.on('connect_error', (err) => { socketStatus.textContent = 'error'; pushLog('Socket error: ' + (err && err.message || err)); });
-    } catch(e){ pushLog('Socket init failed: ' + e.message); socketStatus.textContent = 'failed'; }
-  }
+            socketio.emit(
+                "balance_update",
+                {"uid": t["uid"], "balance": USERS[t["uid"]]["balance"]},
+                broadcast=True
+            )
 
-  // initial load
-  async function init(){
-    showLoader();
-    initSocket();
-    await Promise.allSettled([ loadTopups(), loadWithdraws(), loadTasks() ]);
-    usersCount.textContent = Object.keys(window.__USERS_CACHE || {}).length || '—';
-    renderLogs();
-    setTimeout(()=> hideLoader(), 300);
-  }
+            return jsonify({"ok": True})
 
-  refreshBtn.addEventListener('click', async ()=> {
-    pushLog('Manual refresh');
-    await Promise.allSettled([ loadTopups(), loadWithdraws(), loadTasks() ]);
-  });
+    return jsonify({"ok": False})
 
-  logoutBtn.addEventListener('click', ()=> {
-    if(confirm('Выйти из админки?')) {
-      window.location.href = '/';
-    }
-  });
 
-  // kick off
-  init();
+@app.post("/api/admin/confirm_withdraw")
+def admin_confirm_withdraw():
+    data = request.json
+    w_id = data["id"]
 
-})();
-</script>
-</body>
-</html>
+    for w in WITHDRAWS:
+        if w["id"] == w_id:
+            w["confirmed"] = True
+            return jsonify({"ok": True})
+
+    return jsonify({"ok": False})
+
+
+# ============================================================
+# ===================  TELEGRAM WEBHOOK  ======================
+# ============================================================
+@app.post("/bot")
+def bot_webhook():
+    data = request.data.decode("utf-8")
+    update = telebot.types.Update.de_json(data)
+    bot.process_new_updates([update])
+    return "ok"
+
+
+# ============================================================
+# =====================  BOT COMMANDS  ========================
+# ============================================================
+@bot.message_handler(commands=["start"])
+def start(msg):
+    uid = msg.from_user.id
+
+    # check subscription
+    try:
+        chat = bot.get_chat_member(NEWS_CHANNEL, uid)
+        subscribed = chat.status not in ("left", "kicked")
+    except:
+        subscribed = False
+
+    if not subscribed:
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(
+            telebot.types.InlineKeyboardButton("Подписаться", url=f"https://t.me/{NEWS_CHANNEL[1:]}")
+        )
+        markup.add(
+            telebot.types.InlineKeyboardButton("Проверить 👌", callback_data="check_sub")
+        )
+        bot.send_message(uid, "❗ Для доступа к сервису, подпишись на канал", reply_markup=markup)
+        return
+
+    # show button
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(
+        telebot.types.InlineKeyboardButton(
+            "Открыть приложение 🚀",
+            web_app=telebot.types.WebAppInfo(url=WEBAPP_URL)
+        )
+    )
+    bot.send_message(uid, "Добро пожаловать!", reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda c: c.data == "check_sub")
+def check_sub(c):
+    uid = c.from_user.id
+
+    try:
+        chat = bot.get_chat_member(NEWS_CHANNEL, uid)
+        subscribed = chat.status not in ("left", "kicked")
+    except:
+        subscribed = False
+
+    if subscribed:
+        bot.answer_callback_query(c.id, "Вы подписались!")
+        start(c.message)
+    else:
+        bot.answer_callback_query(c.id, "Вы ещё не подписались!")
+
+
+# ============================================================
+# =============== SOCKET.IO — BALANCE STREAM ==================
+# ============================================================
+@socketio.on("request_balance")
+def req_balance(uid):
+    if uid in USERS:
+        emit("balance_update", {"uid": uid, "balance": USERS[uid]["balance"]})
+
+
+@socketio.on("connect")
+def socket_connect():
+    print("socket connected")
+
+
+@socketio.on("disconnect")
+def socket_disconnect():
+    print("socket disconnected")
+
+
+# ============================================================
+# RUN SERVER
+# ============================================================
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=8080)
