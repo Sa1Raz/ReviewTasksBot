@@ -1,112 +1,33 @@
+<!-- static/moderator.html -->
 <!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Модерация — ReviewCash</title>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;800;900&display=swap" rel="stylesheet">
+<title>Moderator — ReviewCash</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  body{margin:0;background:linear-gradient(180deg,#061425,#07182a);font-family:Inter,system-ui,Roboto;color:#eafaff}
-  .wrap{max-width:720px;margin:26px auto;padding:12px}
-  .header{display:flex;align-items:center;gap:12px}
-  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(90deg,#7ee8c5,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:900}
-  .title{font-weight:900}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;margin-top:12px;border:1px solid rgba(255,255,255,0.02)}
-  .review-title{font-size:18px;font-weight:800}
-  .small{font-size:13px;color:#9fb6c7}
-  .actions{display:flex;gap:10px;margin-top:12px}
-  .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
-  .btn-approve{background:linear-gradient(90deg,#34d399,#10b981);color:#05221a}
-  .btn-reject{background:linear-gradient(90deg,#ff7b9a,#ff4d6d);color:#21060a}
+  body{margin:0;background:linear-gradient(180deg,#071724,#00121a);font-family:Inter,system-ui;color:#dffcff;display:flex;align-items:center;justify-content:center;height:100vh}
+  .panel{width:92%;max-width:720px;background:rgba(2,6,11,0.7);padding:18px;border-radius:16px;border:1px solid rgba(0,255,255,0.06);box-shadow:0 18px 50px rgba(0,0,0,0.35)}
+  .title{font-weight:900;font-size:20px}
+  .row{display:flex;gap:8px;margin-top:12px}
+  .btn{padding:10px 14px;border-radius:12px;border:none;background:linear-gradient(90deg,#00eaff,#0077ff);color:#001;font-weight:800;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:inherit}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="header">
-    <div class="logo">RC</div>
-    <div><div class="title">Модерация отзывов</div><div class="small" id="adminName">—</div></div>
-  </div>
-
-  <div id="cardArea" class="card">
-    <div id="emptyHint" class="small">Загрузка...</div>
-    <div id="assignment" style="display:none">
-      <div class="small">ID: <span id="revId">—</span></div>
-      <div class="review-title" id="revTitle"></div>
-      <div style="margin-top:8px"><a id="revLink" href="#" target="_blank" style="color:#8fe7d2"></a></div>
-      <div id="proofArea" style="margin-top:12px"></div>
-      <div class="actions">
-        <button id="btnReject" class="btn btn-reject">Отклонить</button>
-        <button id="btnApprove" class="btn btn-approve">Подтвердить</button>
-      </div>
+  <div class="panel">
+    <div class="title">Moderator панель</div>
+    <div class="row">
+      <button id="openApp" class="btn">Открыть WebApp (пользователь)</button>
+      <button id="back" class="btn ghost">Назад</button>
     </div>
+    <div style="margin-top:12px;color:#9ee8ff">Здесь можно поместить инструменты модерации (список жалоб/платежей и т.п.).</div>
   </div>
-</div>
-
 <script>
-(() => {
-  const token = new URLSearchParams(location.search).get('token') || '';
-  const socket = io({transports:['websocket']});
-  function API(path, opts={}) {
-    const u = path + (path.includes('?') ? '&':'?') + 'token=' + encodeURIComponent(token);
-    const o = Object.assign({headers:{}}, opts);
-    if (o.json){ o.method = o.method || 'POST'; o.headers['Content-Type']='application/json'; o.body = JSON.stringify(o.json); delete o.json; }
-    return fetch(u,o).then(r=>r.json()).catch(()=>null);
-  }
-
-  async function loadStats(){
-    const m = await API('/api/admin/dashboard');
-    if (m && m.ok) document.getElementById('adminName').textContent = 'Вы: Admin';
-  }
-
-  let queue = [];
-  let current = null;
-  async function loadNext(){
-    // for demo we'll pull tasks and treat first as moderation assignment
-    const j = await API('/api/tasks/list');
-    if (!j || !j.ok || !j.tasks || !j.tasks.length){
-      document.getElementById('assignment').style.display='none';
-      document.getElementById('emptyHint').textContent='Очередь пуста';
-      return;
-    }
-    const a = j.tasks[0];
-    current = a.id;
-    document.getElementById('emptyHint').style.display='none';
-    document.getElementById('assignment').style.display='block';
-    document.getElementById('revId').textContent = a.id;
-    document.getElementById('revTitle').textContent = a.title || '';
-    document.getElementById('revLink').href = a.url || '#';
-    document.getElementById('revLink').textContent = (a.url||'').slice(0,80);
-    const proof = document.getElementById('proofArea'); proof.innerHTML='';
-    proof.textContent = a.description || '(Нет доказательств)';
-  }
-
-  document.getElementById('btnApprove').addEventListener('click', async ()=>{
-    if (!current) return;
-    if (!confirm('Подтвердить?')) return;
-    // demo: remove first task
-    const tasks = (await API('/api/tasks/list')).tasks || [];
-    tasks.shift();
-    // Save back is not implemented client-side — notify admin to remove via admin panel
-    alert('Подтверждено (демо). Обновите список у админа.');
-    loadNext();
-  });
-
-  document.getElementById('btnReject').addEventListener('click', async ()=>{
-    if (!current) return;
-    const reason = prompt('Причина отказа','Неверный отзыв');
-    if (!reason) return;
-    alert('Отклонено (демо).');
-    loadNext();
-  });
-
-  socket.on('connect', ()=> console.log('socket connected'));
-  socket.on('task_update', ()=> loadNext());
-  socket.on('disconnect', ()=> console.log('socket disconnected'));
-
-  loadStats();
-  loadNext();
-})();
+  const OPEN_URL = location.origin.replace(/\/$/, '') + '/'; // main webapp
+  document.getElementById('openApp').addEventListener('click', ()=> window.open(OPEN_URL, '_blank'));
+  document.getElementById('back').addEventListener('click', ()=> history.back());
 </script>
 </body>
 </html>
