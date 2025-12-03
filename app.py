@@ -1,268 +1,400 @@
-# app.py
-# -*- coding: utf-8 -*-
-from flask import Flask, request, send_from_directory, jsonify, abort
-from flask_socketio import SocketIO
+from flask import Flask, request, send_from_directory, jsonify
+from flask_socketio import SocketIO, emit
 import telebot
 import os
 import json
 from time import time
-from datetime import datetime
+import requests
 
-# ====== CONFIG (замени если нужно) ======
+# -----------------------------
+# CONFIG
+# -----------------------------
 TOKEN = "8033069276:AAFv1-kdQ68LjvLEgLHj3ZXd5ehMqyUXOYU"
 ADMIN_ID = 6482440657
 REQUIRED_CHANNEL = "@ReviewCashNews"
-WEBAPP_URL = "https://web-production-398fb.up.railway.app"  # твой railway URL
-# ========================================
 
-app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.config["SECRET_KEY"] = "reviewcash_secret"
+WEBAPP_URL = "https://web-production-398fb.up.railway.app/"
+STATIC_DIR = "static"
+DB_DIR = "db"
 
-# SocketIO: eventlet/async_mode — совместимость с Railway/deployment
+os.makedirs(DB_DIR, exist_ok=True)
+
+app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="")
+app.config['SECRET_KEY'] = "reviewcash_secret"
+
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-# Telegram bot (pyTelegramBotAPI)
 bot = telebot.TeleBot(TOKEN, threaded=False)
 
-# === In-memory demo storage (замени на БД в production) ===
-USERS = {}     # uid -> user dict { uid, balance, history }
-TASKS = []     # list of tasks
-TOPUPS = []    # list of topup requests
-WITHDRAWS = [] # list of withdraw requests
+# -----------------------------
+# DB LOAD/SAVE
+# -----------------------------
+DB_FILES = {
+    "users": "users.json",
+    "tasks": "tasks.json",
+    "task_types": "task_types.json",
+    "topups": "topups.json",
+    "withdraws": "withdraws.json",
+    "admin_stats": "admin_stats.json"
+}
 
-def now_ts():
-    return int(time())
+def load(name):
+    path = f"{DB_DIR}/{DB_FILES[name]}"
+    if not os.path.exists(path):
+        with open(path, "w", encoding="utf8") as f:
+            f.write("[]")
+    with open(path, "r", encoding="utf8") as f:
+        return json.load(f)
 
-# ========== Static pages ==========
+def save(name, data):
+    with open(f"{DB_DIR}/{DB_FILES[name]}", "w", encoding="utf8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# -----------------------------
+# UTILS
+# -----------------------------
+def get_user(uid):
+    users = load("users")
+    for u in users:
+        if str(u["uid"]) == str(uid):
+            return u
+    # create if not exist
+    new_u = {
+        "uid": str(uid),
+        "first_name": "",
+        "username": "",
+        "avatar": "",
+        "role": "user",
+        "balance": 0,
+        "tasks_done": 0
+    }
+    users.append(new_u)
+    save("users", users)
+    return new_u
+
+def update_user(user):
+    users = load("users")
+    for i, u in enumerate(users):
+        if str(u["uid"]) == str(user["uid"]):
+            users[i] = user
+            save("users", users)
+            return
+
+def broadcast_user(uid):
+    socketio.emit("user_update", {"user_id": uid})
+
+def broadcast_tasks():
+    socketio.emit("tasks_update", {})
+
+# -----------------------------
+# CHECK TG SUBSCRIPTION
+# -----------------------------
+def is_subscribed(user_id):
+    try:
+        r = bot.get_chat_member(REQUIRED_CHANNEL, user_id)
+        return r.status in ["member", "administrator", "creator"]
+    except:
+        return False
+
+# -----------------------------
+# ROUTES: STATIC
+# -----------------------------
 @app.route("/")
-def index():
-    return send_from_directory("static", "index.html")
-
-@app.route("/moderator")
-def moderator_page():
-    return send_from_directory("static", "moderator.html")
+def index_page():
+    return send_from_directory(STATIC_DIR, "index.html")
 
 @app.route("/admin")
 def admin_page():
-    return send_from_directory("static", "mainadmin.html")
+    return send_from_directory(STATIC_DIR, "admin.html")
 
-# ========== Profile API ==========
-@app.get("/api/profile_me")
-def profile_me():
+@app.route("/moder")
+def moder_page():
+    return send_from_directory(STATIC_DIR, "moderator.html")
+
+# -----------------------------
+# API: PROFILE
+# -----------------------------
+@app.get("/api/profile")
+def api_profile():
     uid = request.args.get("uid")
-    if not uid:
-        return jsonify({"ok": False, "errmsg": "no uid"}), 400
-    user = USERS.setdefault(uid, {"uid": uid, "balance": 0, "history": []})
-    return jsonify({"ok": True, "user": user})
+    u = get_user(uid)
+    return jsonify({"ok": True, "user": u})
 
-# ========== Tasks API ==========
-@app.get("/api/tasks/list")
-def tasks_list():
-    return jsonify({"ok": True, "tasks": TASKS})
+# -----------------------------
+# API: TASK TYPES (ADMIN)
+# -----------------------------
+@app.get("/api/task_types")
+def api_task_types():
+    return jsonify({"ok": True, "types": load("task_types")})
 
-@app.post("/api/tasks/create")
-def task_create():
-    data = request.json or {}
-    required = ("owner_uid", "title", "description", "qty", "unit_price", "url", "type_id")
-    if not all(k in data for k in required):
-        return jsonify({"ok": False, "errmsg": "missing fields"}), 400
-    task = {
-        "id": now_ts(),
-        "owner_uid": str(data["owner_uid"]),
-        "title": data["title"],
-        "description": data["description"],
-        "qty": int(data["qty"]),
-        "unit_price": float(data["unit_price"]),
-        "url": data["url"],
-        "type_id": data.get("type_id"),
-        "created_at": datetime.utcnow().isoformat()+"Z",
-        "completed_qty": 0
+@app.post("/api/task_type/add")
+def api_task_add():
+    d = request.json
+    types = load("task_types")
+    new_t = {
+        "id": int(time()),
+        "title": d["title"],
+        "price": d["price"]
     }
-    TASKS.append(task)
-    # broadcast update (compatibility guard)
-    try:
-        socketio.emit("task_update", {"task": task}, broadcast=True, namespace="/")
-    except TypeError:
-        # older/newer python-socketio signature differences -> fallback
-        try:
-            socketio.emit("task_update", {"task": task}, namespace="/")
-        except Exception:
-            pass
-    return jsonify({"ok": True, "task": task})
+    types.append(new_t)
+    save("task_types", types)
+    return jsonify({"ok": True})
 
-# ========== Topup API ==========
-@app.post("/api/user/topup-link")
-def topup_link():
-    data = request.json or {}
-    uid = str(data.get("uid", ""))
-    amount = int(data.get("amount", 0))
-    if not uid or amount <= 0:
-        return jsonify({"ok": False, "errmsg": "invalid"}), 400
+# -----------------------------
+# API: TASKS
+# -----------------------------
+@app.get("/api/tasks")
+def api_tasks():
+    return jsonify({"ok": True, "tasks": load("tasks")})
 
-    # create topup record
-    topup_id = now_ts()
-    manual_code = f"RC-{topup_id}"
+@app.post("/api/task/create")
+def api_task_create():
+    d = request.json
+    uid = d["owner_uid"]
+    amount = d["qty"] * d["unit_price"]
+
+    user = get_user(uid)
+    if user["balance"] < amount:
+        return jsonify({"ok": False, "msg": "Недостаточно средств"})
+
+    user["balance"] -= amount
+    update_user(user)
+    broadcast_user(uid)
+
+    tasks = load("tasks")
+    new_task = {
+        "id": int(time()),
+        "owner_uid": uid,
+        "type_id": d["type_id"],
+        "title": d["title"],
+        "url": d["url"],
+        "qty": d["qty"],
+        "unit_price": d["unit_price"],
+        "done": 0,
+        "performers": [],
+        "status": "active"
+    }
+    tasks.append(new_task)
+    save("tasks", tasks)
+    broadcast_tasks()
+
+    return jsonify({"ok": True})
+
+@app.post("/api/task/complete")
+def api_task_complete():
+    d = request.json
+    task_id = d["task_id"]
+    performer = d["uid"]
+
+    tasks = load("tasks")
+    for t in tasks:
+        if t["id"] == task_id and t["status"] == "active":
+            if performer in t["performers"]:
+                return jsonify({"ok": False, "msg": "Вы уже выполняли это задание"})
+
+            t["performers"].append(performer)
+            save("tasks", tasks)
+
+            # notify moderator
+            bot.send_message(
+                ADMIN_ID,
+                f"🔎 Новое выполнение\nTask {task_id}\nUser {performer}"
+            )
+            return jsonify({"ok": True})
+
+    return jsonify({"ok": False})
+
+# -----------------------------
+# TOPUP / WITHDRAW
+# -----------------------------
+@app.post("/api/topup")
+def api_topup():
+    d = request.json
+    uid = d["uid"]
+    amount = int(d["amount"])
+
+    topups = load("topups")
     topup = {
-        "id": topup_id,
+        "id": int(time()),
         "uid": uid,
         "amount": amount,
-        "manual_code": manual_code,
-        "confirmed": False,
-        "created_at": datetime.utcnow().isoformat()+"Z"
+        "timestamp": int(time()),
+        "status": "pending",
+        "manual_code": f"RC-{int(time())}"
     }
-    TOPUPS.append(topup)
+    topups.append(topup)
+    save("topups", topups)
 
-    # fake bank url (user will be redirected)
-    pay_link = "https://example.com/pay?sum=" + str(amount)
+    bot.send_message(ADMIN_ID, f"💳 Новое пополнение\nUID: {uid}\nСумма: {amount}")
 
-    # try to notify admin via bot (non-blocking)
-    try:
-        bot.send_message(ADMIN_ID, f"Новая заявка на пополнение: {amount} ₽\nUID: {uid}\nID: {topup_id}")
-    except Exception:
-        pass
+    return jsonify({"ok": True, "pay_link": "https://www.tbank.ru/cf/AjpqOu4cEzU"})
 
-    return jsonify({
-        "ok": True,
-        "id": topup_id,
-        "manual_code": manual_code,
-        "pay_link": pay_link,
-        "qr_url": "/static/qr.png"
-    })
+@app.post("/api/withdraw")
+def api_withdraw():
+    d = request.json
+    uid = d["uid"]
+    amount = int(d["amount"])
 
-@app.post("/api/user/topup-confirm")
-def topup_confirm():
-    data = request.json or {}
-    topup_id = data.get("topup_id")
-    uid = str(data.get("uid", ""))
-    if not topup_id:
-        return jsonify({"ok": False, "errmsg": "missing id"}), 400
-    found = None
-    for t in TOPUPS:
-        if t["id"] == topup_id:
-            found = t
-            break
-    if not found:
-        return jsonify({"ok": False, "errmsg": "not found"}), 404
+    user = get_user(uid)
+    if user["balance"] < amount:
+        return jsonify({"ok": False, "msg": "Недостаточно средств"})
 
-    # notify admin to check (in demo we don't auto-confirm)
-    try:
-        bot.send_message(ADMIN_ID, f"Пользователь {uid} нажал 'Я оплатил' для пополнения {found['amount']} ₽ (ID {found['id']}). Проверьте платеж.")
-    except Exception:
-        pass
-
-    return jsonify({"ok": True})
-
-# ========== Withdraw API ==========
-@app.post("/api/user/withdraw")
-def withdraw():
-    data = request.json or {}
-    uid = str(data.get("uid", ""))
-    amount = int(data.get("amount", 0))
-    name = data.get("name", "")
-    details = data.get("details", "")
-    if amount <= 0 or not uid or not name or not details:
-        return jsonify({"ok": False, "errmsg": "invalid"}), 400
-
-    req = {
-        "id": now_ts(),
+    withdraws = load("withdraws")
+    w = {
+        "id": int(time()),
         "uid": uid,
         "amount": amount,
-        "name": name,
-        "details": details,
-        "created_at": datetime.utcnow().isoformat()+"Z"
+        "name": d["name"],
+        "details": d["details"],
+        "status": "pending",
+        "timestamp": int(time())
     }
-    WITHDRAWS.append(req)
+    withdraws.append(w)
+    save("withdraws", withdraws)
 
-    # notify admin
-    try:
-        bot.send_message(ADMIN_ID, f"Новая заявка на вывод\nUID: {uid}\nСумма: {amount} ₽\nИмя: {name}\nРеквизиты: {details}")
-    except Exception:
-        pass
+    user["balance"] -= amount
+    update_user(user)
+    broadcast_user(uid)
 
+    bot.send_message(
+        ADMIN_ID,
+        f"💸 Новый вывод\nUID: {uid}\nСумма: {amount}₽\nИмя: {d['name']}\nРеквизиты: {d['details']}"
+    )
     return jsonify({"ok": True})
 
-# ========== Telegram webhook handler ==========
+# -----------------------------
+# WEBHOOK
+# -----------------------------
 @app.post("/bot")
 def bot_webhook():
-    try:
-        data = request.get_data().decode("utf-8")
-        update = telebot.types.Update.de_json(data)
-        bot.process_new_updates([update])
-    except Exception as e:
-        print("bot webhook error:", e)
+    data = request.stream.read().decode("utf-8")
+    update = telebot.types.Update.de_json(data)
+    bot.process_new_updates([update])
     return "ok"
 
-# ========== BOT COMMANDS & HELPERS ==========
-def user_is_subscribed(chat_id, channel_username):
-    # returns True if user is member/admin of channel (not LEFT/LEFT/UNKNOWN)
-    try:
-        member = bot.get_chat_member(channel_username, chat_id)
-        status = member.status
-        return status in ("member", "administrator", "creator")
-    except Exception as e:
-        # If bot is not admin or channel private -> assume False
-        return False
-
+# -----------------------------
+# BOT COMMANDS
+# -----------------------------
 @bot.message_handler(commands=["start"])
-def handle_start(message):
-    uid = message.from_user.id
-    # Check subscription
-    subscribed = user_is_subscribed(uid, REQUIRED_CHANNEL)
-    if not subscribed:
-        # send request to subscribe with link
-        kb = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-        kb.add(telebot.types.KeyboardButton(text=f"Подписаться на {REQUIRED_CHANNEL}"))
-        bot.send_message(message.chat.id,
-                         f"Для доступа к приложению необходимо подписаться на канал {REQUIRED_CHANNEL}. Нажми кнопку и подпишись, затем отправь /start снова.",
-                         reply_markup=kb)
+def start_cmd(m):
+    if not is_subscribed(m.from_user.id):
+        bot.send_message(m.chat.id, "⚠️ Чтобы получить доступ, подпишитесь на канал:\n" + REQUIRED_CHANNEL)
         return
 
-    # user allowed -> send WebApp button
-    markup = telebot.types.InlineKeyboardMarkup()
-    wa = telebot.types.WebAppInfo(url=WEBAPP_URL)
-    markup.add(telebot.types.InlineKeyboardButton("Открыть ReviewCash", web_app=wa))
-    bot.send_message(message.chat.id, "Добро пожаловать! Открой приложение:", reply_markup=markup)
+    u = get_user(m.from_user.id)
+    u["first_name"] = m.from_user.first_name or ""
+    u["username"] = m.from_user.username or ""
+    u["avatar"] = m.from_user.photo_url if hasattr(m.from_user, "photo_url") else ""
+    update_user(u)
 
-@bot.message_handler(commands=["mod"])
-def handle_mod(message):
-    uid = message.from_user.id
-    if not user_is_subscribed(uid, REQUIRED_CHANNEL):
-        bot.send_message(message.chat.id, f"Подпишитесь на {REQUIRED_CHANNEL} чтобы использовать команду.")
+    kb = telebot.types.InlineKeyboardMarkup()
+    kb.add(
+        telebot.types.InlineKeyboardButton(
+            "Открыть ReviewCash",
+            web_app=telebot.types.WebAppInfo(url=WEBAPP_URL)
+        )
+    )
+
+    bot.send_message(
+        m.chat.id,
+        "✨ Добро пожаловать в ReviewCash!\nЗарабатывай на отзывах и заданиях!",
+        reply_markup=kb
+    )
+
+@bot.message_handler(commands=["admin", "mainadmin"])
+def admin_open(m):
+    u = get_user(m.from_user.id)
+    if u["role"] not in ["admin", "superadmin"]:
+        bot.reply_to(m, "⛔ Доступ запрещён")
         return
-    # WebApp link to moderator path
-    markup = telebot.types.InlineKeyboardMarkup()
-    wa = telebot.types.WebAppInfo(url=WEBAPP_URL + "/moderator")
-    markup.add(telebot.types.InlineKeyboardButton("Открыть модератор", web_app=wa))
-    bot.send_message(message.chat.id, "Открыть модераторскую панель:", reply_markup=markup)
 
-@bot.message_handler(commands=["admin"])
-def handle_admin(message):
-    # Only admin id allowed
-    if message.from_user and message.from_user.id != ADMIN_ID:
-        bot.send_message(message.chat.id, "Только администратор может использовать эту команду.")
+    kb = telebot.types.InlineKeyboardMarkup()
+    kb.add(
+        telebot.types.InlineKeyboardButton(
+            "🛠 Открыть Admin Panel",
+            web_app=telebot.types.WebAppInfo(url=WEBAPP_URL + "admin")
+        )
+    )
+    bot.send_message(m.chat.id, "Открываю панель администратора:", reply_markup=kb)
+
+@bot.message_handler(commands=["mod", "moder"])
+def moder_open(m):
+    u = get_user(m.from_user.id)
+    if u["role"] not in ["moderator", "admin", "superadmin"]:
+        bot.reply_to(m, "⛔ Доступ запрещён")
         return
-    markup = telebot.types.InlineKeyboardMarkup()
-    wa = telebot.types.WebAppInfo(url=WEBAPP_URL + "/admin")
-    markup.add(telebot.types.InlineKeyboardButton("Открыть панель администратора", web_app=wa))
-    bot.send_message(message.chat.id, "Открыть админ-панель:", reply_markup=markup)
 
-# ========== Socket events ==========
-@socketio.on("connect")
-def on_connect():
-    print("socket connected")
+    kb = telebot.types.InlineKeyboardMarkup()
+    kb.add(
+        telebot.types.InlineKeyboardButton(
+            "🛠 Открыть панель модератора",
+            web_app=telebot.types.WebAppInfo(url=WEBAPP_URL + "moder")
+        )
+    )
+    bot.send_message(m.chat.id, "Открываю панель модератора:", reply_markup=kb)
 
-@socketio.on("disconnect")
-def on_disconnect():
-    print("socket disconnected")
+# -----------------------------
+# ROLE COMMANDS
+# -----------------------------
+@bot.message_handler(commands=["add_admin"])
+def add_admin(m):
+    if m.from_user.id != ADMIN_ID:
+        return
 
-# ========== Run server ==========
+    try:
+        uid = m.text.split()[1]
+        u = get_user(uid)
+        u["role"] = "admin"
+        update_user(u)
+        bot.reply_to(m, f"🎉 Пользователь {uid} теперь админ")
+    except:
+        bot.reply_to(m, "Ошибка")
+
+@bot.message_handler(commands=["add_moder"])
+def add_moder(m):
+    if m.from_user.id != ADMIN_ID:
+        return
+
+    try:
+        uid = m.text.split()[1]
+        u = get_user(uid)
+        u["role"] = "moderator"
+        update_user(u)
+        bot.reply_to(m, f"🛡 Пользователь {uid} теперь модератор")
+    except:
+        bot.reply_to(m, "Ошибка")
+
+@bot.message_handler(commands=["remove_admin"])
+def remove_admin(m):
+    if m.from_user.id != ADMIN_ID:
+        return
+
+    try:
+        uid = m.text.split()[1]
+        u = get_user(uid)
+        u["role"] = "user"
+        update_user(u)
+        bot.reply_to(m, f"❌ Админка снята с {uid}")
+    except:
+        bot.reply_to(m, "Ошибка")
+
+@bot.message_handler(commands=["remove_moder"])
+def remove_moder(m):
+    if m.from_user.id != ADMIN_ID:
+        return
+
+    try:
+        uid = m.text.split()[1]
+        u = get_user(uid)
+        u["role"] = "user"
+        update_user(u)
+        bot.reply_to(m, f"❌ Модера сняли с {uid}")
+    except:
+        bot.reply_to(m, "Ошибка")
+
+
+# -----------------------------
+# MAIN
+# -----------------------------
 if __name__ == "__main__":
-    # Optionally set webhook automatically (commented: set manually if you prefer)
-    # try:
-    #     bot.remove_webhook()
-    #     bot.set_webhook(url=WEBAPP_URL + "/bot")
-    #     print("Webhook set to", WEBAPP_URL + "/bot")
-    # except Exception as e:
-    #     print("Webhook set error:", e)
-
     socketio.run(app, host="0.0.0.0", port=8080)
