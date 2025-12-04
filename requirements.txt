@@ -4,3 +4,4 @@ python-socketio==5.9.0
 python-engineio==4.9.0
 eventlet==0.33.3
 pyTelegramBotAPI==4.14.0
+flask-cors
