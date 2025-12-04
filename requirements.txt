@@ -1,7 +1,12 @@
+# requirements.txt — точные и проверенные версии для стабильной работы ReviewCash
 Flask==2.3.2
-Flask-SocketIO==5.3.6
-python-socketio==5.9.0
-python-engineio==4.9.0
+Flask-SocketIO==5.3.4
+python-socketio==5.8.0
 eventlet==0.33.3
-pyTelegramBotAPI==4.14.0
-flask-cors
+pyTelegramBotAPI==4.12.0
+Flask-Cors==3.0.10
+python-dotenv==1.0.0
+requests==2.31.0
+gunicorn==20.1.0
+# Опционально, если будете генерировать/обрабатывать QR/изображения
+Pillow==10.1.0
