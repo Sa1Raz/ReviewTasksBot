@@ -2,91 +2,68 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ReviewCash — Кабинет</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-/* === ТВОЙ CSS СОХРАНЁН (без сокращений) === */
-/* Я ничего не вырезал, только слегка почистил от дублей */
-
+/* ====== ОСНОВА ====== */
 :root{
   --accent:#00eaff;
   --accent2:#00b4ff;
-  --dark-bg1:#03040a;
-  --dark-bg2:#071018;
-  --light-bg1:#fff;
-  --light-bg2:#eef7ff;
-  --card-dark:rgba(255,255,255,.06);
-  --card-light:rgba(0,40,70,.06);
+  --bg1:#03040a;
+  --bg2:#071018;
+  --card:rgba(255,255,255,.06);
 }
-
+*{box-sizing:border-box}
 body{
   margin:0;
   font-family:Inter,system-ui;
-  background:linear-gradient(180deg,var(--dark-bg1),var(--dark-bg2));
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
   color:#dff7ff;
-  transition:.25s;
 }
-
-body.light{
-  background:linear-gradient(180deg,var(--light-bg1),var(--light-bg2));
-  color:#062029;
-}
-
 .wrap{
   max-width:1020px;
   margin:20px auto 140px;
   padding:14px;
 }
-
 .card{
-  background:var(--card-dark);
-  padding:18px;
+  background:var(--card);
   border-radius:20px;
-  margin-bottom:16px;
+  padding:18px;
+  margin-bottom:14px;
 }
-
-body.light .card{
-  background:#fff;
-}
-
 .btn{
   padding:12px 18px;
   border-radius:14px;
   border:none;
   font-weight:800;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
   cursor:pointer;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
 }
-
 .btn.ghost{
   background:transparent;
-  border:1px solid rgba(255,255,255,.2);
   color:inherit;
+  border:1px solid rgba(255,255,255,.2);
 }
-
 .task-item{
   padding:14px;
   border-radius:14px;
   background:rgba(255,255,255,.05);
   margin-bottom:10px;
 }
-
 .modal-bg{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.6);
   display:none;
-  align-items:center;
+  background:rgba(0,0,0,.6);
   justify-content:center;
+  align-items:center;
   z-index:9999;
 }
-
 .modal-bg.open{display:flex}
-
 .modal{
   background:#0e1a24;
   padding:20px;
@@ -94,7 +71,6 @@ body.light .card{
   width:92%;
   max-width:760px;
 }
-
 input,select{
   width:100%;
   padding:12px;
@@ -103,11 +79,10 @@ input,select{
   background:rgba(255,255,255,.05);
   color:inherit;
 }
-
 .fab{
   position:fixed;
   right:16px;
-  bottom:100px;
+  bottom:90px;
   width:64px;
   height:64px;
   border-radius:50%;
@@ -115,52 +90,63 @@ input,select{
   font-weight:900;
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
   cursor:pointer;
+}
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#000c;
+  padding:12px 18px;
+  border-radius:12px;
+  display:none;
 }
 </style>
 </head>
 
 <body>
 
+<!-- ===== LOADER ===== -->
 <div id="loader" class="modal-bg open">
   <div class="modal">
-    <b>ReviewCash</b><br><br>
-    Загрузка…
+    <b>ReviewCash</b><br><br>Загрузка…
   </div>
 </div>
 
+<!-- ===== APP ===== -->
 <main id="app" class="wrap" style="display:none">
 
-  <section class="card">
-    <h2>👤 Профиль</h2>
-    <div>Имя: <b id="userName">—</b></div>
-    <div>ID: <span id="userHandle">—</span></div>
-    <div style="margin-top:8px">Баланс: <b id="balance">0 ₽</b></div>
-    <br>
-    <button id="topupBtn" class="btn">Пополнить</button>
-    <button id="withdrawBtn" class="btn ghost">Вывести</button>
-  </section>
+<section class="card">
+  <h2>👤 Профиль</h2>
+  <div>Имя: <b id="userName">—</b></div>
+  <div>ID: <span id="userHandle">—</span></div>
+  <div style="margin-top:8px">Баланс: <b id="balance">0 ₽</b></div>
+  <br>
+  <button id="topupBtn" class="btn">Пополнить</button>
+  <button id="withdrawBtn" class="btn ghost">Вывести</button>
+</section>
 
-  <section class="card">
-    <h2>📋 Задания</h2>
-    <div id="tasksList">Загрузка…</div>
-  </section>
+<section class="card">
+  <h2>📋 Задания</h2>
+  <div id="tasksList">Загрузка…</div>
+</section>
 
 </main>
 
 <div class="fab" id="fab">+</div>
 
-<!-- ===== МОДАЛКИ (СОХРАНЕНЫ) ===== -->
+<!-- ===== CREATE MODAL ===== -->
 <div id="createModal" class="modal-bg">
   <div class="modal">
     <h3>Создать задание</h3>
     <select id="typeSelect">
       <option value="">Тип</option>
-      <option value="review_ya">Яндекс</option>
-      <option value="review_google">Google</option>
-      <option value="subscription_tg">Telegram</option>
+      <option value="review_ya">Яндекс Отзывы</option>
+      <option value="review_google">Google Отзывы</option>
+      <option value="subscription_tg">Telegram Подписки</option>
     </select><br><br>
     <input id="taskUrl" placeholder="URL"><br><br>
     <input id="taskQuantity" type="number" placeholder="Количество"><br><br>
@@ -168,31 +154,43 @@ input,select{
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
+
 <script>
-/* ================== TELEGRAM ================== */
+/* ================= TELEGRAM ================= */
 const tg = Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-/* ================== HELPERS ================== */
+/* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
 
-function apiFetch(url, data){
+function toast(msg){
+  const t=$('toast');
+  t.textContent=msg;
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+
+function apiFetch(url,data){
   return fetch(url,{
-    method: data ? 'POST':'GET',
+    method:data?'POST':'GET',
     headers:{
       'Content-Type':'application/json',
       'X-TG-INIT': tg.initData
     },
-    body: data ? JSON.stringify(data):null
-  }).then(r=>r.json());
+    body:data?JSON.stringify(data):null
+  }).then(r=>{
+    if(!r.ok) throw new Error();
+    return r.json();
+  });
 }
 
 function showLoader(v){
-  $('loader').style.display = v ? 'flex':'none';
+  $('loader').style.display = v?'flex':'none';
 }
 
-/* ================== PROFILE ================== */
+/* ================= PROFILE ================= */
 async function loadProfile(){
   const d = await apiFetch('/api/profile');
   $('userName').textContent = d.name || 'Пользователь';
@@ -200,39 +198,55 @@ async function loadProfile(){
   $('balance').textContent = d.balance.toFixed(2)+' ₽';
 }
 
-/* ================== TASKS ================== */
+/* ================= TASKS ================= */
 async function loadTasks(){
-  const d = await apiFetch('/api/tasks');
-  const list = $('tasksList');
+  const list=$('tasksList');
+  list.textContent='Загрузка…';
+  const tasks = await apiFetch('/api/tasks');
   list.innerHTML='';
-  d.forEach(t=>{
+  tasks.forEach(t=>{
     const el=document.createElement('div');
     el.className='task-item';
-    el.textContent = t.title+' — '+t.price+' ₽';
+    el.innerHTML = `<b>${t.title}</b><br>${t.price} ₽`;
+    el.onclick=()=>{
+      tg.HapticFeedback.impactOccurred("medium");
+      toast('Задание выбрано');
+    };
     list.appendChild(el);
   });
 }
 
-/* ================== CREATE ================== */
-$('fab').onclick = ()=> $('createModal').classList.add('open');
-
-$('submitTask').onclick = async ()=>{
-  await apiFetch('/api/create_task',{
-    type:typeSelect.value,
-    url:taskUrl.value,
-    quantity:+taskQuantity.value
-  });
-  $('createModal').classList.remove('open');
-  loadTasks();
-  loadProfile();
+/* ================= CREATE ================= */
+$('fab').onclick=()=>{
+  $('createModal').classList.add('open');
 };
 
-/* ================== INIT ================== */
-(async ()=>{
-  await loadProfile();
-  await loadTasks();
+$('submitTask').onclick=async()=>{
+  try{
+    await apiFetch('/api/create_task',{
+      type:typeSelect.value,
+      url:taskUrl.value,
+      quantity:+taskQuantity.value
+    });
+    $('createModal').classList.remove('open');
+    toast('Задание создано');
+    loadProfile();
+    loadTasks();
+  }catch{
+    toast('Ошибка создания');
+  }
+};
+
+/* ================= INIT ================= */
+(async()=>{
+  try{
+    await loadProfile();
+    await loadTasks();
+    $('app').style.display='block';
+  }catch{
+    document.body.innerHTML='<h2 style="padding:20px">❌ Ошибка доступа</h2>';
+  }
   showLoader(false);
-  $('app').style.display='block';
 })();
 </script>
 
